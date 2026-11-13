@@ -649,28 +649,48 @@ function createTitleScreen(scene) {
   for (let dashX = left + 20; dashX < left + GAME_WIDTH; dashX += 60) art.fillRect(dashX, 578, 30, 4);
   const car = scene.add.image(left + 160, 598, 'car').setOrigin(0.5, 1).setScale(0.8);
 
-  const titleBand = scene.add.graphics();
-  const bandWidth = 440;
-  const bandTop = 150;
-  paintRoundedRect(titleBand, UI.textStroke, centerX - bandWidth / 2 - 6, bandTop - 6, bandWidth + 12, 56, 10);
-  for (let column = 0; column < bandWidth / 11; column++) {
-    for (let row = 0; row < 4; row++) {
-      paintRect(titleBand, (column + row) % 2 ? PALETTE.white : PALETTE.pink, centerX - bandWidth / 2 + column * 11, bandTop + row * 11, 11, 11);
+  const flags = scene.add.graphics();
+  for (const side of [-1, 1]) {
+    const poleTop = { x: side * 250, y: -70 };
+    const poleBase = { x: side * 156, y: 84 };
+    const flagWidth = 96;
+    const flagHeight = 66;
+    const columns = 8;
+    const rows = 5;
+    const pointOnFlag = (across, down) => {
+      const wave = Math.sin(across * Math.PI * 2) * 7 * across;
+      return {
+        x: poleTop.x + side * across * flagWidth + (poleBase.x - poleTop.x) * down * 0.32,
+        y: poleTop.y + down * flagHeight + wave - across * 10,
+      };
+    };
+    for (let column = 0; column < columns; column++) {
+      for (let row = 0; row < rows; row++) {
+        const corner = (offsetColumn, offsetRow) => pointOnFlag((column + offsetColumn) / columns, (row + offsetRow) / rows);
+        flags.fillStyle((column + row) % 2 ? PALETTE.white : UI.textStroke, 1);
+        flags.fillPoints([corner(0, 0), corner(1, 0), corner(1, 1), corner(0, 1)], true);
+      }
     }
+    flags.lineStyle(7, dark(PALETTE.brown, 0.3), 1);
+    flags.lineBetween(poleTop.x, poleTop.y - 6, poleBase.x, poleBase.y);
+    paintCircle(flags, PALETTE.yellow, poleTop.x, poleTop.y - 8, 7);
   }
-  const makeupWord = scene.add
-    .text(centerX, 100, 'MAKEUP', { ...TEXT_STYLES.display, fontSize: '96px', stroke: css(PALETTE.white), strokeThickness: 12 })
-    .setOrigin(0.5)
-    .setPadding(16);
-  const racingWord = scene.add
-    .text(centerX, 172, 'RACING', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.display, fontStyle: 'italic', strokeThickness: 10 })
-    .setOrigin(0.5)
-    .setPadding(20);
-  for (const [word, colors] of [[makeupWord, [light(PALETTE.pink, 0.3), PALETTE.pink, dark(PALETTE.pink, 0.3)]], [racingWord, [light(PALETTE.yellow, 0.5), PALETTE.yellow, PALETTE.orange]]]) {
-    const gradient = word.context.createLinearGradient(0, 0, 0, word.height);
-    colors.forEach((color, index) => gradient.addColorStop(0.25 + index * 0.25, css(color)));
-    word.setFill(gradient).setShadow(0, 7, css(UI.textStroke), 0, true, true);
-  }
+  const titleWord = (text, y, fontSize, colors) => {
+    const style = { ...TEXT_STYLES.display, fontSize, fontStyle: 'italic' };
+    const outline = scene.add.text(0, y + 7, text, { ...style, color: css(UI.textStroke), stroke: css(UI.textStroke), strokeThickness: 26 }).setOrigin(0.5).setPadding(26);
+    const face = scene.add.text(0, y, text, { ...style, stroke: css(PALETTE.white), strokeThickness: 9 }).setOrigin(0.5).setPadding(26);
+    const gloss = face.context.createLinearGradient(0, 0, 0, face.height);
+    [[0.3, colors[0]], [0.49, colors[1]], [0.51, colors[2]], [0.7, colors[3]]].forEach(([stop, color]) => gloss.addColorStop(stop, css(color)));
+    face.setFill(gloss);
+    return [outline, face];
+  };
+  const logo = scene.add
+    .container(centerX, 118, [
+      flags,
+      ...titleWord('MAKEUP', -22, '92px', [light(PALETTE.pink, 0.4), PALETTE.pink, dark(PALETTE.pink, 0.2), dark(PALETTE.pink, 0.4)]),
+      ...titleWord('RACING', 64, '50px', [light(PALETTE.yellow, 0.4), PALETTE.yellow, PALETTE.orange, dark(PALETTE.orange, 0.25)]),
+    ])
+    .setAngle(-4);
   const subtitle = scene.add
     .text(centerX, 244, 'Llega a cada destino con el look perfecto', { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large })
     .setOrigin(0.5);
@@ -693,7 +713,7 @@ function createTitleScreen(scene) {
   const controlTexts = controlCards.map(([cardX, arrows]) =>
     scene.add.text(cardX + (cardX > centerX ? 0 : 22), 424, arrows, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large, color: css(PALETTE.purple) }).setOrigin(0.5),
   );
-  scene.titleLayer = scene.add.container(0, 0, [art, car, titleBand, makeupWord, racingWord, subtitle, button, driverIcon, ...controlTexts]);
+  scene.titleLayer = scene.add.container(0, 0, [art, car, logo, subtitle, button, driverIcon, ...controlTexts]);
 }
 
 function createLevelSelectScreen(scene) {
