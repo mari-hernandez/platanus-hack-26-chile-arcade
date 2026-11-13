@@ -118,7 +118,7 @@ const COLORS = {
   irisLight: 0xa8e6ff,
   shopWall: 0xfff4e6,
   shopTrim: 0x9ee6c9,
-  cone: 0xf3b860,
+  iceCreamCone: 0xf3b860,
   coneLines: 0xd9963f,
   scoopStrawberry: 0xff9ec7,
   scoopMint: 0x9ee6c9,
@@ -655,7 +655,7 @@ function showResults(scene) {
 
 function drawIceCream(graphics, x, bottomY, height, fogged = (color) => color) {
   const coneTopY = bottomY - height * 0.55;
-  graphics.fillStyle(fogged(COLORS.cone), 1);
+  graphics.fillStyle(fogged(COLORS.iceCreamCone), 1);
   graphics.fillTriangle(x - height * 0.2, coneTopY, x + height * 0.2, coneTopY, x, bottomY);
   graphics.lineStyle(Math.max(1, height * 0.015), fogged(COLORS.coneLines), 1);
   graphics.lineBetween(x - height * 0.12, coneTopY, x + height * 0.06, bottomY - height * 0.18);
