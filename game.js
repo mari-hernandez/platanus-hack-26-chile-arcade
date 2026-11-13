@@ -54,6 +54,9 @@ const CAR_IMAGE_SCALE = 0.85;
 const FIRST_OBSTACLE_POSITION = 60;
 const CRASH_RECOVERY_MS = 1500;
 const JUMP_DURATION_MS = 650;
+const SELFIE_DURATION_MS = 2500;
+const SELFIE_PHOTO_WIDTH = 260;
+const SELFIE_PHOTO_HEIGHT = 200;
 const JUMP_HEIGHT_PX = 70;
 const JUMP_HEIGHT_TO_CLEAR_SPIKES = 0.3;
 const LAST_OBSTACLE_MARGIN = 30;
@@ -278,6 +281,7 @@ const LEVELS = [
     cloudOpacity: 0.9,
     scenery: ['roundTree', 'roundTree', 'blossomTree', 'pine', 'flowerBush'],
     sceneryDensity: 0.4,
+    selfiesNeeded: 0,
     colors: {
       skyTop: PALETTE.blue,
       skyBottom: light(PALETTE.pink, 0.8),
@@ -308,6 +312,7 @@ const LEVELS = [
     cloudOpacity: 0.18,
     scenery: ['building', 'building', 'lamp'],
     sceneryDensity: 0.7,
+    selfiesNeeded: 1,
     colors: {
       skyTop: dark(PALETTE.purple, 0.75),
       skyBottom: dark(PALETTE.purple, 0.2),
@@ -338,6 +343,7 @@ const LEVELS = [
     cloudOpacity: 0.9,
     scenery: ['blossomTree', 'blossomTree', 'roundTree', 'flowerBush'],
     sceneryDensity: 0.5,
+    selfiesNeeded: 2,
     colors: {
       skyTop: light(PALETTE.pink, 0.45),
       skyBottom: light(PALETTE.yellow, 0.75),
@@ -368,6 +374,7 @@ const LEVELS = [
     cloudOpacity: 0.12,
     scenery: ['fire', 'fire', 'skull', 'bones'],
     sceneryDensity: 0.45,
+    selfiesNeeded: 3,
     colors: {
       skyTop: dark(PALETTE.red, 0.8),
       skyBottom: dark(PALETTE.orange, 0.25),
@@ -599,10 +606,11 @@ function createTitleScreen(scene) {
     [centerX + 140, '\u25b2 \u25bc  \u25c0 \u25b6'],
   ];
   for (const [cardX] of controlCards) drawPanel(art, cardX, 424, 230, 58);
-  drawPartIcon(art, 'lips', centerX + 140 - 72, 424, PALETTE.red);
+  drawPartIcon(art, 'lips', centerX + 140 - 82, 424, PALETTE.red);
+  drawCameraIcon(art, centerX + 140 + 82, 426, PALETTE.purple);
   const driverIcon = scene.add.image(centerX - 140 - 72, 444, 'car').setOrigin(0.5, 1).setScale(0.36);
   const controlTexts = controlCards.map(([cardX, arrows]) =>
-    scene.add.text(cardX + 22, 424, arrows, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large, color: css(PALETTE.purple) }).setOrigin(0.5),
+    scene.add.text(cardX + (cardX > centerX ? 0 : 22), 424, arrows, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large, color: css(PALETTE.purple) }).setOrigin(0.5),
   );
   scene.titleLayer = scene.add.container(0, 0, [art, car, makeupWord, racingWord, subtitle, button, driverIcon, ...controlTexts]);
 }
@@ -675,7 +683,9 @@ function showResults(scene) {
   const centerX = OVERLAY_WORLD_X + GAME_WIDTH / 2;
   const makeup = scene.makeup;
   const matchingCount = MAKEUP_PARTS.filter((part, index) => isPartMatching(makeup, index)).length;
-  const isPerfect = matchingCount === MAKEUP_PARTS.length;
+  const isPerfectLook = matchingCount === MAKEUP_PARTS.length;
+  const hasAllSelfies = makeup.selfiesTaken >= currentLevel.selfiesNeeded;
+  const isPerfect = isPerfectLook && hasAllSelfies;
   const nextLevel = scene.levelIndex + 1;
   const hasNextLevel = nextLevel < LEVELS.length;
   const unlocksNextLevel = isPerfect && hasNextLevel && nextLevel >= unlockedLevelCount;
@@ -695,7 +705,13 @@ function showResults(scene) {
     })
     .setOrigin(0.5);
   const summary = scene.add
-    .text(centerX, 198, `Look ${matchingCount}/${MAKEUP_PARTS.length}   \u00b7   ${scene.race.crashes} ${scene.race.crashes === 1 ? 'choque' : 'choques'}`, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large })
+    .text(centerX, 198, [
+        `Look ${matchingCount}/${MAKEUP_PARTS.length}`,
+        currentLevel.selfiesNeeded ? `Selfies ${makeup.selfiesTaken}/${currentLevel.selfiesNeeded}` : '',
+        `${scene.race.crashes} ${scene.race.crashes === 1 ? 'choque' : 'choques'}`,
+      ]
+        .filter(Boolean)
+        .join('   \u00b7   '), { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large })
     .setOrigin(0.5);
   const unlockNotice = scene.add
     .text(centerX, 226, unlocksNextLevel ? `Desbloquearon: ${LEVELS[nextLevel].name}` : '', { ...TEXT_STYLES.onLight, color: css(PALETTE.purple) })
@@ -1018,6 +1034,8 @@ function createMakeupPanel(scene) {
     selectedPart: 0,
     colorIndexes: MAKEUP_PARTS.map(() => -1),
     targetIndexes: MAKEUP_PARTS.map((part) => Phaser.Math.Between(0, part.colors.length - 1)),
+    selfiesTaken: 0,
+    selfieVisibleUntil: 0,
   };
 
   const backdrop = scene.add.graphics();
@@ -1032,12 +1050,14 @@ function createMakeupPanel(scene) {
   scene.tileGraphics = scene.add.graphics();
   createReferencePhoto(scene);
   createMakeupToolbar(scene);
+  scene.selfieBadge = scene.add.graphics();
 
   const panelDivider = scene.add.graphics();
   panelDivider.fillStyle(COLORS.background, 1);
   panelDivider.fillRect(left, 0, 6, GAME_HEIGHT);
 
   refreshMakeup(scene);
+  drawSelfieBadge(scene);
 }
 
 function createReferencePhoto(scene) {
@@ -1096,6 +1116,93 @@ function updateMakeup(scene) {
     changed = true;
   }
   if (changed) refreshMakeup(scene);
+  if (wasPressed(scene, 'P2_2')) takeSelfie(scene);
+}
+
+function takeSelfie(scene) {
+  const makeup = scene.makeup;
+  const now = scene.time.now;
+  if (makeup.selfiesTaken >= currentLevel.selfiesNeeded || now < makeup.selfieVisibleUntil) return;
+  makeup.selfiesTaken += 1;
+  makeup.selfieVisibleUntil = now + SELFIE_DURATION_MS;
+  drawSelfieBadge(scene);
+  playSound(scene, 'shutter');
+  scene.cameras.main.flash(200, 255, 255, 255);
+  scene.makeupCamera.flash(200, 255, 255, 255);
+
+  const painter = scene.make.graphics({ x: 0, y: 0 }, false);
+  painter.fillGradientStyle(COLORS.makeupTop, COLORS.makeupTop, COLORS.makeupBottom, COLORS.makeupBottom, 1);
+  painter.fillRect(0, 0, SELFIE_PHOTO_WIDTH, SELFIE_PHOTO_HEIGHT);
+  drawBoyfriend(painter, 88, 118, 0.5);
+  drawFace(painter, 176, 112, 0.46, lookFrom(makeup.colorIndexes));
+  replaceTexture(scene, painter, 'selfie', SELFIE_PHOTO_WIDTH, SELFIE_PHOTO_HEIGHT);
+  painter.destroy();
+
+  const frame = scene.add.graphics();
+  drawPanel(frame, 0, 18, SELFIE_PHOTO_WIDTH + 24, SELFIE_PHOTO_HEIGHT + 60);
+  frame.fillStyle(PALETTE.pink, 1);
+  frame.fillCircle(-7, SELFIE_PHOTO_HEIGHT / 2 + 26, 7);
+  frame.fillCircle(7, SELFIE_PHOTO_HEIGHT / 2 + 26, 7);
+  frame.fillTriangle(-14, SELFIE_PHOTO_HEIGHT / 2 + 28, 14, SELFIE_PHOTO_HEIGHT / 2 + 28, 0, SELFIE_PHOTO_HEIGHT / 2 + 42);
+  const photo = scene.add.image(0, 0, 'selfie');
+  const selfie = scene.add.container(PANEL_WIDTH / 2, 300, [frame, photo]).setAngle(-4).setScale(0.6).setDepth(10);
+  scene.tweens.add({ targets: selfie, scale: 1.25, duration: 220, ease: 'Back.Out' });
+  scene.time.delayedCall(SELFIE_DURATION_MS, () => {
+    scene.tweens.add({ targets: selfie, alpha: 0, scale: 0.8, duration: 200, onComplete: () => selfie.destroy() });
+  });
+}
+
+function drawSelfieBadge(scene) {
+  const graphics = scene.selfieBadge;
+  const needed = currentLevel.selfiesNeeded;
+  graphics.clear();
+  if (needed === 0) return;
+  const centerX = TILE_CENTER_X + 40 + needed * 9;
+  const width = 58 + needed * 18;
+  drawPanel(graphics, centerX, 40, width, 44);
+  drawCameraIcon(graphics, centerX - width / 2 + 24, 40, PALETTE.purple);
+  for (let selfie = 0; selfie < needed; selfie++) {
+    const dotX = centerX - width / 2 + 52 + selfie * 18;
+    graphics.fillStyle(selfie < scene.makeup.selfiesTaken ? PALETTE.pink : UI.idle, 1);
+    graphics.fillCircle(dotX, 40, 6);
+  }
+}
+
+function drawCameraIcon(graphics, x, y, color) {
+  graphics.fillStyle(color, 1);
+  graphics.fillRoundedRect(x - 15, y - 9, 30, 21, 5);
+  graphics.fillRect(x - 6, y - 13, 12, 5);
+  graphics.fillStyle(PALETTE.white, 1);
+  graphics.fillCircle(x, y + 1, 7);
+  graphics.fillStyle(color, 1);
+  graphics.fillCircle(x, y + 1, 4);
+}
+
+function drawBoyfriend(graphics, centerX, centerY, scale) {
+  const at = (offsetX, offsetY) => [centerX + offsetX * scale, centerY + offsetY * scale];
+  const ellipse = (color, offsetX, offsetY, width, height) => {
+    graphics.fillStyle(color, 1);
+    graphics.fillEllipse(...at(offsetX, offsetY), width * scale, height * scale);
+  };
+  ellipse(PALETTE.blue, 0, 190, 250, 150);
+  ellipse(COLORS.skinShade, 0, 100, 56, 70);
+  ellipse(COLORS.outline, 0, 0, 178, 208);
+  ellipse(PALETTE.skin, -88, 6, 30, 40);
+  ellipse(PALETTE.skin, 88, 6, 30, 40);
+  ellipse(PALETTE.skin, 0, 0, 170, 200);
+  ellipse(COLORS.driverHair, 0, -78, 190, 96);
+  ellipse(COLORS.driverHair, -60, -50, 70, 60);
+  ellipse(COLORS.driverHair, 50, -56, 90, 50);
+  for (const side of [-1, 1]) {
+    ellipse(COLORS.driverHair, side * 36, -26, 40, 9);
+    ellipse(COLORS.driverHair, side * 34, 8, 18, 26);
+    ellipse(PALETTE.white, side * 34 - 3, 2, 6, 7);
+    ellipse(light(PALETTE.pink, 0.4), side * 56, 40, 32, 16);
+  }
+  graphics.lineStyle(5 * scale, COLORS.outline, 1);
+  graphics.beginPath();
+  graphics.arc(...at(0, 44), 22 * scale, 0.2, Math.PI - 0.2);
+  graphics.strokePath();
 }
 
 function isPartMatching(makeup, partIndex) {
@@ -1981,6 +2088,7 @@ function playSound(scene, kind) {
     select: { wave: 'square', from: 700, to: 1000, gain: 0.05, length: 0.06 },
     paint: { wave: 'triangle', from: 500, to: 950, gain: 0.08, length: 0.1 },
     jump: { wave: 'square', from: 300, to: 760, gain: 0.07, length: 0.16 },
+    shutter: { wave: 'square', from: 1800, to: 400, gain: 0.09, length: 0.09 },
     swoosh: { wave: 'triangle', from: 260, to: 620, gain: 0.08, length: 0.12 },
     crash: { wave: 'sawtooth', from: 220, to: 50, gain: 0.25, length: 0.4 },
   };
