@@ -1526,7 +1526,7 @@ function drawFace(graphics, centerX, centerY, scale, look) {
   const isOffShoulder = outfit.style === 'party' || outfit.style === 'bride';
 
   if (outfit.style === 'bride') smoothShape(COLORS.cloud, mirrored([[0, -170], [90, -150], [150, -40], [168, 120], [176, 300], [0, 300]]), 0.5);
-  smoothShape(COLORS.hairDark, mirrored([[0, -150], [60, -146], [104, -118], [124, -60], [126, 10], [118, 90], [128, 180], [140, 300], [0, 300]]), 1, true);
+  smoothShape(COLORS.hairDark, mirrored([[0, -150], [60, -146], [104, -118], [120, -56], [120, 40], [120, 160], [122, 300], [0, 300]]), 1, true);
 
   smoothShape(COLORS.skin, mirrored([[0, 60], [20, 62], [22, 170], [0, 176]]), 1, true);
   ellipse(COLORS.skinShade, 0, 96, 44, 26);
@@ -1617,7 +1617,7 @@ function drawFace(graphics, centerX, centerY, scale, look) {
   ellipse(COLORS.cloud, 5, 74, 8, 3, look.lips ? 0.7 : 0.4);
 
   for (const side of [-1, 1]) {
-    smoothShape(COLORS.hair, [[side * 4, -118], [side * 48, -118], [side * 86, -92], [side * 102, -40], [side * 100, 20], [side * 94, 70], [side * 104, 140], [side * 120, 210], [side * 98, 214], [side * 80, 150], [side * 74, 80], [side * 78, 20], [side * 66, -40], [side * 36, -84], [side * 12, -104]], 1, true);
+    smoothShape(COLORS.hair, [[side * 4, -118], [side * 48, -118], [side * 86, -92], [side * 100, -40], [side * 102, 40], [side * 104, 140], [side * 106, 214], [side * 84, 214], [side * 82, 140], [side * 80, 40], [side * 76, -20], [side * 64, -50], [side * 36, -86], [side * 12, -104]], 1, true);
     stroke(COLORS.hairShine, 4, [[side * 30, -100], [side * 68, -70], [side * 86, -14]], 0.55);
     stroke(COLORS.hairShine, 3, [[side * 96, 40], [side * 100, 120]], 0.4);
     stroke(COLORS.hairDark, 2, [[side * 50, -96], [side * 82, -30], [side * 92, 80]], 0.5);
