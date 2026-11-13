@@ -97,7 +97,6 @@ function css(color) {
 const FONTS = {
   display: 'Arial Black, Impact, sans-serif',
   body: 'Trebuchet MS, Arial',
-  pixel: 'Courier New, monospace',
 };
 
 const FONT_SIZES = {
@@ -109,13 +108,54 @@ const FONT_SIZES = {
   hero: '76px',
 };
 
+const UI = {
+  radius: 14,
+  accentWidth: 5,
+  shadowOffset: 5,
+  shadow: dark(PALETTE.purple, 0.35),
+  textStroke: dark(PALETTE.purple, 0.55),
+  surface: PALETTE.white,
+  surfaceSoft: light(PALETTE.pink, 0.88),
+  accent: PALETTE.purple,
+  accentLight: light(PALETTE.purple, 0.25),
+  idle: light(PALETTE.purple, 0.85),
+};
+
+function drawPanel(graphics, centerX, centerY, width, height, options = {}) {
+  const { isSelected = false, fill = UI.surface } = options;
+  const left = centerX - width / 2;
+  const top = centerY - height / 2;
+  const radius = Math.min(UI.radius, width / 4, height / 4);
+  graphics.fillStyle(UI.shadow, 0.3);
+  graphics.fillRoundedRect(left, top + UI.shadowOffset, width, height, radius);
+  if (isSelected) {
+    graphics.fillStyle(UI.accent, 1);
+    graphics.fillRoundedRect(left - UI.accentWidth, top - UI.accentWidth, width + UI.accentWidth * 2, height + UI.accentWidth * 2, radius + UI.accentWidth);
+  }
+  graphics.fillStyle(fill, 1);
+  graphics.fillRoundedRect(left, top, width, height, radius);
+}
+
+function drawButton(graphics, centerX, centerY, width, height, isSelected) {
+  const left = centerX - width / 2;
+  const top = centerY - height / 2;
+  const radius = Math.min(UI.radius, height / 2);
+  graphics.fillStyle(UI.shadow, 0.3);
+  graphics.fillRoundedRect(left, top + UI.shadowOffset, width, height, radius);
+  graphics.fillStyle(isSelected ? UI.accent : UI.idle, 1);
+  graphics.fillRoundedRect(left, top, width, height, radius);
+  if (!isSelected) return;
+  graphics.fillStyle(UI.accentLight, 1);
+  graphics.fillRoundedRect(left + 10, top + 4, width - 20, 6, 3);
+}
+
 const TEXT_STYLES = {
   onDark: {
     fontFamily: FONTS.body,
     fontStyle: 'bold',
     fontSize: FONT_SIZES.body,
     color: css(PALETTE.white),
-    stroke: css(PALETTE.ink),
+    stroke: css(UI.textStroke),
     strokeThickness: 6,
     align: 'center',
   },
@@ -130,16 +170,14 @@ const TEXT_STYLES = {
     fontFamily: FONTS.display,
     fontSize: FONT_SIZES.display,
     color: css(PALETTE.pink),
-    stroke: css(PALETTE.ink),
+    stroke: css(UI.textStroke),
     strokeThickness: 10,
   },
   button: {
-    fontFamily: FONTS.pixel,
+    fontFamily: FONTS.body,
     fontStyle: 'bold',
     fontSize: FONT_SIZES.large,
     color: css(PALETTE.white),
-    stroke: css(PALETTE.ink),
-    strokeThickness: 5,
   },
 };
 
@@ -222,9 +260,6 @@ const COLORS = {
   bottleMilk: PALETTE.white,
   bottleRing: PALETTE.blue,
   nipple: light(PALETTE.orange, 0.55),
-  buttonPurple: PALETTE.purple,
-  buttonPurpleLight: light(PALETTE.purple, 0.25),
-  buttonIdle: light(PALETTE.purple, 0.85),
   makeupTop: light(PALETTE.pink, 0.8),
   makeupBottom: light(PALETTE.pink, 0.55),
 };
@@ -545,7 +580,7 @@ function createTitleScreen(scene) {
   const racingWord = scene.add
     .text(centerX + 18, 160, 'Racing', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.hero, fontStyle: 'italic', color: css(PALETTE.purple), stroke: css(dark(PALETTE.red, 0.6)) })
     .setOrigin(0, 0.5);
-  for (const word of [makeupWord, racingWord]) word.setShadow(0, 6, css(PALETTE.ink), 0, true, true);
+  for (const word of [makeupWord, racingWord]) word.setShadow(0, 6, css(UI.textStroke), 0, true, true);
   const titleGap = 14;
   const titleLeft = centerX - (makeupWord.width + titleGap + racingWord.width) / 2;
   makeupWord.setOrigin(0, 0.5).setX(titleLeft);
@@ -555,7 +590,7 @@ function createTitleScreen(scene) {
     .setOrigin(0.5);
 
   const playButton = scene.add.graphics();
-  drawPixelButton(playButton, 230, 72);
+  drawButton(playButton, 0, 0, 230, 72, true);
   const playLabel = scene.add
     .text(0, 0, 'JUGAR', { ...TEXT_STYLES.button, fontSize: FONT_SIZES.heading })
     .setOrigin(0.5);
@@ -570,32 +605,11 @@ function createTitleScreen(scene) {
   scene.titleLayer = scene.add.container(0, 0, [art, car, makeupWord, racingWord, subtitle, button, startHint, controls]);
 }
 
-function drawPixelBox(graphics, width, height, layers) {
-  const notch = 8;
-  for (const [color, inset] of layers) {
-    const halfWidth = width / 2 - inset;
-    const halfHeight = height / 2 - inset;
-    graphics.fillStyle(color, 1);
-    graphics.fillRect(-halfWidth + notch, -halfHeight, halfWidth * 2 - notch * 2, halfHeight * 2);
-    graphics.fillRect(-halfWidth, -halfHeight + notch, halfWidth * 2, halfHeight * 2 - notch * 2);
-  }
-}
-
-function drawPixelButton(graphics, width, height, isSelected = true) {
-  drawPixelBox(graphics, width, height, [
-    [COLORS.background, 0],
-    [isSelected ? COLORS.buttonPurple : COLORS.buttonIdle, 5],
-  ]);
-  if (!isSelected) return;
-  graphics.fillStyle(COLORS.buttonPurpleLight, 1);
-  graphics.fillRect(-width / 2 + 13, -height / 2 + 5, width - 26, height / 2 - 8);
-}
-
 function createLevelSelectScreen(scene) {
   const centerX = OVERLAY_WORLD_X + GAME_WIDTH / 2;
   scene.levelSelectBackground = scene.add.graphics();
   const heading = scene.add.text(centerX, 74, 'Elige el destino', TEXT_STYLES.display).setOrigin(0.5);
-  heading.setShadow(0, 5, css(PALETTE.ink), 0, true, true);
+  heading.setShadow(0, 5, css(UI.textStroke), 0, true, true);
   scene.levelCardsGraphics = scene.add.graphics();
   scene.levelCardTexts = LEVELS.map(() => [
     scene.add.text(0, 0, '', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.small, color: css(PALETTE.purple) }).setOrigin(0.5),
@@ -617,21 +631,14 @@ function refreshLevelSelect(scene) {
     const centerX = OVERLAY_WORLD_X + 105 + index * 197;
     const centerY = isSelected ? 288 : 300;
     const top = centerY - 140;
-    graphics.fillStyle(COLORS.background, 0.18);
-    graphics.fillRoundedRect(centerX - 80, top + 8, 170, 280, 18);
-    if (isSelected) {
-      graphics.fillStyle(COLORS.buttonPurple, 1);
-      graphics.fillRoundedRect(centerX - 92, top - 7, 184, 294, 22);
-    }
-    graphics.fillStyle(COLORS.cloud, 1);
-    graphics.fillRoundedRect(centerX - 85, top, 170, 280, 18);
+    drawPanel(graphics, centerX, top + 140, isSelected ? 182 : 170, isSelected ? 292 : 280, { isSelected });
     drawLandscape(graphics, level, { left: centerX - 72, top: top + 13, width: 144, horizonY: top + 112, bottom: top + 183, scale: 0.6, sunY: top + 42 });
     graphics.fillStyle(COLORS.asphaltLight, 1);
     graphics.fillTriangle(centerX - 12, top + 133, centerX + 12, top + 133, centerX + 40, top + 183);
     graphics.fillTriangle(centerX - 12, top + 133, centerX + 40, top + 183, centerX - 40, top + 183);
     level.drawDestination(graphics, { x: centerX, y: top + 140, scale: 64 }, (color) => color);
     if (isLocked) {
-      graphics.fillStyle(COLORS.background, 0.55);
+      graphics.fillStyle(UI.shadow, 0.6);
       graphics.fillRect(centerX - 72, top + 13, 144, 170);
       graphics.lineStyle(6, COLORS.bell, 1);
       graphics.beginPath();
@@ -681,13 +688,9 @@ function showResults(scene) {
     saveProgress();
   }
 
-  const dimmer = scene.add.rectangle(centerX, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.background, 0.5);
+  const dimmer = scene.add.rectangle(centerX, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, UI.shadow, 0.45);
   const panel = scene.add.graphics({ x: centerX, y: 300 });
-  drawPixelBox(panel, 480, 400, [
-    [COLORS.background, 0],
-    [COLORS.buttonPurple, 6],
-    [COLORS.makeupTop, 14],
-  ]);
+  drawPanel(panel, 0, 0, 480, 400, { isSelected: true, fill: UI.surfaceSoft });
   const title = scene.add
     .text(centerX, 152, isPerfect ? '\u00a1Felicidades, ganaron!' : '\u00a1Vuelvan a intentarlo!', {
       ...TEXT_STYLES.display,
@@ -732,8 +735,8 @@ function refreshResultsMenu(scene) {
   scene.resultOptions.forEach((option, index) => {
     const isSelected = index === scene.selectedResultOption;
     option.button.clear();
-    drawPixelButton(option.button, 300, 54, isSelected);
-    option.text.setColor(isSelected ? css(PALETTE.white) : css(dark(PALETTE.purple, 0.45))).setStroke(isSelected ? css(PALETTE.ink) : css(PALETTE.white), 5);
+    drawButton(option.button, 0, 0, 300, 54, isSelected);
+    option.text.setColor(isSelected ? css(PALETTE.white) : css(dark(PALETTE.purple, 0.45)));
   });
 }
 
@@ -1049,7 +1052,7 @@ function createReferencePhoto(scene) {
   createFaceTexture(scene, 'reference-look', lookFrom(scene.makeup.targetIndexes), REFERENCE_PHOTO_SIZE, REFERENCE_PHOTO_SIZE, 0.44, COLORS.makeupBottom);
 
   const card = scene.add.graphics();
-  card.fillStyle(COLORS.background, 0.18);
+  card.fillStyle(UI.shadow, 0.3);
   card.fillRoundedRect(-half - 4, -half - 4, REFERENCE_PHOTO_SIZE + 16, REFERENCE_PHOTO_SIZE + 46, 6);
   card.fillStyle(COLORS.cloud, 1);
   card.fillRoundedRect(-half - 8, -half - 8, REFERENCE_PHOTO_SIZE + 16, REFERENCE_PHOTO_SIZE + 46, 6);
@@ -1064,10 +1067,7 @@ function createReferencePhoto(scene) {
 function createMakeupToolbar(scene) {
   const left = MAKEUP_PANEL_WORLD_X;
   const toolbar = scene.add.graphics();
-  toolbar.fillStyle(COLORS.curbPink, 0.25);
-  toolbar.fillRoundedRect(left + 16, 500, PANEL_WIDTH - 26, 94, 22);
-  toolbar.fillStyle(COLORS.cloud, 0.95);
-  toolbar.fillRoundedRect(left + 16, 494, PANEL_WIDTH - 26, 94, 22);
+  drawPanel(toolbar, left + PANEL_WIDTH / 2 + 3, 541, PANEL_WIDTH - 30, 94);
   scene.swatchGraphics = scene.add.graphics();
   scene.partNameText = scene.add
     .text(left + PANEL_WIDTH / 2 + 3, 513, '', TEXT_STYLES.onLight)
@@ -1139,12 +1139,7 @@ function drawCategoryTiles(scene, look) {
     const y = FIRST_TILE_Y + index * TILE_SPACING;
     const isSelected = index === scene.makeup.selectedPart;
     const size = isSelected ? TILE_SIZE + 8 : TILE_SIZE;
-    graphics.fillStyle(COLORS.curbPink, isSelected ? 0.35 : 0.18);
-    graphics.fillRoundedRect(x - size / 2 + 2, y - size / 2 + 4, size, size, 16);
-    graphics.fillStyle(isSelected ? COLORS.curbPink : COLORS.cloud, 1);
-    graphics.fillRoundedRect(x - size / 2, y - size / 2, size, size, 16);
-    graphics.fillStyle(isSelected ? COLORS.flowerPink : COLORS.makeupTop, 1);
-    graphics.fillRoundedRect(x - size / 2 + 4, y - size / 2 + 4, size - 8, size - 8, 12);
+    drawPanel(graphics, x, y, size, size, { isSelected });
     drawPartIcon(graphics, part.key, x, y, look[part.key] || part.colors[0]);
   });
 }
@@ -1232,7 +1227,7 @@ function drawSwatches(scene, part) {
     const isCurrent = index === currentIndex;
     const radius = isCurrent ? 17 : 14;
     if (isCurrent) {
-      graphics.fillStyle(COLORS.curbPink, 1);
+      graphics.fillStyle(UI.accent, 1);
       graphics.fillCircle(x, SWATCH_Y, radius + 5);
     }
     graphics.fillStyle(COLORS.cloud, 1);
@@ -1959,9 +1954,9 @@ function updateHud(scene) {
   const markerX = PROGRESS_BAR_X + PROGRESS_BAR_WIDTH * progress;
   const graphics = scene.progressGraphics;
   graphics.clear();
-  graphics.fillStyle(COLORS.background, 0.35);
+  graphics.fillStyle(UI.shadow, 0.35);
   graphics.fillRoundedRect(PROGRESS_BAR_X, 12, PROGRESS_BAR_WIDTH, 14, 7);
-  graphics.fillStyle(COLORS.curbPink, 1);
+  graphics.fillStyle(PALETTE.pink, 1);
   graphics.fillRoundedRect(PROGRESS_BAR_X, 12, Math.max(14, PROGRESS_BAR_WIDTH * progress), 14, 7);
   graphics.fillStyle(COLORS.cloud, 1);
   graphics.fillCircle(markerX, 19, 11);
