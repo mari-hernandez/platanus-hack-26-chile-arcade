@@ -478,6 +478,7 @@ function update(time, delta) {
   const startPressed = START_BUTTONS.some((button) => wasPressed(scene, button));
   if (scene.phase === 'title' && startPressed) showLevelSelect(scene, unlockedLevelCount - 1);
   else if (scene.phase === 'select') updateLevelSelect(scene, startPressed);
+  else if (scene.phase === 'intro' && startPressed) beginDriving(scene);
   else if (scene.phase === 'results') updateResultsMenu(scene, startPressed);
 
   if (scene.phase === 'playing' || scene.phase === 'arriving') driveRace(scene, time, seconds);
@@ -493,12 +494,44 @@ function update(time, delta) {
 }
 
 function startLevel(scene) {
-  scene.phase = 'playing';
   playMusic(scene, currentLevel.music);
+  scene.controls.pressed = Object.create(null);
+  if (currentLevel.selfiesNeeded > 0) showSelfieIntro(scene);
+  else beginDriving(scene);
+}
+
+function beginDriving(scene) {
+  scene.phase = 'playing';
+  if (scene.selfieIntro) scene.selfieIntro.setVisible(false);
   scene.race.speed = currentLevel.startingSpeed;
   scene.overlayCamera.setVisible(false);
   scene.controls.pressed = Object.create(null);
   playSound(scene, 'paint');
+}
+
+function showSelfieIntro(scene) {
+  scene.phase = 'intro';
+  const centerX = OVERLAY_WORLD_X + GAME_WIDTH / 2;
+  const needed = currentLevel.selfiesNeeded;
+  const dimmer = scene.add.rectangle(centerX, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, UI.shadow, 0.45);
+  const panel = scene.add.graphics();
+  drawPanel(panel, centerX, 300, 440, 300, { isSelected: true, fill: UI.surfaceSoft });
+  const title = scene.add.text(centerX, 200, '\u00a1Hora de selfies!', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.heading }).setOrigin(0.5);
+  const camera = scene.add.graphics({ x: centerX - 70, y: 292 }).setScale(2.6);
+  drawCameraIcon(camera, 0, 0, PALETTE.purple);
+  const dots = scene.add.graphics();
+  for (let selfie = 0; selfie < needed; selfie++) {
+    dots.fillStyle(PALETTE.pink, 1);
+    dots.fillCircle(centerX + 40 + (selfie - (needed - 1) / 2) * 30, 296, 11);
+  }
+  const howTo = scene.add.text(centerX, 378, 'J2 \u00b7 Bot\u00f3n 2', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large, color: css(PALETTE.purple) }).setOrigin(0.5);
+  scene.selfieIntro = scene.add.container(0, 0, [dimmer, panel, title, camera, dots, howTo]);
+  scene.titleLayer.setVisible(false);
+  scene.levelSelectLayer.setVisible(false);
+  scene.overlayCamera.setVisible(true);
+  scene.time.delayedCall(3500, () => {
+    if (scene.phase === 'intro') beginDriving(scene);
+  });
 }
 
 function showTitle(scene) {
