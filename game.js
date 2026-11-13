@@ -360,7 +360,7 @@ const LEVELS = [
     name: 'Boda',
     fogBase: 0.08,
     arrivalText: 'Llegaron a la boda',
-    distance: 1000,
+    distance: 750,
     startingSpeed: 18,
     maxSpeed: 33,
     obstacleGap: [9, 14],
