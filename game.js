@@ -397,7 +397,7 @@ const LEVELS = [
     horizon: 'lake',
     isNight: false,
     cloudOpacity: 0.12,
-    scenery: ['fire', 'fire', 'skull', 'bones'],
+    scenery: ['fire', 'stroller', 'babyBottle', 'fire', 'skull'],
     sceneryDensity: 0.45,
     selfiesNeeded: 3,
     music: 'metal',
@@ -429,7 +429,8 @@ const SCENERY_DRAWERS = {
   lamp: drawLamp,
   fire: drawFire,
   skull: drawSkull,
-  bones: drawBones,
+  stroller: drawStroller,
+  babyBottle: (graphics, x, groundY, size, fogged) => drawBabyBottle(graphics, x, groundY, size * 0.8, fogged),
 };
 
 let currentLevel = LEVELS[0];
@@ -1914,19 +1915,6 @@ function drawSkull(graphics, x, groundY, size, fogged) {
   graphics.fillTriangle(x - size * 0.015, groundY - size * 0.1, x + size * 0.015, groundY - size * 0.1, x, groundY - size * 0.13);
 }
 
-function drawBones(graphics, x, groundY, size, fogged) {
-  graphics.fillStyle(fogged(COLORS.bone), 1);
-  for (const [offsetX, offsetY] of [[0, 0.05], [0.06, 0.12]]) {
-    const centerX = x + offsetX * size;
-    const centerY = groundY - offsetY * size;
-    graphics.fillRect(centerX - size * 0.16, centerY - size * 0.02, size * 0.32, size * 0.04);
-    for (const end of [-1, 1]) {
-      graphics.fillCircle(centerX + end * size * 0.16, centerY - size * 0.025, size * 0.03);
-      graphics.fillCircle(centerX + end * size * 0.16, centerY + size * 0.025, size * 0.03);
-    }
-  }
-}
-
 function drawHomeWithBaby(graphics, position, fogged) {
   const { x, y: groundY, scale: size } = position;
   const wallTop = groundY - size * 0.6;
@@ -1938,12 +1926,32 @@ function drawHomeWithBaby(graphics, position, fogged) {
   paintRect(graphics, fogged(COLORS.lampBulb), x - size * 0.45, groundY - size * 0.44, size * 0.22, size * 0.18);
   graphics.fillRect(x + size * 0.23, groundY - size * 0.44, size * 0.22, size * 0.18);
 
-  const bottleBottom = wallTop - size * 0.3;
-  paintRoundedRect(graphics, fogged(COLORS.bottleMilk), x - size * 0.13, bottleBottom - size * 0.42, size * 0.26, size * 0.42, size * 0.06);
-  paintRoundedRect(graphics, fogged(COLORS.scoopVanilla), x - size * 0.13, bottleBottom - size * 0.24, size * 0.26, size * 0.24, size * 0.06);
-  paintRect(graphics, fogged(COLORS.bottleRing), x - size * 0.15, bottleBottom - size * 0.5, size * 0.3, size * 0.09);
-  paintEllipse(graphics, fogged(COLORS.nipple), x, bottleBottom - size * 0.56, size * 0.14, size * 0.14);
-  graphics.fillCircle(x, bottleBottom - size * 0.64, size * 0.035);
+  drawBabyBottle(graphics, x, wallTop - size * 0.3, size, fogged);
+}
+
+function drawBabyBottle(graphics, x, bottomY, size, fogged) {
+  paintRoundedRect(graphics, fogged(COLORS.bottleMilk), x - size * 0.13, bottomY - size * 0.42, size * 0.26, size * 0.42, size * 0.06);
+  paintRoundedRect(graphics, fogged(COLORS.scoopVanilla), x - size * 0.13, bottomY - size * 0.24, size * 0.26, size * 0.24, size * 0.06);
+  paintRect(graphics, fogged(COLORS.bottleRing), x - size * 0.15, bottomY - size * 0.5, size * 0.3, size * 0.09);
+  paintEllipse(graphics, fogged(COLORS.nipple), x, bottomY - size * 0.56, size * 0.14, size * 0.14);
+  graphics.fillCircle(x, bottomY - size * 0.64, size * 0.035);
+}
+
+function drawStroller(graphics, x, groundY, size, fogged, variety) {
+  const bodyColor = variety > 0.5 ? PALETTE.pink : PALETTE.blue;
+  const bodyY = groundY - size * 0.24;
+  for (const side of [-1, 1]) {
+    paintCircle(graphics, fogged(COLORS.tire), x + side * size * 0.13, groundY - size * 0.07, size * 0.07);
+    paintCircle(graphics, fogged(COLORS.spikeMetal), x + side * size * 0.13, groundY - size * 0.07, size * 0.025);
+  }
+  graphics.lineStyle(size * 0.025, fogged(COLORS.lampPost), 1);
+  graphics.lineBetween(x + size * 0.18, bodyY, x + size * 0.3, bodyY - size * 0.18);
+  graphics.fillStyle(fogged(bodyColor), 1);
+  graphics.slice(x, bodyY, size * 0.21, 0, Math.PI, false);
+  graphics.fillPath();
+  graphics.fillStyle(fogged(dark(bodyColor, 0.25)), 1);
+  graphics.slice(x - size * 0.02, bodyY, size * 0.19, Math.PI, Math.PI * 1.55, false);
+  graphics.fillPath();
 }
 
 function drawCinema(graphics, position, fogged) {
@@ -2290,33 +2298,43 @@ function playDrum(context, hit, startTime) {
 
 function playBabyCry(context) {
   const start = context.currentTime;
-  for (const [offset, length] of [[0, 0.3], [0.38, 0.3], [0.76, 1]]) {
-    const oscillator = context.createOscillator();
-    const wobble = context.createOscillator();
-    const wobbleDepth = context.createGain();
-    const vowel = context.createBiquadFilter();
-    const volume = context.createGain();
+  for (const [offset, length] of [[0, 0.8], [1.05, 0.18], [1.3, 0.18], [1.6, 1.2]]) {
     const begin = start + offset;
-    oscillator.type = 'sawtooth';
-    oscillator.frequency.setValueAtTime(520, begin);
-    oscillator.frequency.linearRampToValueAtTime(880, begin + length * 0.3);
-    oscillator.frequency.linearRampToValueAtTime(480, begin + length);
-    wobble.frequency.value = 9;
-    wobbleDepth.gain.value = 40;
-    vowel.type = 'bandpass';
-    vowel.frequency.value = 1300;
-    vowel.Q.value = 2;
-    wobble.connect(wobbleDepth);
-    wobbleDepth.connect(oscillator.frequency);
+    const end = begin + length;
+    const voice = context.createOscillator();
+    const vibrato = context.createOscillator();
+    const vibratoDepth = context.createGain();
+    const volume = context.createGain();
+    voice.type = 'sawtooth';
+    voice.frequency.setValueAtTime(400, begin);
+    voice.frequency.linearRampToValueAtTime(560, begin + 0.08);
+    voice.frequency.linearRampToValueAtTime(530, end - 0.15);
+    voice.frequency.linearRampToValueAtTime(360, end);
+    vibrato.frequency.value = 6;
+    vibratoDepth.gain.value = 18;
+    vibrato.connect(vibratoDepth);
+    vibratoDepth.connect(voice.frequency);
     volume.gain.setValueAtTime(0.001, begin);
-    volume.gain.linearRampToValueAtTime(0.3, begin + 0.05);
-    volume.gain.exponentialRampToValueAtTime(0.001, begin + length);
-    oscillator.connect(vowel);
-    vowel.connect(volume);
+    volume.gain.linearRampToValueAtTime(0.4, begin + 0.06);
+    volume.gain.setValueAtTime(0.4, end - 0.12);
+    volume.gain.exponentialRampToValueAtTime(0.001, end);
+    for (const [from, to, quality, share] of [[650, 1150, 5, 1], [2000, 2700, 7, 0.6]]) {
+      const mouth = context.createBiquadFilter();
+      const loudness = context.createGain();
+      mouth.type = 'bandpass';
+      mouth.Q.value = quality;
+      mouth.frequency.setValueAtTime(from, begin);
+      mouth.frequency.linearRampToValueAtTime(to, begin + 0.12);
+      mouth.frequency.linearRampToValueAtTime(from, end);
+      loudness.gain.value = share;
+      voice.connect(mouth);
+      mouth.connect(loudness);
+      loudness.connect(volume);
+    }
     volume.connect(context.destination);
-    for (const node of [oscillator, wobble]) {
+    for (const node of [voice, vibrato]) {
       node.start(begin);
-      node.stop(begin + length);
+      node.stop(end);
     }
   }
 }
