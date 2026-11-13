@@ -149,6 +149,7 @@ const COLORS = {
   nipple: 0xffb3a7,
   buttonPurple: 0x7a3fe8,
   buttonPurpleLight: 0x9c6bff,
+  buttonIdle: 0xe9ddff,
   makeupTop: 0xffd6ea,
   makeupBottom: 0xf3b2d8,
 };
@@ -352,9 +353,7 @@ function update(time, delta) {
   const startPressed = START_BUTTONS.some((button) => wasPressed(scene, button));
   if (scene.phase === 'title' && startPressed) showLevelSelect(scene, unlockedLevelCount - 1);
   else if (scene.phase === 'select') updateLevelSelect(scene, startPressed);
-  else if (scene.phase === 'results' && startPressed) {
-    scene.scene.restart({ levelIndex: scene.levelIndex, showLevelSelect: true, selectedLevel: scene.nextSelectedLevel });
-  }
+  else if (scene.phase === 'results') updateResultsMenu(scene, startPressed);
 
   if (scene.phase === 'playing' || scene.phase === 'arriving') driveRace(scene, time, seconds);
   if (scene.phase === 'playing') updateMakeup(scene);
@@ -516,12 +515,8 @@ function createTitleScreen(scene) {
   scene.titleLayer = scene.add.container(0, 0, [art, car, makeupWord, racingWord, subtitle, button, startHint, controls]);
 }
 
-function drawPixelButton(graphics, width, height) {
+function drawPixelBox(graphics, width, height, layers) {
   const notch = 8;
-  const layers = [
-    [COLORS.background, 0],
-    [COLORS.buttonPurple, 5],
-  ];
   for (const [color, inset] of layers) {
     const halfWidth = width / 2 - inset;
     const halfHeight = height / 2 - inset;
@@ -529,8 +524,16 @@ function drawPixelButton(graphics, width, height) {
     graphics.fillRect(-halfWidth + notch, -halfHeight, halfWidth * 2 - notch * 2, halfHeight * 2);
     graphics.fillRect(-halfWidth, -halfHeight + notch, halfWidth * 2, halfHeight * 2 - notch * 2);
   }
+}
+
+function drawPixelButton(graphics, width, height, isSelected = true) {
+  drawPixelBox(graphics, width, height, [
+    [COLORS.background, 0],
+    [isSelected ? COLORS.buttonPurple : COLORS.buttonIdle, 5],
+  ]);
+  if (!isSelected) return;
   graphics.fillStyle(COLORS.buttonPurpleLight, 1);
-  graphics.fillRect(-width / 2 + 5 + notch, -height / 2 + 5, width - 10 - notch * 2, height / 2 - 8);
+  graphics.fillRect(-width / 2 + 13, -height / 2 + 5, width - 26, height / 2 - 8);
 }
 
 function createLevelSelectScreen(scene) {
@@ -611,54 +614,84 @@ function saveProgress() {
 
 function showResults(scene) {
   scene.phase = 'results';
-  const left = OVERLAY_WORLD_X;
-  const centerX = left + GAME_WIDTH / 2;
+  const centerX = OVERLAY_WORLD_X + GAME_WIDTH / 2;
   const makeup = scene.makeup;
-  const race = scene.race;
   const matchingCount = MAKEUP_PARTS.filter((part, index) => isPartMatching(makeup, index)).length;
   const isPerfect = matchingCount === MAKEUP_PARTS.length;
   const nextLevel = scene.levelIndex + 1;
-  const unlocksNextLevel = isPerfect && nextLevel < LEVELS.length && nextLevel >= unlockedLevelCount;
+  const hasNextLevel = nextLevel < LEVELS.length;
+  const unlocksNextLevel = isPerfect && hasNextLevel && nextLevel >= unlockedLevelCount;
   if (unlocksNextLevel) {
     unlockedLevelCount = nextLevel + 1;
     saveProgress();
   }
-  scene.nextSelectedLevel = isPerfect ? Math.min(nextLevel, LEVELS.length - 1) : scene.levelIndex;
 
-  const art = drawOverlayLandscape(scene.add.graphics(), currentLevel);
-  scene.add
-    .text(centerX, 70, isPerfect ? '\u00a1Look perfecto!' : '\u00a1Oh no!', { ...HEADING_STYLE, fontSize: '54px', color: isPerfect ? '#ff00d1' : '#5000ff' })
-    .setOrigin(0.5)
-    .setShadow(0, 5, '#1d1230', 0, true, true);
-  scene.add
-    .text(centerX, 128, unlocksNextLevel ? `\u00a1Desbloquearon: ${LEVELS[nextLevel].name}!` : isPerfect ? `${currentLevel.arrivalText} regias` : `${currentLevel.arrivalText}, pero el look no estaba listo`, { ...OVERLAY_TEXT_STYLE, fontSize: '20px', strokeThickness: 6 })
-    .setOrigin(0.5);
-
-  const photos = [
-    ['result-current', 'ELLA', lookFrom(makeup.colorIndexes)],
-    ['result-target', 'META', lookFrom(makeup.targetIndexes)],
-  ];
-  photos.forEach(([key, label, look], index) => {
-    const photoX = centerX + (index === 0 ? -130 : 130);
-    createFaceTexture(scene, key, look, 200, 220, 0.66, COLORS.makeupBottom);
-    art.fillStyle(COLORS.background, 0.18);
-    art.fillRoundedRect(photoX - 108, 166, 224, 290, 8);
-    art.fillStyle(COLORS.cloud, 1);
-    art.fillRoundedRect(photoX - 112, 160, 224, 290, 8);
-    scene.add.image(photoX, 280, key);
-    scene.add.text(photoX, 420, label, { ...MAKEUP_TEXT_STYLE, fontSize: '22px' }).setOrigin(0.5);
-  });
-
-  scene.add
-    .text(centerX, 492, `Look ${matchingCount}/${MAKEUP_PARTS.length}     Choques ${race.crashes}`, {
-      ...OVERLAY_TEXT_STYLE,
-      fontSize: '22px',
-      strokeThickness: 6,
+  const dimmer = scene.add.rectangle(centerX, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.background, 0.5);
+  const panel = scene.add.graphics({ x: centerX, y: 300 });
+  drawPixelBox(panel, 480, 400, [
+    [COLORS.background, 0],
+    [COLORS.buttonPurple, 6],
+    [COLORS.makeupTop, 14],
+  ]);
+  const title = scene.add
+    .text(centerX, 152, isPerfect ? '\u00a1Felicidades, ganaron!' : '\u00a1Vuelvan a intentarlo!', {
+      ...HEADING_STYLE,
+      fontSize: '32px',
+      strokeThickness: 8,
+      color: isPerfect ? '#ff00d1' : '#5000ff',
     })
     .setOrigin(0.5);
-  addBlinkingPrompt(scene, 'START para continuar');
+  const summary = scene.add
+    .text(centerX, 198, `Look ${matchingCount}/${MAKEUP_PARTS.length}   \u00b7   ${scene.race.crashes} choques`, { ...MAKEUP_TEXT_STYLE, fontSize: '20px' })
+    .setOrigin(0.5);
+  const unlockNotice = scene.add
+    .text(centerX, 226, unlocksNextLevel ? `Desbloquearon: ${LEVELS[nextLevel].name}` : '', { ...MAKEUP_TEXT_STYLE, fontSize: '16px', color: '#7a3fe8' })
+    .setOrigin(0.5);
+
+  const retryOption = ['Reintentar', { levelIndex: scene.levelIndex, startLevel: true }];
+  const nextOption = ['Siguiente nivel', { levelIndex: nextLevel, startLevel: true }];
+  scene.resultOptions = [
+    isPerfect && hasNextLevel ? nextOption : retryOption,
+    ['Elegir nivel', { levelIndex: scene.levelIndex, showLevelSelect: true, selectedLevel: isPerfect && hasNextLevel ? nextLevel : scene.levelIndex }],
+    ['Men\u00fa principal', { levelIndex: scene.levelIndex }],
+  ].map(([label, restartOptions], index) => {
+    const y = 286 + index * 66;
+    const button = scene.add.graphics({ x: centerX, y });
+    const text = scene.add
+      .text(centerX, y, label, { fontFamily: 'Courier New, monospace', fontStyle: 'bold', fontSize: '26px', color: '#ffffff', stroke: '#1d1230', strokeThickness: 5 })
+      .setOrigin(0.5);
+    return { button, text, restartOptions };
+  });
+  const hint = scene.add
+    .text(centerX, 474, '\u25b2\u25bc elegir    START aceptar', { ...MAKEUP_TEXT_STYLE, fontSize: '14px', color: '#9a6a8a' })
+    .setOrigin(0.5);
+  scene.selectedResultOption = 0;
+  refreshResultsMenu(scene);
+  scene.add.container(0, 0, [dimmer, panel, title, summary, unlockNotice, ...scene.resultOptions.flatMap((option) => [option.button, option.text]), hint]);
+  scene.titleLayer.setVisible(false);
+  scene.levelSelectLayer.setVisible(false);
   scene.overlayCamera.setVisible(true);
   playMelody(scene, isPerfect ? [523, 659, 784, 1047] : [392, 330, 262]);
+}
+
+function refreshResultsMenu(scene) {
+  scene.resultOptions.forEach((option, index) => {
+    const isSelected = index === scene.selectedResultOption;
+    option.button.clear();
+    drawPixelButton(option.button, 300, 54, isSelected);
+    option.text.setColor(isSelected ? '#ffffff' : '#4a3580').setStroke(isSelected ? '#1d1230' : '#ffffff', 5);
+  });
+}
+
+function updateResultsMenu(scene, startPressed) {
+  const step = ['P1_D', 'P2_D'].some((button) => wasPressed(scene, button)) ? 1 : ['P1_U', 'P2_U'].some((button) => wasPressed(scene, button)) ? -1 : 0;
+  if (step !== 0) {
+    const optionCount = scene.resultOptions.length;
+    scene.selectedResultOption = (scene.selectedResultOption + step + optionCount) % optionCount;
+    playSound(scene, 'select');
+    refreshResultsMenu(scene);
+  }
+  if (startPressed) scene.scene.restart(scene.resultOptions[scene.selectedResultOption].restartOptions);
 }
 
 function drawIceCream(graphics, x, bottomY, height, fogged = (color) => color) {
