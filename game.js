@@ -92,6 +92,31 @@ function dark(color, amount) {
   return blendColor(color, PALETTE.ink, amount);
 }
 
+function paintRect(graphics, color, ...area) {
+  graphics.fillStyle(color, 1);
+  graphics.fillRect(...area);
+}
+
+function paintCircle(graphics, color, ...area) {
+  graphics.fillStyle(color, 1);
+  graphics.fillCircle(...area);
+}
+
+function paintEllipse(graphics, color, ...area) {
+  graphics.fillStyle(color, 1);
+  graphics.fillEllipse(...area);
+}
+
+function paintTriangle(graphics, color, ...corners) {
+  graphics.fillStyle(color, 1);
+  graphics.fillTriangle(...corners);
+}
+
+function paintRoundedRect(graphics, color, ...area) {
+  graphics.fillStyle(color, 1);
+  graphics.fillRoundedRect(...area);
+}
+
 function css(color) {
   return `#${color.toString(16).padStart(6, '0')}`;
 }
@@ -130,11 +155,9 @@ function drawPanel(graphics, centerX, centerY, width, height, options = {}) {
   graphics.fillStyle(UI.shadow, 0.3);
   graphics.fillRoundedRect(left, top + UI.shadowOffset, width, height, radius);
   if (isSelected) {
-    graphics.fillStyle(UI.accent, 1);
-    graphics.fillRoundedRect(left - UI.accentWidth, top - UI.accentWidth, width + UI.accentWidth * 2, height + UI.accentWidth * 2, radius + UI.accentWidth);
+    paintRoundedRect(graphics, UI.accent, left - UI.accentWidth, top - UI.accentWidth, width + UI.accentWidth * 2, height + UI.accentWidth * 2, radius + UI.accentWidth);
   }
-  graphics.fillStyle(fill, 1);
-  graphics.fillRoundedRect(left, top, width, height, radius);
+  paintRoundedRect(graphics, fill, left, top, width, height, radius);
 }
 
 function drawButton(graphics, centerX, centerY, width, height, isSelected) {
@@ -143,11 +166,9 @@ function drawButton(graphics, centerX, centerY, width, height, isSelected) {
   const radius = Math.min(UI.radius, height / 2);
   graphics.fillStyle(UI.shadow, 0.3);
   graphics.fillRoundedRect(left, top + UI.shadowOffset, width, height, radius);
-  graphics.fillStyle(isSelected ? UI.accent : UI.idle, 1);
-  graphics.fillRoundedRect(left, top, width, height, radius);
+  paintRoundedRect(graphics, isSelected ? UI.accent : UI.idle, left, top, width, height, radius);
   if (!isSelected) return;
-  graphics.fillStyle(UI.accentLight, 1);
-  graphics.fillRoundedRect(left + 10, top + 4, width - 20, 6, 3);
+  paintRoundedRect(graphics, UI.accentLight, left + 10, top + 4, width - 20, 6, 3);
 }
 
 const TEXT_STYLES = {
@@ -184,8 +205,6 @@ const TEXT_STYLES = {
 
 const COLORS = {
   background: PALETTE.ink,
-  sunGlow: light(PALETTE.yellow, 0.7),
-  sun: light(PALETTE.yellow, 0.85),
   cloud: PALETTE.white,
   curbPink: PALETTE.pink,
   curbWhite: light(PALETTE.pink, 0.92),
@@ -521,8 +540,7 @@ function showSelfieIntro(scene) {
   drawCameraIcon(camera, 0, 0, PALETTE.purple);
   const dots = scene.add.graphics();
   for (let selfie = 0; selfie < needed; selfie++) {
-    dots.fillStyle(PALETTE.pink, 1);
-    dots.fillCircle(centerX + 40 + (selfie - (needed - 1) / 2) * 30, 296, 11);
+    paintCircle(dots, PALETTE.pink, centerX + 40 + (selfie - (needed - 1) / 2) * 30, 296, 11);
   }
   const howTo = scene.add.text(centerX, 378, 'J2 \u00b7 Bot\u00f3n 2', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large, color: css(PALETTE.purple) }).setOrigin(0.5);
   scene.selfieIntro = scene.add.container(0, 0, [dimmer, panel, title, camera, dots, howTo]);
@@ -595,8 +613,7 @@ function replaceTexture(scene, painter, key, width, height) {
 
 function createFaceTexture(scene, key, look, width, height, scale, background) {
   const painter = scene.make.graphics({ x: 0, y: 0 }, false);
-  painter.fillStyle(background, 1);
-  painter.fillRect(0, 0, width, height);
+  paintRect(painter, background, 0, 0, width, height);
   drawFace(painter, width / 2, height / 2 + 6, scale, look);
   replaceTexture(scene, painter, key, width, height);
   painter.destroy();
@@ -608,20 +625,11 @@ function drawOverlayLandscape(graphics, level) {
   return graphics;
 }
 
-function addBlinkingPrompt(scene, text) {
-  const prompt = scene.add
-    .text(OVERLAY_WORLD_X + GAME_WIDTH / 2, 562, text, { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large })
-    .setOrigin(0.5);
-  scene.tweens.add({ targets: prompt, alpha: 0.25, duration: 600, yoyo: true, repeat: -1 });
-  return prompt;
-}
-
 function createTitleScreen(scene) {
   const left = OVERLAY_WORLD_X;
   const centerX = left + GAME_WIDTH / 2;
   const art = drawOverlayLandscape(scene.add.graphics(), LEVELS[0]);
-  art.fillStyle(COLORS.asphaltLight, 1);
-  art.fillRect(left, 560, GAME_WIDTH, 40);
+  paintRect(art, COLORS.asphaltLight, left, 560, GAME_WIDTH, 40);
   art.fillStyle(COLORS.laneLine, 1);
   for (let dashX = left + 20; dashX < left + GAME_WIDTH; dashX += 60) art.fillRect(dashX, 578, 30, 4);
   const car = scene.add.image(left + 160, 598, 'car').setOrigin(0.5, 1).setScale(0.8);
@@ -685,8 +693,7 @@ function refreshLevelSelect(scene) {
     const top = centerY - 140;
     drawPanel(graphics, centerX, top + 122, isSelected ? 182 : 170, isSelected ? 256 : 244, { isSelected });
     drawLandscape(graphics, level, { left: centerX - 72, top: top + 13, width: 144, horizonY: top + 112, bottom: top + 183, scale: 0.6, sunY: top + 42 });
-    graphics.fillStyle(COLORS.asphaltLight, 1);
-    graphics.fillTriangle(centerX - 12, top + 133, centerX + 12, top + 133, centerX + 40, top + 183);
+    paintTriangle(graphics, COLORS.asphaltLight, centerX - 12, top + 133, centerX + 12, top + 133, centerX + 40, top + 183);
     graphics.fillTriangle(centerX - 12, top + 133, centerX + 40, top + 183, centerX - 40, top + 183);
     level.drawDestination(graphics, { x: centerX, y: top + 140, scale: 64 }, (color) => color);
     if (isLocked) {
@@ -696,10 +703,8 @@ function refreshLevelSelect(scene) {
       graphics.beginPath();
       graphics.arc(centerX, top + 88, 14, Math.PI, 0);
       graphics.strokePath();
-      graphics.fillStyle(COLORS.bell, 1);
-      graphics.fillRoundedRect(centerX - 20, top + 88, 40, 32, 6);
-      graphics.fillStyle(COLORS.background, 1);
-      graphics.fillCircle(centerX, top + 102, 5);
+      paintRoundedRect(graphics, COLORS.bell, centerX - 20, top + 88, 40, 32, 6);
+      paintCircle(graphics, COLORS.background, centerX, top + 102, 5);
     }
     scene.levelNameTexts[index]
       .setPosition(centerX, top + 212).setText(level.name).setColor(isLocked ? css(light(PALETTE.ink, 0.5)) : css(dark(PALETTE.pink, 0.3)));
@@ -810,19 +815,14 @@ function updateResultsMenu(scene, startPressed) {
 
 function drawIceCream(graphics, x, bottomY, height, fogged = (color) => color) {
   const coneTopY = bottomY - height * 0.55;
-  graphics.fillStyle(fogged(COLORS.iceCreamCone), 1);
-  graphics.fillTriangle(x - height * 0.2, coneTopY, x + height * 0.2, coneTopY, x, bottomY);
+  paintTriangle(graphics, fogged(COLORS.iceCreamCone), x - height * 0.2, coneTopY, x + height * 0.2, coneTopY, x, bottomY);
   graphics.lineStyle(Math.max(1, height * 0.015), fogged(COLORS.coneLines), 1);
   graphics.lineBetween(x - height * 0.12, coneTopY, x + height * 0.06, bottomY - height * 0.18);
   graphics.lineBetween(x + height * 0.12, coneTopY, x - height * 0.06, bottomY - height * 0.18);
-  graphics.fillStyle(fogged(COLORS.scoopStrawberry), 1);
-  graphics.fillCircle(x - height * 0.1, coneTopY - height * 0.06, height * 0.16);
-  graphics.fillStyle(fogged(COLORS.scoopMint), 1);
-  graphics.fillCircle(x + height * 0.1, coneTopY - height * 0.06, height * 0.16);
-  graphics.fillStyle(fogged(COLORS.scoopVanilla), 1);
-  graphics.fillCircle(x, coneTopY - height * 0.24, height * 0.16);
-  graphics.fillStyle(fogged(COLORS.cherry), 1);
-  graphics.fillCircle(x, coneTopY - height * 0.42, height * 0.05);
+  paintCircle(graphics, fogged(COLORS.scoopStrawberry), x - height * 0.1, coneTopY - height * 0.06, height * 0.16);
+  paintCircle(graphics, fogged(COLORS.scoopMint), x + height * 0.1, coneTopY - height * 0.06, height * 0.16);
+  paintCircle(graphics, fogged(COLORS.scoopVanilla), x, coneTopY - height * 0.24, height * 0.16);
+  paintCircle(graphics, fogged(COLORS.cherry), x, coneTopY - height * 0.42, height * 0.05);
 }
 
 function currentSliceIndex(race) {
@@ -851,8 +851,7 @@ function fillTrapezoid(graphics, color, near, far, offsetInRoadWidths, halfWidth
   const farX = far.x + offsetInRoadWidths * far.halfWidth;
   const nearHalf = halfWidthInRoadWidths * near.halfWidth;
   const farHalf = halfWidthInRoadWidths * far.halfWidth;
-  graphics.fillStyle(color, 1);
-  graphics.fillTriangle(nearX - nearHalf, near.y, nearX + nearHalf, near.y, farX + farHalf, far.y);
+  paintTriangle(graphics, color, nearX - nearHalf, near.y, nearX + nearHalf, near.y, farX + farHalf, far.y);
   graphics.fillTriangle(nearX - nearHalf, near.y, farX + farHalf, far.y, farX - farHalf, far.y);
 }
 
@@ -881,8 +880,7 @@ function drawRoad(scene) {
   const slices = scene.roadSlices;
   const sliceCount = projectRoadSlices(scene);
   graphics.clear();
-  graphics.fillStyle(blendColor(currentLevel.colors.grassLight, currentLevel.colors.fog, 0.85), 1);
-  graphics.fillRect(0, HORIZON_Y + 8, PANEL_WIDTH, GAME_HEIGHT);
+  paintRect(graphics, blendColor(currentLevel.colors.grassLight, currentLevel.colors.fog, 0.85), 0, HORIZON_Y + 8, PANEL_WIDTH, GAME_HEIGHT);
 
   for (let index = sliceCount - 1; index >= 0; index--) {
     const near = slices[index];
@@ -892,8 +890,7 @@ function drawRoad(scene) {
     const fogged = (color) => blendColor(color, currentLevel.colors.fog, fogAmount);
     const isStripe = ((near.index >> 1) & 1) === 1;
 
-    graphics.fillStyle(fogged(isStripe ? currentLevel.colors.grassLight : currentLevel.colors.grassDark), 1);
-    graphics.fillRect(0, far.y, PANEL_WIDTH, near.y - far.y + 1);
+    paintRect(graphics, fogged(isStripe ? currentLevel.colors.grassLight : currentLevel.colors.grassDark), 0, far.y, PANEL_WIDTH, near.y - far.y + 1);
     for (const side of [-1, 1]) {
       fillTrapezoid(graphics, fogged(currentLevel.colors.sand), near, far, side * 1.2, 0.12);
       fillTrapezoid(graphics, fogged(isStripe ? COLORS.curbPink : COLORS.curbWhite), near, far, side * 1.05, 0.06);
@@ -926,34 +923,25 @@ function drawRoadsideScenery(graphics, slice, fogAmount) {
 }
 
 function drawRoundTree(graphics, x, groundY, size, fogged, isBlossom) {
-  graphics.fillStyle(fogged(COLORS.trunk), 1);
-  graphics.fillRect(x - size * 0.03, groundY - size * 0.42, size * 0.06, size * 0.42);
-  graphics.fillStyle(fogged(isBlossom ? COLORS.blossom : COLORS.leaves), 1);
-  graphics.fillCircle(x, groundY - size * 0.62, size * 0.22);
+  paintRect(graphics, fogged(COLORS.trunk), x - size * 0.03, groundY - size * 0.42, size * 0.06, size * 0.42);
+  paintCircle(graphics, fogged(isBlossom ? COLORS.blossom : COLORS.leaves), x, groundY - size * 0.62, size * 0.22);
   graphics.fillCircle(x - size * 0.16, groundY - size * 0.46, size * 0.16);
   graphics.fillCircle(x + size * 0.16, groundY - size * 0.46, size * 0.16);
-  graphics.fillStyle(fogged(isBlossom ? COLORS.blossomHighlight : COLORS.leavesHighlight), 1);
-  graphics.fillCircle(x - size * 0.07, groundY - size * 0.7, size * 0.1);
+  paintCircle(graphics, fogged(isBlossom ? COLORS.blossomHighlight : COLORS.leavesHighlight), x - size * 0.07, groundY - size * 0.7, size * 0.1);
 }
 
 function drawPine(graphics, x, groundY, size, fogged) {
-  graphics.fillStyle(fogged(COLORS.pineTrunk), 1);
-  graphics.fillRect(x - size * 0.025, groundY - size * 0.15, size * 0.05, size * 0.15);
-  graphics.fillStyle(fogged(COLORS.pineDark), 1);
-  graphics.fillTriangle(x - size * 0.2, groundY - size * 0.12, x + size * 0.2, groundY - size * 0.12, x, groundY - size * 0.55);
-  graphics.fillStyle(fogged(COLORS.pineLight), 1);
-  graphics.fillTriangle(x - size * 0.15, groundY - size * 0.4, x + size * 0.15, groundY - size * 0.4, x, groundY - size * 0.8);
+  paintRect(graphics, fogged(COLORS.pineTrunk), x - size * 0.025, groundY - size * 0.15, size * 0.05, size * 0.15);
+  paintTriangle(graphics, fogged(COLORS.pineDark), x - size * 0.2, groundY - size * 0.12, x + size * 0.2, groundY - size * 0.12, x, groundY - size * 0.55);
+  paintTriangle(graphics, fogged(COLORS.pineLight), x - size * 0.15, groundY - size * 0.4, x + size * 0.15, groundY - size * 0.4, x, groundY - size * 0.8);
 }
 
 function drawFlowerBush(graphics, x, groundY, size, fogged) {
-  graphics.fillStyle(fogged(COLORS.bush), 1);
-  graphics.fillEllipse(x, groundY - size * 0.08, size * 0.4, size * 0.2);
+  paintEllipse(graphics, fogged(COLORS.bush), x, groundY - size * 0.08, size * 0.4, size * 0.2);
   graphics.fillEllipse(x - size * 0.1, groundY - size * 0.15, size * 0.2, size * 0.16);
-  graphics.fillStyle(fogged(COLORS.flowerPink), 1);
-  graphics.fillCircle(x - size * 0.08, groundY - size * 0.15, size * 0.03);
+  paintCircle(graphics, fogged(COLORS.flowerPink), x - size * 0.08, groundY - size * 0.15, size * 0.03);
   graphics.fillCircle(x + size * 0.08, groundY - size * 0.1, size * 0.03);
-  graphics.fillStyle(fogged(COLORS.flowerYellow), 1);
-  graphics.fillCircle(x + size * 0.01, groundY - size * 0.17, size * 0.025);
+  paintCircle(graphics, fogged(COLORS.flowerYellow), x + size * 0.01, groundY - size * 0.17, size * 0.025);
 }
 
 function createSky(scene) {
@@ -979,8 +967,7 @@ function drawLandscape(graphics, level, area) {
   const sunX = left + width * 0.75;
   graphics.fillGradientStyle(colors.skyTop, colors.skyTop, colors.skyBottom, colors.skyBottom, 1);
   graphics.fillRect(left, top, width, groundY - top);
-  graphics.fillStyle(colors.grassLight, 1);
-  graphics.fillRect(left, groundY, width, bottom - groundY);
+  paintRect(graphics, colors.grassLight, left, groundY, width, bottom - groundY);
   if (level.isNight) {
     for (let index = 0; index < 40; index++) {
       graphics.fillStyle(COLORS.cloud, 0.3 + seededRandom(index, 7) * 0.6);
@@ -989,11 +976,9 @@ function drawLandscape(graphics, level, area) {
   }
   graphics.fillStyle(colors.sunGlow, 0.35);
   graphics.fillCircle(sunX, sunY, 48 * scale);
-  graphics.fillStyle(colors.sun, 1);
-  graphics.fillCircle(sunX, sunY, 30 * scale);
+  paintCircle(graphics, colors.sun, sunX, sunY, 30 * scale);
   if (level.isNight) {
-    graphics.fillStyle(blendColor(colors.skyTop, colors.skyBottom, (sunY - top) / (groundY - top)), 1);
-    graphics.fillCircle(sunX + 14 * scale, sunY - 9 * scale, 25 * scale);
+    paintCircle(graphics, blendColor(colors.skyTop, colors.skyBottom, (sunY - top) / (groundY - top)), sunX + 14 * scale, sunY - 9 * scale, 25 * scale);
   }
 
   const farColor = blendColor(colors.mountains, colors.fog, 0.35);
@@ -1007,8 +992,7 @@ function drawLandscape(graphics, level, area) {
     drawRidge(graphics, area, blendColor(colors.hills, colors.fog, 0.2), 26, 4);
     return;
   }
-  graphics.fillStyle(colors.hills, 1);
-  graphics.fillRect(left, horizonY - 14 * scale, width, 30 * scale);
+  paintRect(graphics, colors.hills, left, horizonY - 14 * scale, width, 30 * scale);
   graphics.fillStyle(COLORS.cloud, 0.5);
   for (let index = 0; index < 14; index++) {
     graphics.fillRect(left + seededRandom(index, 11) * width, horizonY + (seededRandom(index, 12) * 16 - 10) * scale, 14 * scale, 2 * scale);
@@ -1036,8 +1020,7 @@ function drawSkyline(graphics, area, color, tallestBuilding, salt) {
   for (let index = 0; x < left + width; index++) {
     const buildingWidth = Math.min((18 + seededRandom(index, salt) * 26) * scale, left + width - x);
     const height = tallestBuilding * scale * (0.35 + seededRandom(index, salt + 3) * 0.65);
-    graphics.fillStyle(color, 1);
-    graphics.fillRect(Math.max(x, left), baseY - height, buildingWidth - 3 * scale - Math.max(0, left - x), height);
+    paintRect(graphics, color, Math.max(x, left), baseY - height, buildingWidth - 3 * scale - Math.max(0, left - x), height);
     graphics.fillStyle(COLORS.windowLight, 0.45);
     for (let windowY = baseY - height + 6 * scale; windowY < baseY - 6 * scale; windowY += 10 * scale) {
       if (x + 4 * scale > left) graphics.fillRect(x + 4 * scale, windowY, 3 * scale, 4 * scale);
@@ -1101,8 +1084,7 @@ function createMakeupPanel(scene) {
   scene.selfieBadge = scene.add.graphics();
 
   const panelDivider = scene.add.graphics();
-  panelDivider.fillStyle(COLORS.background, 1);
-  panelDivider.fillRect(left, 0, 6, GAME_HEIGHT);
+  paintRect(panelDivider, COLORS.background, left, 0, 6, GAME_HEIGHT);
 
   refreshMakeup(scene);
   drawSelfieBadge(scene);
@@ -1115,8 +1097,7 @@ function createReferencePhoto(scene) {
   const card = scene.add.graphics();
   card.fillStyle(UI.shadow, 0.3);
   card.fillRoundedRect(-half - 4, -half - 4, REFERENCE_PHOTO_SIZE + 16, REFERENCE_PHOTO_SIZE + 46, 6);
-  card.fillStyle(COLORS.cloud, 1);
-  card.fillRoundedRect(-half - 8, -half - 8, REFERENCE_PHOTO_SIZE + 16, REFERENCE_PHOTO_SIZE + 46, 6);
+  paintRoundedRect(card, COLORS.cloud, -half - 8, -half - 8, REFERENCE_PHOTO_SIZE + 16, REFERENCE_PHOTO_SIZE + 46, 6);
   const photo = scene.add.image(0, 0, 'reference-look');
   const tape = scene.add.rectangle(0, -half - 8, 44, 16, COLORS.curbPink, 0.75);
   const caption = scene.add
@@ -1192,8 +1173,7 @@ function takeSelfie(scene) {
 
   const frame = scene.add.graphics();
   drawPanel(frame, 0, 18, SELFIE_PHOTO_WIDTH + 24, SELFIE_PHOTO_HEIGHT + 60);
-  frame.fillStyle(PALETTE.pink, 1);
-  frame.fillCircle(-7, SELFIE_PHOTO_HEIGHT / 2 + 26, 7);
+  paintCircle(frame, PALETTE.pink, -7, SELFIE_PHOTO_HEIGHT / 2 + 26, 7);
   frame.fillCircle(7, SELFIE_PHOTO_HEIGHT / 2 + 26, 7);
   frame.fillTriangle(-14, SELFIE_PHOTO_HEIGHT / 2 + 28, 14, SELFIE_PHOTO_HEIGHT / 2 + 28, 0, SELFIE_PHOTO_HEIGHT / 2 + 42);
   const photo = scene.add.image(0, 0, 'selfie');
@@ -1215,31 +1195,25 @@ function drawSelfieBadge(scene) {
   drawCameraIcon(graphics, centerX - width / 2 + 24, 40, PALETTE.purple);
   for (let selfie = 0; selfie < needed; selfie++) {
     const dotX = centerX - width / 2 + 52 + selfie * 18;
-    graphics.fillStyle(selfie < scene.makeup.selfiesTaken ? PALETTE.pink : UI.idle, 1);
-    graphics.fillCircle(dotX, 40, 6);
+    paintCircle(graphics, selfie < scene.makeup.selfiesTaken ? PALETTE.pink : UI.idle, dotX, 40, 6);
   }
 }
 
 function drawCameraIcon(graphics, x, y, color) {
-  graphics.fillStyle(color, 1);
-  graphics.fillRoundedRect(x - 15, y - 9, 30, 21, 5);
+  paintRoundedRect(graphics, color, x - 15, y - 9, 30, 21, 5);
   graphics.fillRect(x - 6, y - 13, 12, 5);
-  graphics.fillStyle(PALETTE.white, 1);
-  graphics.fillCircle(x, y + 1, 7);
-  graphics.fillStyle(color, 1);
-  graphics.fillCircle(x, y + 1, 4);
+  paintCircle(graphics, PALETTE.white, x, y + 1, 7);
+  paintCircle(graphics, color, x, y + 1, 4);
 }
 
 function drawBoyfriend(graphics, centerX, centerY, scale, outfit) {
   const at = (offsetX, offsetY) => [centerX + offsetX * scale, centerY + offsetY * scale];
   const ellipse = (color, offsetX, offsetY, width, height) => {
-    graphics.fillStyle(color, 1);
-    graphics.fillEllipse(...at(offsetX, offsetY), width * scale, height * scale);
+    paintEllipse(graphics, color, ...at(offsetX, offsetY), width * scale, height * scale);
   };
   ellipse(outfit.shirt, 0, 190, 250, 150);
   if (outfit.hasBowTie) {
-    graphics.fillStyle(PALETTE.white, 1);
-    graphics.fillTriangle(...at(-34, 124), ...at(34, 124), ...at(0, 190));
+    paintTriangle(graphics, PALETTE.white, ...at(-34, 124), ...at(34, 124), ...at(0, 190));
   }
   ellipse(COLORS.skinShade, 0, 100, 56, 70);
   ellipse(COLORS.outline, 0, 0, 178, 208);
@@ -1265,8 +1239,7 @@ function drawBoyfriend(graphics, centerX, centerY, scale, outfit) {
   }
   graphics.strokePath();
   if (outfit.hasBowTie) {
-    graphics.fillStyle(PALETTE.pink, 1);
-    graphics.fillTriangle(...at(0, 132), ...at(-22, 120), ...at(-22, 144));
+    paintTriangle(graphics, PALETTE.pink, ...at(0, 132), ...at(-22, 120), ...at(-22, 144));
     graphics.fillTriangle(...at(0, 132), ...at(22, 120), ...at(22, 144));
   }
 }
@@ -1282,24 +1255,20 @@ function drawPopcorn(graphics) {
   const left = 18;
   const top = 140;
   for (let kernel = 0; kernel < 9; kernel++) {
-    graphics.fillStyle(kernel % 3 ? light(PALETTE.yellow, 0.75) : light(PALETTE.yellow, 0.4), 1);
-    graphics.fillCircle(left + 6 + (kernel % 5) * 9, top - 4 - Math.floor(kernel / 5) * 7, 7);
+    paintCircle(graphics, kernel % 3 ? light(PALETTE.yellow, 0.75) : light(PALETTE.yellow, 0.4), left + 6 + (kernel % 5) * 9, top - 4 - Math.floor(kernel / 5) * 7, 7);
   }
   for (let stripe = 0; stripe < 5; stripe++) {
-    graphics.fillStyle(stripe % 2 ? PALETTE.white : PALETTE.red, 1);
-    graphics.fillRect(left + stripe * 10, top, 10, 52);
+    paintRect(graphics, stripe % 2 ? PALETTE.white : PALETTE.red, left + stripe * 10, top, 10, 52);
   }
 }
 
 function drawConfetti(graphics) {
   const confettiColors = [PALETTE.pink, PALETTE.yellow, PALETTE.mint, PALETTE.purple];
   for (let piece = 0; piece < 26; piece++) {
-    graphics.fillStyle(confettiColors[piece % confettiColors.length], 1);
-    graphics.fillRect(seededRandom(piece, 41) * SELFIE_PHOTO_WIDTH, seededRandom(piece, 42) * 90, 6, 4);
+    paintRect(graphics, confettiColors[piece % confettiColors.length], seededRandom(piece, 41) * SELFIE_PHOTO_WIDTH, seededRandom(piece, 42) * 90, 6, 4);
   }
   for (const [heartX, heartY] of [[30, 30], [228, 46]]) {
-    graphics.fillStyle(PALETTE.pink, 1);
-    graphics.fillCircle(heartX - 6, heartY, 7);
+    paintCircle(graphics, PALETTE.pink, heartX - 6, heartY, 7);
     graphics.fillCircle(heartX + 6, heartY, 7);
     graphics.fillTriangle(heartX - 13, heartY + 2, heartX + 13, heartY + 2, heartX, heartY + 17);
   }
@@ -1308,11 +1277,9 @@ function drawConfetti(graphics) {
 function drawBaby(graphics, centerX, centerY, scale) {
   const at = (offsetX, offsetY) => [centerX + offsetX * scale, centerY + offsetY * scale];
   const circle = (color, offsetX, offsetY, radius) => {
-    graphics.fillStyle(color, 1);
-    graphics.fillCircle(...at(offsetX, offsetY), radius * scale);
+    paintCircle(graphics, color, ...at(offsetX, offsetY), radius * scale);
   };
-  graphics.fillStyle(light(PALETTE.yellow, 0.55), 1);
-  graphics.fillEllipse(...at(0, 70), 170 * scale, 110 * scale);
+  paintEllipse(graphics, light(PALETTE.yellow, 0.55), ...at(0, 70), 170 * scale, 110 * scale);
   circle(COLORS.outline, 0, 0, 64);
   circle(PALETTE.skin, 0, 0, 60);
   graphics.lineStyle(7 * scale, COLORS.hair, 1);
@@ -1330,10 +1297,8 @@ function drawBaby(graphics, centerX, centerY, scale) {
     graphics.fillStyle(light(PALETTE.blue, 0.3), 0.85);
     graphics.fillEllipse(...at(side * 30, 30), 10 * scale, 44 * scale);
   }
-  graphics.fillStyle(COLORS.outline, 1);
-  graphics.fillEllipse(...at(0, 30), 34 * scale, 30 * scale);
-  graphics.fillStyle(PALETTE.pink, 1);
-  graphics.fillEllipse(...at(0, 38), 18 * scale, 10 * scale);
+  paintEllipse(graphics, COLORS.outline, ...at(0, 30), 34 * scale, 30 * scale);
+  paintEllipse(graphics, PALETTE.pink, ...at(0, 38), 18 * scale, 10 * scale);
 }
 
 function isPartMatching(makeup, partIndex) {
@@ -1385,19 +1350,15 @@ function drawPartIcon(graphics, key, x, y, color) {
   if (key === 'brows') {
     fillRotatedRect(graphics, color, ...alongDiagonal(-14), 4, 7, diagonal);
     fillRotatedRect(graphics, COLORS.iceCreamCone, ...alongDiagonal(-3), 18, 7, diagonal);
-    graphics.fillStyle(COLORS.skin, 1);
-    graphics.fillTriangle(...alongDiagonal(6, -3.5), ...alongDiagonal(6, 3.5), ...alongDiagonal(15));
-    graphics.fillStyle(color, 1);
-    graphics.fillTriangle(...alongDiagonal(11, -1.6), ...alongDiagonal(11, 1.6), ...alongDiagonal(15));
+    paintTriangle(graphics, COLORS.skin, ...alongDiagonal(6, -3.5), ...alongDiagonal(6, 3.5), ...alongDiagonal(15));
+    paintTriangle(graphics, color, ...alongDiagonal(11, -1.6), ...alongDiagonal(11, 1.6), ...alongDiagonal(15));
   } else if (key === 'shadow') {
-    graphics.fillStyle(caseColor, 1);
-    graphics.fillRoundedRect(x - 16, y - 14, 32, 28, 6);
+    paintRoundedRect(graphics, caseColor, x - 16, y - 14, 32, 28, 6);
     const pans = [color, blendColor(color, COLORS.cloud, 0.45), blendColor(color, COLORS.background, 0.3), COLORS.flowerPink];
     pans.forEach((panColor, index) => {
       const panX = x + (index % 2 ? 7 : -7);
       const panY = y + (index < 2 ? -6 : 6);
-      graphics.fillStyle(panColor, 1);
-      graphics.fillCircle(panX, panY, 5.5);
+      paintCircle(graphics, panColor, panX, panY, 5.5);
       graphics.fillStyle(COLORS.cloud, 0.6);
       graphics.fillCircle(panX - 2, panY - 2, 1.5);
     });
@@ -1407,10 +1368,8 @@ function drawPartIcon(graphics, key, x, y, color) {
     fillRotatedRect(graphics, COLORS.lampPost, ...alongDiagonal(8), 8, 2, diagonal);
     fillRotatedRect(graphics, color, ...alongDiagonal(14), 10, 6, diagonal);
   } else if (key === 'blush') {
-    graphics.fillStyle(caseColor, 1);
-    graphics.fillCircle(x, y, 15);
-    graphics.fillStyle(color, 1);
-    graphics.fillCircle(x, y, 11);
+    paintCircle(graphics, caseColor, x, y, 15);
+    paintCircle(graphics, color, x, y, 11);
     graphics.fillStyle(COLORS.cloud, 0.45);
     graphics.fillEllipse(x - 4, y - 4, 9, 5);
   } else if (key === 'earrings') {
@@ -1425,10 +1384,8 @@ function drawPartIcon(graphics, key, x, y, color) {
     graphics.fillStyle(COLORS.cloud, 0.7);
     graphics.fillCircle(x - 1.5, y + 10, 1.5);
   } else {
-    graphics.fillStyle(COLORS.bell, 1);
-    graphics.fillRect(x - 7, y + 3, 14, 12);
-    graphics.fillStyle(caseColor, 1);
-    graphics.fillRect(x - 6, y - 4, 12, 8);
+    paintRect(graphics, COLORS.bell, x - 7, y + 3, 14, 12);
+    paintRect(graphics, caseColor, x - 6, y - 4, 12, 8);
     graphics.fillStyle(color, 1);
     graphics.fillPoints([{ x: x - 5, y: y - 4 }, { x: x + 5, y: y - 4 }, { x: x + 5, y: y - 13 }, { x: x - 5, y: y - 18 }], true);
     graphics.fillStyle(COLORS.cloud, 0.5);
@@ -1447,13 +1404,10 @@ function drawSwatches(scene, part) {
     const isCurrent = index === currentIndex;
     const radius = isCurrent ? 17 : 14;
     if (isCurrent) {
-      graphics.fillStyle(UI.accent, 1);
-      graphics.fillCircle(x, SWATCH_Y, radius + 5);
+      paintCircle(graphics, UI.accent, x, SWATCH_Y, radius + 5);
     }
-    graphics.fillStyle(COLORS.cloud, 1);
-    graphics.fillCircle(x, SWATCH_Y, radius + 2);
-    graphics.fillStyle(color, 1);
-    graphics.fillCircle(x, SWATCH_Y, radius);
+    paintCircle(graphics, COLORS.cloud, x, SWATCH_Y, radius + 2);
+    paintCircle(graphics, color, x, SWATCH_Y, radius);
     graphics.fillStyle(COLORS.cloud, 0.55);
     graphics.fillEllipse(x - radius * 0.35, SWATCH_Y - radius * 0.4, radius * 0.7, radius * 0.4);
   });
@@ -1488,8 +1442,7 @@ function drawFace(graphics, centerX, centerY, scale, look) {
     graphics.fillCircle(...pointAt(offsetX, offsetY), radius * scale);
   };
   const triangle = (color, points) => {
-    graphics.fillStyle(color, 1);
-    graphics.fillTriangle(...pointAt(...points[0]), ...pointAt(...points[1]), ...pointAt(...points[2]));
+    paintTriangle(graphics, color, ...pointAt(...points[0]), ...pointAt(...points[1]), ...pointAt(...points[2]));
   };
   const stroke = (color, width, points, alpha = 1) => {
     graphics.lineStyle(width * scale, color, alpha);
@@ -1514,8 +1467,7 @@ function drawFace(graphics, centerX, centerY, scale, look) {
   }
   smoothShape(COLORS.hairDark, mirrored([[0, -150], [70, -142], [122, -102], [140, -34], [132, 36], [146, 96], [130, 150], [104, 140], [90, 168], [60, 150]]));
 
-  graphics.fillStyle(COLORS.skinShade, 1);
-  graphics.fillRect(...pointAt(-20, 80), 40 * scale, 60 * scale);
+  paintRect(graphics, COLORS.skinShade, ...pointAt(-20, 80), 40 * scale, 60 * scale);
   const shoulders = (grow) => mirrored([[0, 128 - grow], [46, 130 - grow], [96 + grow, 140 - grow], [132 + grow, 168 - grow], [146 + grow, 230], [144 + grow, 300]]);
   const isOffShoulder = outfit.style === 'party' || outfit.style === 'bride';
   if (outfit.style === 'hoodie') ellipse(outfit.shade, 0, 140, 176, 84);
@@ -1678,10 +1630,6 @@ function createControls(scene) {
   });
 }
 
-function isHeld(scene, arcadeCode) {
-  return scene.controls.held[arcadeCode] === true;
-}
-
 function wasPressed(scene, arcadeCode) {
   return scene.controls.pressed[arcadeCode] === true;
 }
@@ -1705,39 +1653,26 @@ function createCar(scene) {
   const painter = scene.make.graphics({ x: 0, y: 0 }, false);
   painter.fillStyle(COLORS.windshield, 0.45);
   painter.fillRoundedRect(18, 8, 84, 32, 8);
-  painter.fillStyle(COLORS.driverHair, 1);
-  painter.fillCircle(40, 30, 13);
-  painter.fillStyle(COLORS.passengerHair, 1);
-  painter.fillCircle(80, 30, 13);
+  paintCircle(painter, COLORS.driverHair, 40, 30, 13);
+  paintCircle(painter, COLORS.passengerHair, 80, 30, 13);
   painter.fillCircle(80, 14, 7);
-  painter.fillStyle(COLORS.bow, 1);
-  painter.fillTriangle(80, 20, 70, 15, 70, 25);
+  paintTriangle(painter, COLORS.bow, 80, 20, 70, 15, 70, 25);
   painter.fillTriangle(80, 20, 90, 15, 90, 25);
-  painter.fillStyle(COLORS.tire, 1);
-  painter.fillRoundedRect(8, 62, 22, 24, 5);
+  paintRoundedRect(painter, COLORS.tire, 8, 62, 22, 24, 5);
   painter.fillRoundedRect(90, 62, 22, 24, 5);
-  painter.fillStyle(COLORS.carBody, 1);
-  painter.fillRoundedRect(4, 36, 112, 36, 12);
-  painter.fillStyle(COLORS.carHighlight, 1);
-  painter.fillRoundedRect(12, 37, 96, 8, 4);
-  painter.fillStyle(COLORS.carShade, 1);
-  painter.fillRoundedRect(4, 60, 112, 12, { tl: 0, tr: 0, bl: 12, br: 12 });
-  painter.fillStyle(COLORS.bumper, 1);
-  painter.fillRoundedRect(22, 64, 76, 9, 4);
-  painter.fillStyle(COLORS.tailLight, 1);
-  painter.fillRoundedRect(10, 46, 24, 10, 4);
+  paintRoundedRect(painter, COLORS.carBody, 4, 36, 112, 36, 12);
+  paintRoundedRect(painter, COLORS.carHighlight, 12, 37, 96, 8, 4);
+  paintRoundedRect(painter, COLORS.carShade, 4, 60, 112, 12, { tl: 0, tr: 0, bl: 12, br: 12 });
+  paintRoundedRect(painter, COLORS.bumper, 22, 64, 76, 9, 4);
+  paintRoundedRect(painter, COLORS.tailLight, 10, 46, 24, 10, 4);
   painter.fillRoundedRect(86, 46, 24, 10, 4);
-  painter.fillStyle(COLORS.tailLightGlow, 1);
-  painter.fillRoundedRect(13, 48, 10, 5, 2);
+  paintRoundedRect(painter, COLORS.tailLightGlow, 13, 48, 10, 5, 2);
   painter.fillRoundedRect(89, 48, 10, 5, 2);
-  painter.fillStyle(COLORS.plate, 1);
-  painter.fillRoundedRect(47, 50, 26, 11, 2);
-  painter.fillStyle(COLORS.background, 1);
-  painter.fillRect(51, 54, 18, 3);
+  paintRoundedRect(painter, COLORS.plate, 47, 50, 26, 11, 2);
+  paintRect(painter, COLORS.background, 51, 54, 18, 3);
   replaceTexture(scene, painter, 'car', 120, 90);
   painter.clear();
-  painter.fillStyle(COLORS.cloud, 1);
-  painter.fillCircle(8, 8, 8);
+  paintCircle(painter, COLORS.cloud, 8, 8, 8);
   replaceTexture(scene, painter, 'puff', 16, 16);
   painter.destroy();
 
@@ -1902,15 +1837,11 @@ function drawIceCreamShop(graphics, position, fogged) {
   const wallTop = groundY - wallHeight;
   graphics.fillStyle(COLORS.background, 0.2);
   graphics.fillEllipse(x, groundY, width * 1.15, size * 0.08);
-  graphics.fillStyle(fogged(COLORS.shopWall), 1);
-  graphics.fillRect(x - width / 2, wallTop, width, wallHeight);
-  graphics.fillStyle(fogged(COLORS.shopTrim), 1);
-  graphics.fillRect(x - width / 2, groundY - size * 0.07, width, size * 0.07);
-  graphics.fillStyle(fogged(COLORS.windshield), 1);
-  graphics.fillRect(x - size * 0.56, groundY - size * 0.38, size * 0.32, size * 0.2);
+  paintRect(graphics, fogged(COLORS.shopWall), x - width / 2, wallTop, width, wallHeight);
+  paintRect(graphics, fogged(COLORS.shopTrim), x - width / 2, groundY - size * 0.07, width, size * 0.07);
+  paintRect(graphics, fogged(COLORS.windshield), x - size * 0.56, groundY - size * 0.38, size * 0.32, size * 0.2);
   graphics.fillRect(x + size * 0.24, groundY - size * 0.38, size * 0.32, size * 0.2);
-  graphics.fillStyle(fogged(COLORS.flowerPink), 1);
-  graphics.fillRoundedRect(x - size * 0.13, groundY - size * 0.42, size * 0.26, size * 0.42, { tl: size * 0.12, tr: size * 0.12, bl: 0, br: 0 });
+  paintRoundedRect(graphics, fogged(COLORS.flowerPink), x - size * 0.13, groundY - size * 0.42, size * 0.26, size * 0.42, { tl: size * 0.12, tr: size * 0.12, bl: 0, br: 0 });
 
   const stripes = 10;
   const awningWidth = width + size * 0.12;
@@ -1918,12 +1849,10 @@ function drawIceCreamShop(graphics, position, fogged) {
   const awningTop = wallTop + size * 0.04;
   for (let stripe = 0; stripe < stripes; stripe++) {
     const stripeX = x - awningWidth / 2 + stripe * stripeWidth;
-    graphics.fillStyle(fogged(stripe % 2 ? COLORS.cloud : COLORS.curbPink), 1);
-    graphics.fillRect(stripeX, awningTop, stripeWidth, size * 0.1);
+    paintRect(graphics, fogged(stripe % 2 ? COLORS.cloud : COLORS.curbPink), stripeX, awningTop, stripeWidth, size * 0.1);
     graphics.fillCircle(stripeX + stripeWidth / 2, awningTop + size * 0.1, stripeWidth / 2);
   }
-  graphics.fillStyle(fogged(COLORS.curbPink), 1);
-  graphics.fillRoundedRect(x - size * 0.42, wallTop - size * 0.2, size * 0.84, size * 0.2, size * 0.05);
+  paintRoundedRect(graphics, fogged(COLORS.curbPink), x - size * 0.42, wallTop - size * 0.2, size * 0.84, size * 0.2, size * 0.05);
   graphics.fillStyle(fogged(COLORS.cloud), 1);
   for (let dot = 0; dot < 5; dot++) graphics.fillCircle(x - size * 0.3 + dot * size * 0.15, wallTop - size * 0.1, size * 0.025);
   drawIceCream(graphics, x, wallTop - size * 0.18, size * 0.62, fogged);
@@ -1935,26 +1864,21 @@ function drawBuilding(graphics, x, groundY, size, fogged, variety) {
   const wallColor = COLORS.buildingColors[Math.floor(variety * 4) % 4];
   const left = x - width / 2;
   const top = groundY - height;
-  graphics.fillStyle(fogged(wallColor), 1);
-  graphics.fillRect(left, top, width, height);
-  graphics.fillStyle(fogged(blendColor(wallColor, COLORS.background, 0.25)), 1);
-  graphics.fillRect(left - size * 0.02, top, width + size * 0.04, size * 0.05);
+  paintRect(graphics, fogged(wallColor), left, top, width, height);
+  paintRect(graphics, fogged(blendColor(wallColor, COLORS.background, 0.25)), left - size * 0.02, top, width + size * 0.04, size * 0.05);
   graphics.fillStyle(fogged(COLORS.windowLight), 1);
   for (let windowY = top + size * 0.12; windowY < groundY - size * 0.25; windowY += size * 0.2) {
     graphics.fillRect(left + width * 0.18, windowY, width * 0.22, size * 0.1);
     graphics.fillRect(left + width * 0.6, windowY, width * 0.22, size * 0.1);
   }
-  graphics.fillStyle(fogged(blendColor(wallColor, COLORS.background, 0.4)), 1);
-  graphics.fillRect(x - size * 0.06, groundY - size * 0.18, size * 0.12, size * 0.18);
+  paintRect(graphics, fogged(blendColor(wallColor, COLORS.background, 0.4)), x - size * 0.06, groundY - size * 0.18, size * 0.12, size * 0.18);
 }
 
 function drawLamp(graphics, x, groundY, size, fogged) {
-  graphics.fillStyle(fogged(COLORS.lampPost), 1);
-  graphics.fillRect(x - size * 0.012, groundY - size * 0.78, size * 0.024, size * 0.78);
+  paintRect(graphics, fogged(COLORS.lampPost), x - size * 0.012, groundY - size * 0.78, size * 0.024, size * 0.78);
   graphics.fillStyle(currentLevel.colors.sunGlow, currentLevel.isNight ? 0.45 : 0.2);
   graphics.fillCircle(x, groundY - size * 0.8, size * 0.12);
-  graphics.fillStyle(fogged(COLORS.lampBulb), 1);
-  graphics.fillCircle(x, groundY - size * 0.8, size * 0.045);
+  paintCircle(graphics, fogged(COLORS.lampBulb), x, groundY - size * 0.8, size * 0.045);
 }
 
 function drawStar(graphics, x, y, radius, color) {
@@ -1977,18 +1901,15 @@ function drawFire(graphics, x, groundY, size, fogged, variety) {
   ];
   for (const [color, width, heightShare] of layers) {
     const flameHeight = height * heightShare;
-    graphics.fillStyle(fogged(color), 1);
-    graphics.fillEllipse(x, groundY - flameHeight * 0.32, size * width, flameHeight * 0.64);
+    paintEllipse(graphics, fogged(color), x, groundY - flameHeight * 0.32, size * width, flameHeight * 0.64);
     graphics.fillTriangle(x - size * width * 0.42, groundY - flameHeight * 0.4, x + size * width * 0.42, groundY - flameHeight * 0.4, x, groundY - flameHeight);
   }
 }
 
 function drawSkull(graphics, x, groundY, size, fogged) {
-  graphics.fillStyle(fogged(COLORS.bone), 1);
-  graphics.fillCircle(x, groundY - size * 0.17, size * 0.12);
+  paintCircle(graphics, fogged(COLORS.bone), x, groundY - size * 0.17, size * 0.12);
   graphics.fillRoundedRect(x - size * 0.07, groundY - size * 0.09, size * 0.14, size * 0.08, size * 0.02);
-  graphics.fillStyle(fogged(COLORS.background), 1);
-  graphics.fillCircle(x - size * 0.045, groundY - size * 0.17, size * 0.032);
+  paintCircle(graphics, fogged(COLORS.background), x - size * 0.045, groundY - size * 0.17, size * 0.032);
   graphics.fillCircle(x + size * 0.045, groundY - size * 0.17, size * 0.032);
   graphics.fillTriangle(x - size * 0.015, groundY - size * 0.1, x + size * 0.015, groundY - size * 0.1, x, groundY - size * 0.13);
 }
@@ -2011,25 +1932,17 @@ function drawHomeWithBaby(graphics, position, fogged) {
   const wallTop = groundY - size * 0.6;
   graphics.fillStyle(COLORS.background, 0.25);
   graphics.fillEllipse(x, groundY, size * 1.4, size * 0.08);
-  graphics.fillStyle(fogged(COLORS.shopWall), 1);
-  graphics.fillRect(x - size * 0.55, wallTop, size * 1.1, size * 0.6);
-  graphics.fillStyle(fogged(COLORS.roofRed), 1);
-  graphics.fillTriangle(x - size * 0.7, wallTop + size * 0.02, x + size * 0.7, wallTop + size * 0.02, x, wallTop - size * 0.42);
-  graphics.fillStyle(fogged(COLORS.deck), 1);
-  graphics.fillRect(x - size * 0.12, groundY - size * 0.34, size * 0.24, size * 0.34);
-  graphics.fillStyle(fogged(COLORS.lampBulb), 1);
-  graphics.fillRect(x - size * 0.45, groundY - size * 0.44, size * 0.22, size * 0.18);
+  paintRect(graphics, fogged(COLORS.shopWall), x - size * 0.55, wallTop, size * 1.1, size * 0.6);
+  paintTriangle(graphics, fogged(COLORS.roofRed), x - size * 0.7, wallTop + size * 0.02, x + size * 0.7, wallTop + size * 0.02, x, wallTop - size * 0.42);
+  paintRect(graphics, fogged(COLORS.deck), x - size * 0.12, groundY - size * 0.34, size * 0.24, size * 0.34);
+  paintRect(graphics, fogged(COLORS.lampBulb), x - size * 0.45, groundY - size * 0.44, size * 0.22, size * 0.18);
   graphics.fillRect(x + size * 0.23, groundY - size * 0.44, size * 0.22, size * 0.18);
 
   const bottleBottom = wallTop - size * 0.3;
-  graphics.fillStyle(fogged(COLORS.bottleMilk), 1);
-  graphics.fillRoundedRect(x - size * 0.13, bottleBottom - size * 0.42, size * 0.26, size * 0.42, size * 0.06);
-  graphics.fillStyle(fogged(COLORS.scoopVanilla), 1);
-  graphics.fillRoundedRect(x - size * 0.13, bottleBottom - size * 0.24, size * 0.26, size * 0.24, size * 0.06);
-  graphics.fillStyle(fogged(COLORS.bottleRing), 1);
-  graphics.fillRect(x - size * 0.15, bottleBottom - size * 0.5, size * 0.3, size * 0.09);
-  graphics.fillStyle(fogged(COLORS.nipple), 1);
-  graphics.fillEllipse(x, bottleBottom - size * 0.56, size * 0.14, size * 0.14);
+  paintRoundedRect(graphics, fogged(COLORS.bottleMilk), x - size * 0.13, bottleBottom - size * 0.42, size * 0.26, size * 0.42, size * 0.06);
+  paintRoundedRect(graphics, fogged(COLORS.scoopVanilla), x - size * 0.13, bottleBottom - size * 0.24, size * 0.26, size * 0.24, size * 0.06);
+  paintRect(graphics, fogged(COLORS.bottleRing), x - size * 0.15, bottleBottom - size * 0.5, size * 0.3, size * 0.09);
+  paintEllipse(graphics, fogged(COLORS.nipple), x, bottleBottom - size * 0.56, size * 0.14, size * 0.14);
   graphics.fillCircle(x, bottleBottom - size * 0.64, size * 0.035);
 }
 
@@ -2039,28 +1952,20 @@ function drawCinema(graphics, position, fogged) {
   const wallTop = groundY - size * 0.78;
   graphics.fillStyle(COLORS.background, 0.2);
   graphics.fillEllipse(x, groundY, width * 1.15, size * 0.08);
-  graphics.fillStyle(fogged(COLORS.cinemaWall), 1);
-  graphics.fillRect(x - width / 2, wallTop, width, size * 0.78);
-  graphics.fillStyle(fogged(COLORS.cinemaTrim), 1);
-  graphics.fillRect(x - width / 2 - size * 0.03, wallTop, width + size * 0.06, size * 0.08);
-  graphics.fillStyle(fogged(COLORS.marquee), 1);
-  graphics.fillRoundedRect(x - size * 0.52, wallTop + size * 0.13, size * 1.04, size * 0.24, size * 0.04);
-  graphics.fillStyle(fogged(COLORS.cinemaTrim), 1);
-  graphics.fillRect(x - size * 0.43, wallTop + size * 0.18, size * 0.86, size * 0.14);
+  paintRect(graphics, fogged(COLORS.cinemaWall), x - width / 2, wallTop, width, size * 0.78);
+  paintRect(graphics, fogged(COLORS.cinemaTrim), x - width / 2 - size * 0.03, wallTop, width + size * 0.06, size * 0.08);
+  paintRoundedRect(graphics, fogged(COLORS.marquee), x - size * 0.52, wallTop + size * 0.13, size * 1.04, size * 0.24, size * 0.04);
+  paintRect(graphics, fogged(COLORS.cinemaTrim), x - size * 0.43, wallTop + size * 0.18, size * 0.86, size * 0.14);
   graphics.fillStyle(fogged(COLORS.cloud), 1);
   for (let bulb = 0; bulb <= 10; bulb++) {
     const bulbX = x - size * 0.48 + bulb * size * 0.096;
     graphics.fillCircle(bulbX, wallTop + size * 0.15, size * 0.016);
     graphics.fillCircle(bulbX, wallTop + size * 0.35, size * 0.016);
   }
-  graphics.fillStyle(fogged(COLORS.curtain), 1);
-  graphics.fillRect(x - size * 0.25, groundY - size * 0.32, size * 0.5, size * 0.32);
-  graphics.fillStyle(fogged(COLORS.cinemaTrim), 1);
-  graphics.fillRect(x - size * 0.01, groundY - size * 0.32, size * 0.02, size * 0.32);
-  graphics.fillStyle(fogged(COLORS.flowerPink), 1);
-  graphics.fillRect(x - size * 0.62, groundY - size * 0.4, size * 0.2, size * 0.28);
-  graphics.fillStyle(fogged(COLORS.scoopMint), 1);
-  graphics.fillRect(x + size * 0.42, groundY - size * 0.4, size * 0.2, size * 0.28);
+  paintRect(graphics, fogged(COLORS.curtain), x - size * 0.25, groundY - size * 0.32, size * 0.5, size * 0.32);
+  paintRect(graphics, fogged(COLORS.cinemaTrim), x - size * 0.01, groundY - size * 0.32, size * 0.02, size * 0.32);
+  paintRect(graphics, fogged(COLORS.flowerPink), x - size * 0.62, groundY - size * 0.4, size * 0.2, size * 0.28);
+  paintRect(graphics, fogged(COLORS.scoopMint), x + size * 0.42, groundY - size * 0.4, size * 0.2, size * 0.28);
   drawStar(graphics, x, wallTop - size * 0.14, size * 0.16, fogged(COLORS.marquee));
 }
 
@@ -2068,28 +1973,20 @@ function drawChapel(graphics, position, fogged) {
   const { x, y: groundY, scale: size } = position;
   graphics.fillStyle(COLORS.background, 0.2);
   graphics.fillEllipse(x, groundY, size * 1.3, size * 0.08);
-  graphics.fillStyle(fogged(COLORS.chapelWall), 1);
-  graphics.fillRect(x - size * 0.5, groundY - size * 0.6, size, size * 0.6);
+  paintRect(graphics, fogged(COLORS.chapelWall), x - size * 0.5, groundY - size * 0.6, size, size * 0.6);
   graphics.fillRect(x - size * 0.12, groundY - size * 1.12, size * 0.24, size * 0.3);
-  graphics.fillStyle(fogged(COLORS.chapelRoof), 1);
-  graphics.fillTriangle(x - size * 0.6, groundY - size * 0.58, x + size * 0.6, groundY - size * 0.58, x, groundY - size * 0.98);
+  paintTriangle(graphics, fogged(COLORS.chapelRoof), x - size * 0.6, groundY - size * 0.58, x + size * 0.6, groundY - size * 0.58, x, groundY - size * 0.98);
   graphics.fillTriangle(x - size * 0.18, groundY - size * 1.1, x + size * 0.18, groundY - size * 1.1, x, groundY - size * 1.42);
-  graphics.fillStyle(fogged(COLORS.bell), 1);
-  graphics.fillCircle(x, groundY - size * 0.98, size * 0.05);
-  graphics.fillStyle(fogged(COLORS.curbPink), 1);
-  graphics.fillCircle(x - size * 0.04, groundY - size * 0.75, size * 0.05);
+  paintCircle(graphics, fogged(COLORS.bell), x, groundY - size * 0.98, size * 0.05);
+  paintCircle(graphics, fogged(COLORS.curbPink), x - size * 0.04, groundY - size * 0.75, size * 0.05);
   graphics.fillCircle(x + size * 0.04, groundY - size * 0.75, size * 0.05);
   graphics.fillTriangle(x - size * 0.09, groundY - size * 0.74, x + size * 0.09, groundY - size * 0.74, x, groundY - size * 0.63);
-  graphics.fillStyle(fogged(COLORS.deck), 1);
-  graphics.fillRoundedRect(x - size * 0.13, groundY - size * 0.36, size * 0.26, size * 0.36, { tl: size * 0.13, tr: size * 0.13, bl: 0, br: 0 });
-  graphics.fillStyle(fogged(COLORS.windshield), 1);
-  graphics.fillRoundedRect(x - size * 0.38, groundY - size * 0.42, size * 0.14, size * 0.2, { tl: size * 0.07, tr: size * 0.07, bl: 0, br: 0 });
+  paintRoundedRect(graphics, fogged(COLORS.deck), x - size * 0.13, groundY - size * 0.36, size * 0.26, size * 0.36, { tl: size * 0.13, tr: size * 0.13, bl: 0, br: 0 });
+  paintRoundedRect(graphics, fogged(COLORS.windshield), x - size * 0.38, groundY - size * 0.42, size * 0.14, size * 0.2, { tl: size * 0.07, tr: size * 0.07, bl: 0, br: 0 });
   graphics.fillRoundedRect(x + size * 0.24, groundY - size * 0.42, size * 0.14, size * 0.2, { tl: size * 0.07, tr: size * 0.07, bl: 0, br: 0 });
   for (const side of [-1, 1]) {
-    graphics.fillStyle(fogged(COLORS.bush), 1);
-    graphics.fillCircle(x + side * size * 0.45, groundY - size * 0.05, size * 0.09);
-    graphics.fillStyle(fogged(COLORS.flowerPink), 1);
-    graphics.fillCircle(x + side * size * 0.42, groundY - size * 0.09, size * 0.025);
+    paintCircle(graphics, fogged(COLORS.bush), x + side * size * 0.45, groundY - size * 0.05, size * 0.09);
+    paintCircle(graphics, fogged(COLORS.flowerPink), x + side * size * 0.42, groundY - size * 0.09, size * 0.025);
     graphics.fillCircle(x + side * size * 0.5, groundY - size * 0.04, size * 0.025);
   }
 }
@@ -2098,30 +1995,23 @@ function drawTrafficCar(graphics, x, groundY, size, fogged, bodyColor) {
   const width = size * 0.26;
   graphics.fillStyle(COLORS.background, 0.25);
   graphics.fillEllipse(x, groundY, width * 1.1, size * 0.04);
-  graphics.fillStyle(fogged(COLORS.tire), 1);
-  graphics.fillRect(x - width * 0.45, groundY - size * 0.05, width * 0.18, size * 0.05);
+  paintRect(graphics, fogged(COLORS.tire), x - width * 0.45, groundY - size * 0.05, width * 0.18, size * 0.05);
   graphics.fillRect(x + width * 0.27, groundY - size * 0.05, width * 0.18, size * 0.05);
-  graphics.fillStyle(fogged(bodyColor), 1);
-  graphics.fillRoundedRect(x - width * 0.4, groundY - size * 0.26, width * 0.8, size * 0.14, size * 0.03);
+  paintRoundedRect(graphics, fogged(bodyColor), x - width * 0.4, groundY - size * 0.26, width * 0.8, size * 0.14, size * 0.03);
   graphics.fillRoundedRect(x - width / 2, groundY - size * 0.15, width, size * 0.12, size * 0.02);
-  graphics.fillStyle(fogged(COLORS.trafficGlass), 1);
-  graphics.fillRoundedRect(x - width * 0.32, groundY - size * 0.24, width * 0.64, size * 0.08, size * 0.02);
-  graphics.fillStyle(fogged(COLORS.tailLight), 1);
-  graphics.fillRect(x - width * 0.46, groundY - size * 0.12, width * 0.16, size * 0.03);
+  paintRoundedRect(graphics, fogged(COLORS.trafficGlass), x - width * 0.32, groundY - size * 0.24, width * 0.64, size * 0.08, size * 0.02);
+  paintRect(graphics, fogged(COLORS.tailLight), x - width * 0.46, groundY - size * 0.12, width * 0.16, size * 0.03);
   graphics.fillRect(x + width * 0.3, groundY - size * 0.12, width * 0.16, size * 0.03);
-  graphics.fillStyle(fogged(COLORS.plate), 1);
-  graphics.fillRect(x - width * 0.1, groundY - size * 0.09, width * 0.2, size * 0.035);
+  paintRect(graphics, fogged(COLORS.plate), x - width * 0.1, groundY - size * 0.09, width * 0.2, size * 0.035);
 }
 
 function drawBarrier(graphics, x, groundY, size, fogged) {
   const width = size * 0.28;
   const boardHeight = size * 0.06;
   const boardTop = groundY - size * 0.13;
-  graphics.fillStyle(fogged(COLORS.barrierLeg), 1);
-  graphics.fillRect(x - width * 0.4, boardTop, size * 0.015, size * 0.13);
+  paintRect(graphics, fogged(COLORS.barrierLeg), x - width * 0.4, boardTop, size * 0.015, size * 0.13);
   graphics.fillRect(x + width * 0.4 - size * 0.015, boardTop, size * 0.015, size * 0.13);
-  graphics.fillStyle(fogged(COLORS.curbWhite), 1);
-  graphics.fillRect(x - width / 2, boardTop, width, boardHeight);
+  paintRect(graphics, fogged(COLORS.curbWhite), x - width / 2, boardTop, width, boardHeight);
   graphics.fillStyle(fogged(COLORS.barrierStripe), 1);
   for (let stripe = 0; stripe < 4; stripe++) {
     const left = x - width / 2 + (stripe * width) / 4;
@@ -2136,26 +2026,20 @@ function drawSpikes(graphics, x, groundY, size, fogged) {
   const spikeWidth = width / spikeCount;
   const baseHeight = size * 0.03;
   const spikeTop = groundY - size * 0.14;
-  graphics.fillStyle(fogged(COLORS.marquee), 1);
-  graphics.fillRect(x - width / 2, groundY - baseHeight, width, baseHeight);
+  paintRect(graphics, fogged(COLORS.marquee), x - width / 2, groundY - baseHeight, width, baseHeight);
   for (let spike = 0; spike < spikeCount; spike++) {
     const left = x - width / 2 + spike * spikeWidth;
-    graphics.fillStyle(fogged(COLORS.spikeMetal), 1);
-    graphics.fillTriangle(left, groundY - baseHeight, left + spikeWidth, groundY - baseHeight, left + spikeWidth / 2, spikeTop);
-    graphics.fillStyle(fogged(COLORS.spikeShade), 1);
-    graphics.fillTriangle(left + spikeWidth / 2, groundY - baseHeight, left + spikeWidth, groundY - baseHeight, left + spikeWidth / 2, spikeTop);
+    paintTriangle(graphics, fogged(COLORS.spikeMetal), left, groundY - baseHeight, left + spikeWidth, groundY - baseHeight, left + spikeWidth / 2, spikeTop);
+    paintTriangle(graphics, fogged(COLORS.spikeShade), left + spikeWidth / 2, groundY - baseHeight, left + spikeWidth, groundY - baseHeight, left + spikeWidth / 2, spikeTop);
   }
 }
 
 function drawCones(graphics, x, groundY, size, fogged) {
   for (const offset of [-0.08, 0, 0.08]) {
     const coneX = x + offset * size;
-    graphics.fillStyle(fogged(COLORS.cone), 1);
-    graphics.fillTriangle(coneX - size * 0.035, groundY, coneX + size * 0.035, groundY, coneX, groundY - size * 0.12);
-    graphics.fillStyle(fogged(COLORS.curbWhite), 1);
-    graphics.fillRect(coneX - size * 0.018, groundY - size * 0.07, size * 0.036, size * 0.015);
-    graphics.fillStyle(fogged(COLORS.cone), 1);
-    graphics.fillRect(coneX - size * 0.05, groundY - size * 0.01, size * 0.1, size * 0.012);
+    paintTriangle(graphics, fogged(COLORS.cone), coneX - size * 0.035, groundY, coneX + size * 0.035, groundY, coneX, groundY - size * 0.12);
+    paintRect(graphics, fogged(COLORS.curbWhite), coneX - size * 0.018, groundY - size * 0.07, size * 0.036, size * 0.015);
+    paintRect(graphics, fogged(COLORS.cone), coneX - size * 0.05, groundY - size * 0.01, size * 0.1, size * 0.012);
   }
 }
 
@@ -2173,12 +2057,9 @@ function updateHud(scene) {
   graphics.clear();
   graphics.fillStyle(UI.shadow, 0.35);
   graphics.fillRoundedRect(PROGRESS_BAR_X, 12, PROGRESS_BAR_WIDTH, 14, 7);
-  graphics.fillStyle(PALETTE.pink, 1);
-  graphics.fillRoundedRect(PROGRESS_BAR_X, 12, Math.max(14, PROGRESS_BAR_WIDTH * progress), 14, 7);
-  graphics.fillStyle(COLORS.cloud, 1);
-  graphics.fillCircle(markerX, 19, 11);
-  graphics.fillStyle(COLORS.carBody, 1);
-  graphics.fillCircle(markerX, 19, 8);
+  paintRoundedRect(graphics, PALETTE.pink, PROGRESS_BAR_X, 12, Math.max(14, PROGRESS_BAR_WIDTH * progress), 14, 7);
+  paintCircle(graphics, COLORS.cloud, markerX, 19, 11);
+  paintCircle(graphics, COLORS.carBody, markerX, 19, 8);
 }
 
 function audioContextOf(scene) {
