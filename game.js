@@ -54,7 +54,7 @@ const CAR_IMAGE_SCALE = 0.85;
 const FIRST_OBSTACLE_POSITION = 60;
 const CRASH_RECOVERY_MS = 1500;
 const JUMP_DURATION_MS = 650;
-const SELFIE_DURATION_MS = 2500;
+const SELFIE_DURATION_MS = 1800;
 const SELFIE_PHOTO_WIDTH = 260;
 const SELFIE_PHOTO_HEIGHT = 200;
 const JUMP_HEIGHT_PX = 70;
@@ -2289,8 +2289,8 @@ const MUSIC_TRACKS = {
   metal: {
     tempo: 170,
     voices: [
-      { wave: 'sawtooth', volume: 0.05, distorted: true, notes: 'E2 E2 E2 G2 E2 E2 A2 G2 E2 E2 E2 Bb2 A2 G2 F#2 G2' },
-      { wave: 'sawtooth', volume: 0.04, distorted: true, notes: 'B2 B2 B2 D3 B2 B2 E3 D3 B2 B2 B2 F3 E3 D3 C#3 D3' },
+      { wave: 'sawtooth', volume: 0.035, distorted: true, notes: 'E2 E2 E2 G2 E2 E2 A2 G2 E2 E2 E2 Bb2 A2 G2 F#2 G2' },
+      { wave: 'sawtooth', volume: 0.028, distorted: true, notes: 'B2 B2 B2 D3 B2 B2 E3 D3 B2 B2 B2 F3 E3 D3 C#3 D3' },
     ],
     drums: 'kks-kks-kkskkks-',
   },
@@ -2324,7 +2324,7 @@ function updateMusic(scene, time) {
   }
   if (currentLevel.hasCryingBaby && scene.phase === 'playing' && time > music.nextCryAt) {
     playBabyCry(context);
-    music.nextCryAt = time + Phaser.Math.Between(4000, 7000);
+    music.nextCryAt = time + Phaser.Math.Between(2500, 4000);
   }
 }
 
@@ -2409,24 +2409,29 @@ function playDrum(context, hit, startTime) {
 
 function playBabyCry(context) {
   const start = context.currentTime;
-  for (const [offset, length] of [[0, 0.35], [0.45, 0.9]]) {
+  for (const [offset, length] of [[0, 0.3], [0.38, 0.3], [0.76, 1]]) {
     const oscillator = context.createOscillator();
     const wobble = context.createOscillator();
     const wobbleDepth = context.createGain();
+    const vowel = context.createBiquadFilter();
     const volume = context.createGain();
     const begin = start + offset;
-    oscillator.type = 'triangle';
-    oscillator.frequency.setValueAtTime(450, begin);
-    oscillator.frequency.linearRampToValueAtTime(780, begin + length * 0.3);
-    oscillator.frequency.linearRampToValueAtTime(420, begin + length);
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(520, begin);
+    oscillator.frequency.linearRampToValueAtTime(880, begin + length * 0.3);
+    oscillator.frequency.linearRampToValueAtTime(480, begin + length);
     wobble.frequency.value = 9;
-    wobbleDepth.gain.value = 35;
+    wobbleDepth.gain.value = 40;
+    vowel.type = 'bandpass';
+    vowel.frequency.value = 1300;
+    vowel.Q.value = 2;
     wobble.connect(wobbleDepth);
     wobbleDepth.connect(oscillator.frequency);
     volume.gain.setValueAtTime(0.001, begin);
-    volume.gain.linearRampToValueAtTime(0.12, begin + 0.05);
+    volume.gain.linearRampToValueAtTime(0.3, begin + 0.05);
     volume.gain.exponentialRampToValueAtTime(0.001, begin + length);
-    oscillator.connect(volume);
+    oscillator.connect(vowel);
+    vowel.connect(volume);
     volume.connect(context.destination);
     for (const node of [oscillator, wobble]) {
       node.start(begin);
