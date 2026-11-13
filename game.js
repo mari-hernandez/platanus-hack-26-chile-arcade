@@ -50,16 +50,14 @@ const LANE_WIDTH = (ROAD_HALF_WIDTH * 2) / 3;
 const CAR_DEPTH = 3.3;
 const CAR_SCREEN_Y = HORIZON_Y + PERSPECTIVE_HEIGHT / CAR_DEPTH + 16;
 const CAR_IMAGE_SCALE = 0.85;
-const STARTING_SPEED = 16;
-const MAX_SPEED = 34;
-const SPEED_GAIN_PER_METER = 0.004;
 const FIRST_OBSTACLE_POSITION = 60;
 const CRASH_RECOVERY_MS = 1500;
 const KMH_PER_SPEED_UNIT = 6;
-const LEVEL_DISTANCE = 1500;
-const LAST_OBSTACLE_POSITION = LEVEL_DISTANCE - 30;
-const CAR_STOP_POSITION = LEVEL_DISTANCE + 4;
-const ICE_CREAM_SHOP_POSITION = LEVEL_DISTANCE + 11;
+const LAST_OBSTACLE_MARGIN = 30;
+const CAR_STOP_OFFSET = 4;
+const DESTINATION_OFFSET = 11;
+const DISTANCE_SHARE_TO_REACH_MAX_SPEED = 0.8;
+const PROGRESS_STORAGE_KEY = 'makeup-racing:progress';
 const RESULTS_DELAY_MS = 1800;
 const PROGRESS_BAR_X = 16;
 const PROGRESS_BAR_WIDTH = 318;
@@ -67,17 +65,9 @@ const START_BUTTONS = ['START1', 'START2', 'P1_1', 'P2_1'];
 
 const COLORS = {
   background: 0x1d1230,
-  fog: 0xe3e3f7,
-  skyTop: 0x5bb8ff,
-  skyBottom: 0xffdcee,
   sunGlow: 0xfff6c8,
   sun: 0xfffbe6,
   cloud: 0xffffff,
-  mountains: 0x9d8fd8,
-  hills: 0x8fcf8a,
-  grassLight: 0x86d06f,
-  grassDark: 0x78c262,
-  sand: 0xf6dfae,
   curbPink: 0xff5f9e,
   curbWhite: 0xfff4fa,
   asphaltLight: 0x5d6178,
@@ -133,9 +123,153 @@ const COLORS = {
   scoopMint: 0x9ee6c9,
   scoopVanilla: 0xfff1d6,
   cherry: 0xe8384f,
+  windowLight: 0xfff8e1,
+  lampPost: 0x4a4458,
+  lampBulb: 0xfff3b0,
+  buildingColors: [0xf7b2c4, 0xb9d7f2, 0xf6d6a8, 0xc9b8f0],
+  cinemaWall: 0x6b4fa8,
+  cinemaTrim: 0x4a3580,
+  marquee: 0xffd166,
+  curtain: 0xd6336c,
+  palmTrunk: 0xb07a4a,
+  palmLeaves: 0x3fae6a,
+  palmLeavesLight: 0x6fd08a,
+  coconut: 0x7a4a2a,
+  bamboo: 0xe0b07a,
+  bambooDark: 0xb98450,
+  straw: 0xf2c96b,
+  strawDark: 0xd9a845,
+  deck: 0xc98a55,
+  chapelWall: 0xfffaf5,
+  chapelRoof: 0xffb3cf,
+  bell: 0xffcf4a,
+  partyLights: [0xff7eb3, 0x9ee6c9, 0xffd166, 0x7cb8ff],
   makeupTop: 0xffd6ea,
   makeupBottom: 0xf3b2d8,
 };
+
+const LEVELS = [
+  {
+    name: 'Helader\u00eda',
+    arrivalText: 'Llegaron a la helader\u00eda',
+    distance: 1200,
+    startingSpeed: 14,
+    maxSpeed: 26,
+    obstacleGap: [12, 18],
+    twoLaneChance: 0.15,
+    obstacles: ['traffic', 'cones'],
+    horizon: 'mountains',
+    scenery: ['roundTree', 'roundTree', 'blossomTree', 'pine', 'flowerBush'],
+    sceneryDensity: 0.4,
+    colors: {
+      skyTop: 0x5bb8ff,
+      skyBottom: 0xffdcee,
+      sun: 0xfffbe6,
+      sunGlow: 0xfff6c8,
+      fog: 0xe3e3f7,
+      mountains: 0x9d8fd8,
+      hills: 0x8fcf8a,
+      grassLight: 0x86d06f,
+      grassDark: 0x78c262,
+      sand: 0xf6dfae,
+    },
+    drawDestination: drawIceCreamShop,
+  },
+  {
+    name: 'Cine',
+    arrivalText: 'Llegaron al cine',
+    distance: 1600,
+    startingSpeed: 16,
+    maxSpeed: 30,
+    obstacleGap: [10, 16],
+    twoLaneChance: 0.3,
+    obstacles: ['traffic', 'traffic', 'barrier', 'cones'],
+    horizon: 'city',
+    scenery: ['building', 'building', 'lamp'],
+    sceneryDensity: 0.7,
+    colors: {
+      skyTop: 0x8fa8ff,
+      skyBottom: 0xffd2b8,
+      sun: 0xfff0d0,
+      sunGlow: 0xffd6a8,
+      fog: 0xf0dce8,
+      mountains: 0xb3a0d6,
+      hills: 0x9a8cc4,
+      grassLight: 0xd8d2e0,
+      grassDark: 0xcbc4d6,
+      sand: 0xbdb3cc,
+    },
+    drawDestination: drawCinema,
+  },
+  {
+    name: 'Fiesta en la playa',
+    arrivalText: 'Llegaron a la fiesta en la playa',
+    distance: 2000,
+    startingSpeed: 18,
+    maxSpeed: 33,
+    obstacleGap: [9, 14],
+    twoLaneChance: 0.4,
+    obstacles: ['traffic', 'barrier', 'cones'],
+    horizon: 'sea',
+    scenery: ['palm', 'palm', 'umbrella'],
+    sceneryDensity: 0.45,
+    colors: {
+      skyTop: 0xff9a8b,
+      skyBottom: 0xffe0a3,
+      sun: 0xfff3c4,
+      sunGlow: 0xffb36b,
+      fog: 0xffe2cf,
+      mountains: 0xd68bb0,
+      hills: 0x4fb3d9,
+      grassLight: 0xf7dfa8,
+      grassDark: 0xf0d398,
+      sand: 0xfff0cc,
+    },
+    drawDestination: drawBeachParty,
+  },
+  {
+    name: 'Boda',
+    arrivalText: 'Llegaron a la boda',
+    distance: 2400,
+    startingSpeed: 20,
+    maxSpeed: 36,
+    obstacleGap: [8, 12],
+    twoLaneChance: 0.5,
+    obstacles: ['traffic', 'traffic', 'barrier', 'cones'],
+    horizon: 'mountains',
+    isNight: true,
+    scenery: ['lamp', 'pine', 'blossomTree'],
+    sceneryDensity: 0.45,
+    colors: {
+      skyTop: 0x1c1747,
+      skyBottom: 0x6b4a9e,
+      sun: 0xfff6dc,
+      sunGlow: 0xb9a6ff,
+      fog: 0x5b4a86,
+      mountains: 0x3a2f6b,
+      hills: 0x2f5a5a,
+      grassLight: 0x3f7a5a,
+      grassDark: 0x376f51,
+      sand: 0x8a7aa8,
+    },
+    drawDestination: drawChapel,
+  },
+];
+
+const SCENERY_DRAWERS = {
+  roundTree: (graphics, x, groundY, size, fogged) => drawRoundTree(graphics, x, groundY, size, fogged, false),
+  blossomTree: (graphics, x, groundY, size, fogged) => drawRoundTree(graphics, x, groundY, size, fogged, true),
+  pine: drawPine,
+  flowerBush: drawFlowerBush,
+  building: drawBuilding,
+  lamp: drawLamp,
+  palm: drawPalm,
+  umbrella: drawUmbrella,
+};
+
+let currentLevel = LEVELS[0];
+let unlockedLevelCount = 1;
+let hasLoadedProgress = false;
 
 new Phaser.Game({
   type: Phaser.AUTO,
@@ -154,6 +288,9 @@ new Phaser.Game({
 
 function create(data) {
   const scene = this;
+  const options = data || {};
+  scene.levelIndex = options.levelIndex || 0;
+  currentLevel = LEVELS[scene.levelIndex];
   createControls(scene);
 
   scene.cameras.main.setViewport(0, 0, PANEL_WIDTH, GAME_HEIGHT);
@@ -180,17 +317,23 @@ function create(data) {
   createHud(scene);
   createMakeupPanel(scene);
   createTitleScreen(scene);
+  createLevelSelectScreen(scene);
+  loadProgress(scene);
 
-  scene.phase = 'title';
-  if (data && data.skipTitle) startLevel(scene);
+  if (options.startLevel) startLevel(scene);
+  else if (options.showLevelSelect) showLevelSelect(scene, options.selectedLevel);
+  else showTitle(scene);
 }
 
 function update(time, delta) {
   const scene = this;
   const seconds = Math.min(delta, 50) / 1000;
   const startPressed = START_BUTTONS.some((button) => wasPressed(scene, button));
-  if (scene.phase === 'title' && startPressed) startLevel(scene);
-  else if (scene.phase === 'results' && startPressed) scene.scene.restart({ skipTitle: true });
+  if (scene.phase === 'title' && startPressed) showLevelSelect(scene, unlockedLevelCount - 1);
+  else if (scene.phase === 'select') updateLevelSelect(scene, startPressed);
+  else if (scene.phase === 'results' && startPressed) {
+    scene.scene.restart({ levelIndex: scene.levelIndex, showLevelSelect: true, selectedLevel: scene.nextSelectedLevel });
+  }
 
   if (scene.phase === 'playing' || scene.phase === 'arriving') driveRace(scene, time, seconds);
   if (scene.phase === 'playing') updateMakeup(scene);
@@ -205,30 +348,61 @@ function update(time, delta) {
 
 function startLevel(scene) {
   scene.phase = 'playing';
-  scene.race.speed = STARTING_SPEED;
+  scene.race.speed = currentLevel.startingSpeed;
   scene.overlayCamera.setVisible(false);
   scene.controls.pressed = Object.create(null);
   playSound(scene, 'paint');
+}
+
+function showTitle(scene) {
+  scene.phase = 'title';
+  scene.titleLayer.setVisible(true);
+  scene.levelSelectLayer.setVisible(false);
+  scene.overlayCamera.setVisible(true);
+}
+
+function showLevelSelect(scene, selectedLevel) {
+  scene.phase = 'select';
+  scene.selectedLevel = Phaser.Math.Clamp(selectedLevel || 0, 0, LEVELS.length - 1);
+  scene.titleLayer.setVisible(false);
+  scene.levelSelectLayer.setVisible(true);
+  scene.overlayCamera.setVisible(true);
+  scene.controls.pressed = Object.create(null);
+  refreshLevelSelect(scene);
+}
+
+function updateLevelSelect(scene, startPressed) {
+  const step = ['P1_R', 'P2_R'].some((button) => wasPressed(scene, button)) ? 1 : ['P1_L', 'P2_L'].some((button) => wasPressed(scene, button)) ? -1 : 0;
+  if (step !== 0) {
+    scene.selectedLevel = Phaser.Math.Clamp(scene.selectedLevel + step, 0, LEVELS.length - 1);
+    playSound(scene, 'select');
+    refreshLevelSelect(scene);
+  }
+  if (!startPressed) return;
+  if (scene.selectedLevel < unlockedLevelCount) scene.scene.restart({ levelIndex: scene.selectedLevel, startLevel: true });
+  else playSound(scene, 'crash');
 }
 
 function driveRace(scene, time, seconds) {
   const race = scene.race;
   steerCar(scene, seconds);
   if (scene.phase === 'playing') {
-    const cruisingSpeed = Math.min(MAX_SPEED, STARTING_SPEED + race.distance * SPEED_GAIN_PER_METER);
+    const progressToMaxSpeed = Math.min(1, race.distance / (currentLevel.distance * DISTANCE_SHARE_TO_REACH_MAX_SPEED));
+    const cruisingSpeed = currentLevel.startingSpeed + (currentLevel.maxSpeed - currentLevel.startingSpeed) * progressToMaxSpeed;
     race.speed += (cruisingSpeed - race.speed) * Math.min(1, seconds * 0.8);
     race.elapsedSeconds += seconds;
   } else {
-    race.speed = Math.max(0, Math.min(race.speed, (CAR_STOP_POSITION - race.distance) * 2.5));
+    const stopPosition = currentLevel.distance + CAR_STOP_OFFSET;
+    race.speed = Math.max(0, Math.min(race.speed, (stopPosition - race.distance) * 2.5));
   }
   race.distance += race.speed * seconds;
   spawnObstacles(race);
   if (scene.phase !== 'playing') return;
   detectCrash(scene, time);
-  if (race.distance >= LEVEL_DISTANCE) arriveAtIceCreamShop(scene);
+  if (race.distance >= currentLevel.distance) arriveAtDestination(scene);
 }
 
-function arriveAtIceCreamShop(scene) {
+function arriveAtDestination(scene) {
   scene.phase = 'arriving';
   scene.time.delayedCall(RESULTS_DELAY_MS, () => showResults(scene));
 }
@@ -287,18 +461,16 @@ function createTitleScreen(scene) {
   for (let dashX = left + 330; dashX < left + 560; dashX += 46) art.fillRect(dashX, 335, 24, 6);
   drawIceCream(art, left + 600, 372, 130);
 
-  scene.add.image(left + 255, 372, 'car').setOrigin(0.5, 1).setScale(1.25);
+  const car = scene.add.image(left + 255, 372, 'car').setOrigin(0.5, 1).setScale(1.25);
   const title = scene.add
     .text(centerX, 108, 'MAKEUP RACING', { ...OVERLAY_TEXT_STYLE, fontSize: '68px', strokeThickness: 14 })
     .setOrigin(0.5);
   title.setShadow(0, 6, '#b03a7a', 0, true, true);
-  scene.add
-    .text(centerX, 188, 'Lleguen a la helader\u00eda con el look igual a la foto', {
-      ...MAKEUP_TEXT_STYLE,
-      fontSize: '22px',
-    })
+  const subtitle = scene.add
+    .text(centerX, 188, 'Lleguen a cada destino con el look igual a la foto', { ...MAKEUP_TEXT_STYLE, fontSize: '22px' })
     .setOrigin(0.5);
 
+  const cardTexts = [];
   const cards = [
     ['JUGADOR 1 \u00b7 MANEJA', '\u25c0 \u25b6  cambia de carril\nEsquiva el tr\u00e1fico'],
     ['JUGADOR 2 \u00b7 MAQUILLA', '\u25b2 \u25bc  elige la parte\n\u25c0 \u25b6 o Bot\u00f3n 1  cambia el color'],
@@ -309,12 +481,94 @@ function createTitleScreen(scene) {
     art.fillRoundedRect(cardX + 4, 416, 320, 106, 20);
     art.fillStyle(COLORS.cloud, 0.95);
     art.fillRoundedRect(cardX, 410, 320, 106, 20);
-    scene.add.text(cardX + 160, 436, heading, { ...MAKEUP_TEXT_STYLE, fontSize: '19px' }).setOrigin(0.5);
-    scene.add
-      .text(cardX + 160, 482, body, { ...MAKEUP_TEXT_STYLE, fontSize: '16px', color: '#8a5a7a', align: 'center' })
-      .setOrigin(0.5);
+    cardTexts.push(scene.add.text(cardX + 160, 436, heading, { ...MAKEUP_TEXT_STYLE, fontSize: '19px' }).setOrigin(0.5));
+    cardTexts.push(
+      scene.add
+        .text(cardX + 160, 482, body, { ...MAKEUP_TEXT_STYLE, fontSize: '16px', color: '#8a5a7a', align: 'center' })
+        .setOrigin(0.5),
+    );
   });
-  addBlinkingPrompt(scene, 'Presiona START para jugar');
+  const prompt = addBlinkingPrompt(scene, 'Presiona START para jugar');
+  scene.titleLayer = scene.add.container(0, 0, [art, car, title, subtitle, ...cardTexts, prompt]);
+}
+
+function createLevelSelectScreen(scene) {
+  const centerX = OVERLAY_WORLD_X + GAME_WIDTH / 2;
+  const background = createOverlayBackground(scene, COLORS.makeupTop, COLORS.clothes);
+  const heading = scene.add
+    .text(centerX, 74, 'ELIGE EL DESTINO', { ...OVERLAY_TEXT_STYLE, fontSize: '48px', strokeThickness: 12 })
+    .setOrigin(0.5);
+  scene.levelCardsGraphics = scene.add.graphics();
+  scene.levelCardTexts = LEVELS.map(() => [
+    scene.add.text(0, 0, '', { ...MAKEUP_TEXT_STYLE, fontSize: '15px' }).setOrigin(0.5),
+    scene.add.text(0, 0, '', { ...MAKEUP_TEXT_STYLE, fontSize: '18px', align: 'center', wordWrap: { width: 150 } }).setOrigin(0.5),
+  ]);
+  const hint = scene.add
+    .text(centerX, 522, '\u25c0 \u25b6  elegir      START  jugar', { ...MAKEUP_TEXT_STYLE, fontSize: '22px' })
+    .setOrigin(0.5);
+  scene.levelSelectLayer = scene.add.container(0, 0, [background, heading, scene.levelCardsGraphics, ...scene.levelCardTexts.flat(), hint]);
+}
+
+function refreshLevelSelect(scene) {
+  const graphics = scene.levelCardsGraphics;
+  graphics.clear();
+  LEVELS.forEach((level, index) => {
+    const isSelected = index === scene.selectedLevel;
+    const isLocked = index >= unlockedLevelCount;
+    const centerX = OVERLAY_WORLD_X + 105 + index * 197;
+    const centerY = isSelected ? 288 : 300;
+    const top = centerY - 140;
+    graphics.fillStyle(COLORS.background, 0.18);
+    graphics.fillRoundedRect(centerX - 80, top + 8, 170, 280, 18);
+    if (isSelected) {
+      graphics.fillStyle(COLORS.curbPink, 1);
+      graphics.fillRoundedRect(centerX - 91, top - 7, 182, 294, 22);
+    }
+    graphics.fillStyle(COLORS.cloud, 1);
+    graphics.fillRoundedRect(centerX - 85, top, 170, 280, 18);
+    graphics.fillGradientStyle(level.colors.skyTop, level.colors.skyTop, level.colors.skyBottom, level.colors.skyBottom, 1);
+    graphics.fillRect(centerX - 72, top + 13, 144, 120);
+    graphics.fillStyle(level.colors.grassLight, 1);
+    graphics.fillRect(centerX - 72, top + 133, 144, 50);
+    graphics.fillStyle(COLORS.asphaltLight, 1);
+    graphics.fillTriangle(centerX - 12, top + 133, centerX + 12, top + 133, centerX + 40, top + 183);
+    graphics.fillTriangle(centerX - 12, top + 133, centerX + 40, top + 183, centerX - 40, top + 183);
+    level.drawDestination(graphics, { x: centerX, y: top + 140, scale: 64 }, (color) => color);
+    if (isLocked) {
+      graphics.fillStyle(COLORS.background, 0.55);
+      graphics.fillRect(centerX - 72, top + 13, 144, 170);
+      graphics.lineStyle(6, COLORS.bell, 1);
+      graphics.beginPath();
+      graphics.arc(centerX, top + 88, 14, Math.PI, 0);
+      graphics.strokePath();
+      graphics.fillStyle(COLORS.bell, 1);
+      graphics.fillRoundedRect(centerX - 20, top + 88, 40, 32, 6);
+      graphics.fillStyle(COLORS.background, 1);
+      graphics.fillCircle(centerX, top + 102, 5);
+    }
+    const [numberText, nameText] = scene.levelCardTexts[index];
+    numberText.setPosition(centerX, top + 206).setText(`NIVEL ${index + 1}`);
+    nameText.setPosition(centerX, top + 238).setText(level.name).setColor(isLocked ? '#9a8aa6' : '#c2457f');
+  });
+}
+
+function loadProgress(scene) {
+  if (hasLoadedProgress || !window.platanusArcadeStorage) return;
+  hasLoadedProgress = true;
+  window.platanusArcadeStorage
+    .get(PROGRESS_STORAGE_KEY)
+    .then((result) => {
+      const saved = result && result.found && result.value ? result.value.unlockedLevelCount : null;
+      if (!Number.isInteger(saved)) return;
+      unlockedLevelCount = Phaser.Math.Clamp(saved, 1, LEVELS.length);
+      if (scene.phase === 'select') refreshLevelSelect(scene);
+    })
+    .catch(() => {});
+}
+
+function saveProgress() {
+  if (!window.platanusArcadeStorage) return;
+  window.platanusArcadeStorage.set(PROGRESS_STORAGE_KEY, { unlockedLevelCount }).catch(() => {});
 }
 
 function showResults(scene) {
@@ -325,13 +579,20 @@ function showResults(scene) {
   const race = scene.race;
   const matchingCount = MAKEUP_PARTS.filter((part, index) => isPartMatching(makeup, index)).length;
   const isPerfect = matchingCount === MAKEUP_PARTS.length;
+  const nextLevel = scene.levelIndex + 1;
+  const unlocksNextLevel = isPerfect && nextLevel < LEVELS.length && nextLevel >= unlockedLevelCount;
+  if (unlocksNextLevel) {
+    unlockedLevelCount = nextLevel + 1;
+    saveProgress();
+  }
+  scene.nextSelectedLevel = isPerfect ? Math.min(nextLevel, LEVELS.length - 1) : scene.levelIndex;
 
   const art = createOverlayBackground(scene, isPerfect ? COLORS.scoopMint : COLORS.makeupTop, isPerfect ? COLORS.makeupTop : COLORS.clothes);
   scene.add
     .text(centerX, 70, isPerfect ? '\u00a1LOOK PERFECTO!' : '\u00a1OH NO!', { ...OVERLAY_TEXT_STYLE, fontSize: '54px', strokeThickness: 12 })
     .setOrigin(0.5);
   scene.add
-    .text(centerX, 128, isPerfect ? 'Llegaron a la helader\u00eda regias' : 'Llegaron a la helader\u00eda, pero el look no estaba listo', {
+    .text(centerX, 128, unlocksNextLevel ? `\u00a1Desbloquearon: ${LEVELS[nextLevel].name}!` : isPerfect ? `${currentLevel.arrivalText} regias` : `${currentLevel.arrivalText}, pero el look no estaba listo`, {
       ...MAKEUP_TEXT_STYLE,
       fontSize: '20px',
     })
@@ -351,7 +612,6 @@ function showResults(scene) {
     scene.add.image(photoX, 280, key);
     scene.add.text(photoX, 420, label, { ...MAKEUP_TEXT_STYLE, fontSize: '22px' }).setOrigin(0.5);
   });
-  if (isPerfect) drawIceCream(art, centerX, 330, 90);
 
   const minutes = Math.floor(race.elapsedSeconds / 60);
   const seconds = String(Math.floor(race.elapsedSeconds % 60)).padStart(2, '0');
@@ -364,7 +624,7 @@ function showResults(scene) {
       strokeThickness: 6,
     })
     .setOrigin(0.5);
-  addBlinkingPrompt(scene, 'START para jugar otra vez');
+  addBlinkingPrompt(scene, 'START para continuar');
   scene.overlayCamera.setVisible(true);
   playMelody(scene, isPerfect ? [523, 659, 784, 1047] : [392, 330, 262]);
 }
@@ -442,7 +702,7 @@ function drawRoad(scene) {
   const slices = scene.roadSlices;
   const sliceCount = projectRoadSlices(scene);
   graphics.clear();
-  graphics.fillStyle(blendColor(COLORS.grassLight, COLORS.fog, 0.85), 1);
+  graphics.fillStyle(blendColor(currentLevel.colors.grassLight, currentLevel.colors.fog, 0.85), 1);
   graphics.fillRect(0, HORIZON_Y + 8, PANEL_WIDTH, GAME_HEIGHT);
 
   for (let index = sliceCount - 1; index >= 0; index--) {
@@ -450,13 +710,13 @@ function drawRoad(scene) {
     const far = slices[index + 1];
     const distanceRatio = (near.depth - NEAREST_VISIBLE_DEPTH) / (FARTHEST_VISIBLE_DEPTH - NEAREST_VISIBLE_DEPTH);
     const fogAmount = Math.pow(Phaser.Math.Clamp(distanceRatio, 0, 1), 0.7) * 0.9;
-    const fogged = (color) => blendColor(color, COLORS.fog, fogAmount);
+    const fogged = (color) => blendColor(color, currentLevel.colors.fog, fogAmount);
     const isStripe = ((near.index >> 1) & 1) === 1;
 
-    graphics.fillStyle(fogged(isStripe ? COLORS.grassLight : COLORS.grassDark), 1);
+    graphics.fillStyle(fogged(isStripe ? currentLevel.colors.grassLight : currentLevel.colors.grassDark), 1);
     graphics.fillRect(0, far.y, PANEL_WIDTH, near.y - far.y + 1);
     for (const side of [-1, 1]) {
-      fillTrapezoid(graphics, fogged(COLORS.sand), near, far, side * 1.2, 0.12);
+      fillTrapezoid(graphics, fogged(currentLevel.colors.sand), near, far, side * 1.2, 0.12);
       fillTrapezoid(graphics, fogged(isStripe ? COLORS.curbPink : COLORS.curbWhite), near, far, side * 1.05, 0.06);
     }
     fillTrapezoid(graphics, fogged(isStripe ? COLORS.asphaltLight : COLORS.asphaltDark), near, far, 0, 1);
@@ -472,24 +732,17 @@ function drawRoad(scene) {
 function drawRoadsideScenery(graphics, slice, fogAmount) {
   const size = slice.scale;
   if (size < 8) return;
-  const fogged = (color) => blendColor(color, COLORS.fog, fogAmount);
+  const fogged = (color) => blendColor(color, currentLevel.colors.fog, fogAmount);
 
   for (const side of [-1, 1]) {
     const salt = side > 0 ? 1 : 0;
-    if (seededRandom(slice.index, salt) > 0.4) continue;
+    if (seededRandom(slice.index, salt) > currentLevel.sceneryDensity) continue;
     const x = slice.x + side * (slice.halfWidth * 1.5 + size * (0.25 + seededRandom(slice.index, salt + 5) * 1.6));
     if (x < -size || x > PANEL_WIDTH + size) continue;
-    const kind = seededRandom(slice.index, salt + 9);
-
+    const kind = currentLevel.scenery[Math.floor(seededRandom(slice.index, salt + 9) * currentLevel.scenery.length)];
     graphics.fillStyle(COLORS.shadow, 0.25 * (1 - fogAmount));
     graphics.fillEllipse(x, slice.y, size * 0.45, size * 0.08);
-    if (kind < 0.6) {
-      drawRoundTree(graphics, x, slice.y, size, fogged, kind < 0.2);
-    } else if (kind < 0.8) {
-      drawPine(graphics, x, slice.y, size, fogged);
-    } else {
-      drawFlowerBush(graphics, x, slice.y, size, fogged);
-    }
+    SCENERY_DRAWERS[kind](graphics, x, slice.y, size, fogged, seededRandom(slice.index, salt + 13));
   }
 }
 
@@ -525,18 +778,30 @@ function drawFlowerBush(graphics, x, groundY, size, fogged) {
 }
 
 function createSky(scene) {
+  const colors = currentLevel.colors;
   const sky = scene.add.graphics();
-  sky.fillGradientStyle(COLORS.skyTop, COLORS.skyTop, COLORS.skyBottom, COLORS.skyBottom, 1);
-  sky.fillRect(0, 0, PANEL_WIDTH, HORIZON_Y + 20);
-  sky.fillStyle(COLORS.sunGlow, 0.35);
+  const skyHeight = HORIZON_Y + 20;
+  sky.fillGradientStyle(colors.skyTop, colors.skyTop, colors.skyBottom, colors.skyBottom, 1);
+  sky.fillRect(0, 0, PANEL_WIDTH, skyHeight);
+  if (currentLevel.isNight) {
+    for (let index = 0; index < 40; index++) {
+      sky.fillStyle(COLORS.cloud, 0.3 + seededRandom(index, 7) * 0.6);
+      sky.fillCircle(seededRandom(index, 8) * PANEL_WIDTH, seededRandom(index, 9) * (HORIZON_Y - 30), 0.8 + seededRandom(index, 10) * 1.4);
+    }
+  }
+  sky.fillStyle(colors.sunGlow, 0.35);
   sky.fillCircle(300, 105, 48);
-  sky.fillStyle(COLORS.sun, 1);
+  sky.fillStyle(colors.sun, 1);
   sky.fillCircle(300, 105, 30);
+  if (currentLevel.isNight) {
+    sky.fillStyle(blendColor(colors.skyTop, colors.skyBottom, 95 / skyHeight), 1);
+    sky.fillCircle(314, 96, 25);
+  }
 
   scene.clouds = [];
   for (let index = 0; index < 5; index++) {
     const cloud = scene.add.graphics();
-    cloud.fillStyle(COLORS.cloud, 0.9);
+    cloud.fillStyle(COLORS.cloud, currentLevel.isNight ? 0.18 : 0.9);
     cloud.fillEllipse(0, 0, 70, 22);
     cloud.fillEllipse(-18, -8, 34, 24);
     cloud.fillEllipse(12, -12, 40, 30);
@@ -545,8 +810,42 @@ function createSky(scene) {
     scene.clouds.push(cloud);
   }
 
-  createRidge(scene, blendColor(COLORS.mountains, COLORS.fog, 0.35), 75, 1);
-  createRidge(scene, blendColor(COLORS.hills, COLORS.fog, 0.2), 26, 4);
+  if (currentLevel.horizon === 'city') {
+    createSkyline(scene, blendColor(colors.mountains, colors.fog, 0.35), 90, 1);
+    createSkyline(scene, blendColor(colors.hills, colors.fog, 0.15), 50, 2);
+  } else {
+    createRidge(scene, blendColor(colors.mountains, colors.fog, 0.35), currentLevel.horizon === 'sea' ? 40 : 75, 1);
+    if (currentLevel.horizon === 'sea') createSea(scene, colors.hills);
+    else createRidge(scene, blendColor(colors.hills, colors.fog, 0.2), 26, 4);
+  }
+}
+
+function createSkyline(scene, color, tallestBuilding, salt) {
+  const skyline = scene.add.graphics();
+  const baseY = HORIZON_Y + 12;
+  let x = -10;
+  for (let index = 0; x < PANEL_WIDTH; index++) {
+    const width = 18 + seededRandom(index, salt) * 26;
+    const height = tallestBuilding * (0.35 + seededRandom(index, salt + 3) * 0.65);
+    skyline.fillStyle(color, 1);
+    skyline.fillRect(x, baseY - height, width - 3, height);
+    skyline.fillStyle(COLORS.windowLight, 0.45);
+    for (let windowY = baseY - height + 6; windowY < baseY - 6; windowY += 10) {
+      skyline.fillRect(x + 4, windowY, 3, 4);
+      if (width > 26) skyline.fillRect(x + width - 10, windowY, 3, 4);
+    }
+    x += width;
+  }
+}
+
+function createSea(scene, seaColor) {
+  const sea = scene.add.graphics();
+  sea.fillStyle(seaColor, 1);
+  sea.fillRect(0, HORIZON_Y - 14, PANEL_WIDTH, 30);
+  sea.fillStyle(COLORS.cloud, 0.5);
+  for (let index = 0; index < 14; index++) {
+    sea.fillRect(seededRandom(index, 11) * PANEL_WIDTH, HORIZON_Y - 10 + seededRandom(index, 12) * 16, 14, 2);
+  }
 }
 
 function createRidge(scene, color, peakHeight, phase) {
@@ -1105,20 +1404,21 @@ function updateCar(scene, time) {
 }
 
 function spawnObstacles(race) {
-  while (race.nextObstaclePosition < Math.min(race.distance + FARTHEST_VISIBLE_DEPTH, LAST_OBSTACLE_POSITION)) {
+  const lastObstaclePosition = currentLevel.distance - LAST_OBSTACLE_MARGIN;
+  while (race.nextObstaclePosition < Math.min(race.distance + FARTHEST_VISIBLE_DEPTH, lastObstaclePosition)) {
     const lanes = Phaser.Utils.Array.Shuffle([-1, 0, 1]);
-    const chanceOfTwoBlockedLanes = Math.min(0.5, race.distance / 4000);
+    const chanceOfTwoBlockedLanes = currentLevel.twoLaneChance * Math.min(1, race.distance / (currentLevel.distance * 0.5));
     const blockedLanes = Math.random() < chanceOfTwoBlockedLanes ? 2 : 1;
     for (let index = 0; index < blockedLanes; index++) {
       race.obstacles.push({
         lane: lanes[index],
         position: race.nextObstaclePosition,
-        kind: randomItem(['traffic', 'traffic', 'barrier', 'cones']),
+        kind: randomItem(currentLevel.obstacles),
         color: randomItem(COLORS.trafficBodies),
         hasHit: false,
       });
     }
-    race.nextObstaclePosition += Phaser.Math.Between(9, 16);
+    race.nextObstaclePosition += Phaser.Math.Between(...currentLevel.obstacleGap);
   }
   race.obstacles = race.obstacles.filter((obstacle) => depthOf(race, obstacle) > 1.5);
 }
@@ -1150,7 +1450,7 @@ function detectCrash(scene, time) {
 function foggedAtDepth(depth) {
   const distanceRatio = (depth - NEAREST_VISIBLE_DEPTH) / (FARTHEST_VISIBLE_DEPTH - NEAREST_VISIBLE_DEPTH);
   const fogAmount = Math.pow(Phaser.Math.Clamp(distanceRatio, 0, 1), 0.7) * 0.9;
-  return (color) => blendColor(color, COLORS.fog, fogAmount);
+  return (color) => blendColor(color, currentLevel.colors.fog, fogAmount);
 }
 
 function isVisibleDepth(depth) {
@@ -1161,9 +1461,11 @@ function drawObstacles(scene) {
   const race = scene.race;
   const graphics = scene.obstacleGraphics;
   graphics.clear();
-  const shopDepth = ICE_CREAM_SHOP_POSITION - race.distance + CAR_DEPTH;
-  if (isVisibleDepth(shopDepth)) drawIceCreamShop(graphics, screenPositionAt(scene, shopDepth, 0), foggedAtDepth(shopDepth));
-  const finishDepth = LEVEL_DISTANCE - race.distance + CAR_DEPTH;
+  const destinationDepth = currentLevel.distance + DESTINATION_OFFSET - race.distance + CAR_DEPTH;
+  if (isVisibleDepth(destinationDepth)) {
+    currentLevel.drawDestination(graphics, screenPositionAt(scene, destinationDepth, 0), foggedAtDepth(destinationDepth));
+  }
+  const finishDepth = currentLevel.distance - race.distance + CAR_DEPTH;
   if (isVisibleDepth(finishDepth)) drawFinishLine(scene, graphics, finishDepth);
 
   for (let index = race.obstacles.length - 1; index >= 0; index--) {
@@ -1236,6 +1538,177 @@ function drawIceCreamShop(graphics, position, fogged) {
   drawIceCream(graphics, x, wallTop - size * 0.18, size * 0.62, fogged);
 }
 
+function drawBuilding(graphics, x, groundY, size, fogged, variety) {
+  const width = size * (0.45 + variety * 0.2);
+  const height = size * (0.7 + variety * 0.9);
+  const wallColor = COLORS.buildingColors[Math.floor(variety * 4) % 4];
+  const left = x - width / 2;
+  const top = groundY - height;
+  graphics.fillStyle(fogged(wallColor), 1);
+  graphics.fillRect(left, top, width, height);
+  graphics.fillStyle(fogged(blendColor(wallColor, COLORS.background, 0.25)), 1);
+  graphics.fillRect(left - size * 0.02, top, width + size * 0.04, size * 0.05);
+  graphics.fillStyle(fogged(COLORS.windowLight), 1);
+  for (let windowY = top + size * 0.12; windowY < groundY - size * 0.25; windowY += size * 0.2) {
+    graphics.fillRect(left + width * 0.18, windowY, width * 0.22, size * 0.1);
+    graphics.fillRect(left + width * 0.6, windowY, width * 0.22, size * 0.1);
+  }
+  graphics.fillStyle(fogged(blendColor(wallColor, COLORS.background, 0.4)), 1);
+  graphics.fillRect(x - size * 0.06, groundY - size * 0.18, size * 0.12, size * 0.18);
+}
+
+function drawLamp(graphics, x, groundY, size, fogged) {
+  graphics.fillStyle(fogged(COLORS.lampPost), 1);
+  graphics.fillRect(x - size * 0.012, groundY - size * 0.78, size * 0.024, size * 0.78);
+  graphics.fillStyle(currentLevel.colors.sunGlow, currentLevel.isNight ? 0.45 : 0.2);
+  graphics.fillCircle(x, groundY - size * 0.8, size * 0.12);
+  graphics.fillStyle(fogged(COLORS.lampBulb), 1);
+  graphics.fillCircle(x, groundY - size * 0.8, size * 0.045);
+}
+
+function drawPalm(graphics, x, groundY, size, fogged, variety) {
+  const lean = variety > 0.5 ? 1 : -1;
+  const segments = 7;
+  let topX = x;
+  let topY = groundY;
+  for (let segment = 0; segment <= segments; segment++) {
+    const progress = segment / segments;
+    topX = x + Math.sin(progress * 1.4) * size * 0.14 * lean;
+    topY = groundY - progress * size * 0.8;
+    graphics.fillStyle(fogged(segment % 2 ? COLORS.palmTrunk : blendColor(COLORS.palmTrunk, COLORS.cloud, 0.2)), 1);
+    graphics.fillCircle(topX, topY, size * 0.032);
+  }
+  [-2.8, -2.2, -1.6, -1.0, -0.4, 0.2].forEach((angle, index) => {
+    const tipX = topX + Math.cos(angle) * size * 0.32;
+    const tipY = topY + Math.sin(angle) * size * 0.2 + size * 0.1;
+    const sideX = Math.sin(angle) * size * 0.04;
+    const sideY = -Math.cos(angle) * size * 0.04;
+    graphics.fillStyle(fogged(index % 2 ? COLORS.palmLeaves : COLORS.palmLeavesLight), 1);
+    graphics.fillTriangle(topX + sideX, topY + sideY, topX - sideX, topY - sideY, tipX, tipY);
+  });
+  graphics.fillStyle(fogged(COLORS.coconut), 1);
+  graphics.fillCircle(topX - size * 0.025, topY + size * 0.03, size * 0.025);
+  graphics.fillCircle(topX + size * 0.025, topY + size * 0.035, size * 0.025);
+}
+
+function drawUmbrella(graphics, x, groundY, size, fogged, variety) {
+  const canopyY = groundY - size * 0.5;
+  const radius = size * 0.26;
+  const accent = COLORS.partyLights[Math.floor(variety * 4) % 4];
+  graphics.fillStyle(fogged(COLORS.cloud), 1);
+  graphics.fillRect(x - size * 0.01, canopyY, size * 0.02, size * 0.5);
+  for (let panel = 0; panel < 6; panel++) {
+    const start = Math.PI + (panel * Math.PI) / 6;
+    graphics.fillStyle(fogged(panel % 2 ? COLORS.cloud : accent), 1);
+    graphics.slice(x, canopyY, radius, start, start + Math.PI / 6, false);
+    graphics.fillPath();
+  }
+}
+
+function drawStar(graphics, x, y, radius, color) {
+  const points = [];
+  for (let point = 0; point < 10; point++) {
+    const angle = -Math.PI / 2 + (point * Math.PI) / 5;
+    const distance = point % 2 ? radius * 0.45 : radius;
+    points.push({ x: x + Math.cos(angle) * distance, y: y + Math.sin(angle) * distance });
+  }
+  graphics.fillStyle(color, 1);
+  graphics.fillPoints(points, true);
+}
+
+function drawCinema(graphics, position, fogged) {
+  const { x, y: groundY, scale: size } = position;
+  const width = size * 1.4;
+  const wallTop = groundY - size * 0.78;
+  graphics.fillStyle(COLORS.background, 0.2);
+  graphics.fillEllipse(x, groundY, width * 1.15, size * 0.08);
+  graphics.fillStyle(fogged(COLORS.cinemaWall), 1);
+  graphics.fillRect(x - width / 2, wallTop, width, size * 0.78);
+  graphics.fillStyle(fogged(COLORS.cinemaTrim), 1);
+  graphics.fillRect(x - width / 2 - size * 0.03, wallTop, width + size * 0.06, size * 0.08);
+  graphics.fillStyle(fogged(COLORS.marquee), 1);
+  graphics.fillRoundedRect(x - size * 0.52, wallTop + size * 0.13, size * 1.04, size * 0.24, size * 0.04);
+  graphics.fillStyle(fogged(COLORS.cinemaTrim), 1);
+  graphics.fillRect(x - size * 0.43, wallTop + size * 0.18, size * 0.86, size * 0.14);
+  graphics.fillStyle(fogged(COLORS.cloud), 1);
+  for (let bulb = 0; bulb <= 10; bulb++) {
+    const bulbX = x - size * 0.48 + bulb * size * 0.096;
+    graphics.fillCircle(bulbX, wallTop + size * 0.15, size * 0.016);
+    graphics.fillCircle(bulbX, wallTop + size * 0.35, size * 0.016);
+  }
+  graphics.fillStyle(fogged(COLORS.curtain), 1);
+  graphics.fillRect(x - size * 0.25, groundY - size * 0.32, size * 0.5, size * 0.32);
+  graphics.fillStyle(fogged(COLORS.cinemaTrim), 1);
+  graphics.fillRect(x - size * 0.01, groundY - size * 0.32, size * 0.02, size * 0.32);
+  graphics.fillStyle(fogged(COLORS.flowerPink), 1);
+  graphics.fillRect(x - size * 0.62, groundY - size * 0.4, size * 0.2, size * 0.28);
+  graphics.fillStyle(fogged(COLORS.scoopMint), 1);
+  graphics.fillRect(x + size * 0.42, groundY - size * 0.4, size * 0.2, size * 0.28);
+  drawStar(graphics, x, wallTop - size * 0.14, size * 0.16, fogged(COLORS.marquee));
+}
+
+function drawBeachParty(graphics, position, fogged) {
+  const { x, y: groundY, scale: size } = position;
+  graphics.fillStyle(COLORS.background, 0.2);
+  graphics.fillEllipse(x, groundY, size * 1.6, size * 0.08);
+  graphics.fillStyle(fogged(COLORS.deck), 1);
+  graphics.fillRect(x - size * 0.68, groundY - size * 0.08, size * 1.36, size * 0.08);
+  graphics.fillStyle(fogged(COLORS.bamboo), 1);
+  graphics.fillRect(x - size * 0.52, groundY - size * 0.52, size * 1.04, size * 0.44);
+  graphics.fillStyle(fogged(COLORS.bambooDark), 1);
+  for (let stick = 0; stick <= 10; stick++) graphics.fillRect(x - size * 0.52 + stick * size * 0.1, groundY - size * 0.52, size * 0.012, size * 0.44);
+  graphics.fillStyle(fogged(COLORS.coconut), 1);
+  graphics.fillRect(x - size * 0.22, groundY - size * 0.4, size * 0.44, size * 0.26);
+  graphics.fillStyle(fogged(COLORS.straw), 1);
+  graphics.fillTriangle(x - size * 0.8, groundY - size * 0.5, x + size * 0.8, groundY - size * 0.5, x, groundY - size * 1.0);
+  graphics.fillStyle(fogged(COLORS.strawDark), 1);
+  for (let fringe = 0; fringe < 16; fringe++) {
+    const fringeX = x - size * 0.8 + fringe * size * 0.1;
+    graphics.fillTriangle(fringeX, groundY - size * 0.5, fringeX + size * 0.1, groundY - size * 0.5, fringeX + size * 0.05, groundY - size * 0.42);
+  }
+  for (let bulb = 0; bulb < 9; bulb++) {
+    const progress = bulb / 8;
+    const bulbX = x - size * 0.75 + progress * size * 1.5;
+    const bulbY = groundY - size * 0.6 + Math.sin(progress * Math.PI) * size * 0.08;
+    graphics.fillStyle(fogged(COLORS.partyLights[bulb % 4]), 1);
+    graphics.fillCircle(bulbX, bulbY, size * 0.03);
+  }
+  graphics.fillStyle(fogged(COLORS.flowerPink), 1);
+  graphics.fillCircle(x - size * 0.2, groundY - size * 1.12, size * 0.08);
+  graphics.fillStyle(fogged(COLORS.scoopMint), 1);
+  graphics.fillCircle(x + size * 0.18, groundY - size * 1.16, size * 0.08);
+}
+
+function drawChapel(graphics, position, fogged) {
+  const { x, y: groundY, scale: size } = position;
+  graphics.fillStyle(COLORS.background, 0.2);
+  graphics.fillEllipse(x, groundY, size * 1.3, size * 0.08);
+  graphics.fillStyle(fogged(COLORS.chapelWall), 1);
+  graphics.fillRect(x - size * 0.5, groundY - size * 0.6, size, size * 0.6);
+  graphics.fillRect(x - size * 0.12, groundY - size * 1.12, size * 0.24, size * 0.3);
+  graphics.fillStyle(fogged(COLORS.chapelRoof), 1);
+  graphics.fillTriangle(x - size * 0.6, groundY - size * 0.58, x + size * 0.6, groundY - size * 0.58, x, groundY - size * 0.98);
+  graphics.fillTriangle(x - size * 0.18, groundY - size * 1.1, x + size * 0.18, groundY - size * 1.1, x, groundY - size * 1.42);
+  graphics.fillStyle(fogged(COLORS.bell), 1);
+  graphics.fillCircle(x, groundY - size * 0.98, size * 0.05);
+  graphics.fillStyle(fogged(COLORS.curbPink), 1);
+  graphics.fillCircle(x - size * 0.04, groundY - size * 0.75, size * 0.05);
+  graphics.fillCircle(x + size * 0.04, groundY - size * 0.75, size * 0.05);
+  graphics.fillTriangle(x - size * 0.09, groundY - size * 0.74, x + size * 0.09, groundY - size * 0.74, x, groundY - size * 0.63);
+  graphics.fillStyle(fogged(COLORS.deck), 1);
+  graphics.fillRoundedRect(x - size * 0.13, groundY - size * 0.36, size * 0.26, size * 0.36, { tl: size * 0.13, tr: size * 0.13, bl: 0, br: 0 });
+  graphics.fillStyle(fogged(COLORS.windshield), 1);
+  graphics.fillRoundedRect(x - size * 0.38, groundY - size * 0.42, size * 0.14, size * 0.2, { tl: size * 0.07, tr: size * 0.07, bl: 0, br: 0 });
+  graphics.fillRoundedRect(x + size * 0.24, groundY - size * 0.42, size * 0.14, size * 0.2, { tl: size * 0.07, tr: size * 0.07, bl: 0, br: 0 });
+  for (const side of [-1, 1]) {
+    graphics.fillStyle(fogged(COLORS.bush), 1);
+    graphics.fillCircle(x + side * size * 0.45, groundY - size * 0.05, size * 0.09);
+    graphics.fillStyle(fogged(COLORS.flowerPink), 1);
+    graphics.fillCircle(x + side * size * 0.42, groundY - size * 0.09, size * 0.025);
+    graphics.fillCircle(x + side * size * 0.5, groundY - size * 0.04, size * 0.025);
+  }
+}
+
 function drawTrafficCar(graphics, x, groundY, size, fogged, bodyColor) {
   const width = size * 0.26;
   graphics.fillStyle(COLORS.background, 0.25);
@@ -1295,7 +1768,7 @@ function createHud(scene) {
   };
   scene.progressGraphics = scene.add.graphics();
   const finishIcon = scene.add.graphics();
-  drawIceCream(finishIcon, PROGRESS_BAR_X + PROGRESS_BAR_WIDTH + 26, 40, 36);
+  currentLevel.drawDestination(finishIcon, { x: PROGRESS_BAR_X + PROGRESS_BAR_WIDTH + 28, y: 40, scale: 26 }, (color) => color);
   scene.remainingText = scene.add.text(PROGRESS_BAR_X, 34, '', style);
   scene.speedText = scene.add.text(PROGRESS_BAR_X + PROGRESS_BAR_WIDTH, 34, '', style).setOrigin(1, 0);
   scene.crashText = scene.add.text(PROGRESS_BAR_X, 56, '', { ...style, color: '#ffb3d1' });
@@ -1303,7 +1776,7 @@ function createHud(scene) {
 
 function updateHud(scene) {
   const race = scene.race;
-  const progress = Phaser.Math.Clamp(race.distance / LEVEL_DISTANCE, 0, 1);
+  const progress = Phaser.Math.Clamp(race.distance / currentLevel.distance, 0, 1);
   const markerX = PROGRESS_BAR_X + PROGRESS_BAR_WIDTH * progress;
   const graphics = scene.progressGraphics;
   graphics.clear();
@@ -1316,7 +1789,7 @@ function updateHud(scene) {
   graphics.fillStyle(COLORS.carBody, 1);
   graphics.fillCircle(markerX, 19, 8);
 
-  scene.remainingText.setText(`Faltan ${Math.ceil(Math.max(0, LEVEL_DISTANCE - race.distance))} m`);
+  scene.remainingText.setText(`Faltan ${Math.ceil(Math.max(0, currentLevel.distance - race.distance))} m`);
   scene.speedText.setText(`${Math.round(race.speed * KMH_PER_SPEED_UNIT)} km/h`);
   scene.crashText.setText(race.crashes ? `Choques: ${race.crashes}` : '');
 }
