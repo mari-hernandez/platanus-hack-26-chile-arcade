@@ -729,12 +729,22 @@ function drawFace(graphics, centerX, centerY, scale, look) {
     circle(COLORS.cloud, eyeX + side * 6, eyeY + 11, 3);
 
     const lashColor = look.mascara || NATURAL_LASHES;
-    stroke(lashColor, look.mascara ? 7 : 5, [[eyeX - side * 21, eyeY - 6], [eyeX - side * 8, eyeY - 21], [eyeX + side * 10, eyeY - 21], [eyeX + side * 23, eyeY - 10]]);
-    stroke(lashColor, 2, [[eyeX + side * 6, eyeY + 22], [eyeX + side * 17, eyeY + 15]]);
+    const thickness = look.mascara ? 6 : 3.5;
+    const fromEye = (alongX, alongY) => [eyeX + side * alongX, eyeY + alongY];
+    smoothShape(lashColor, [
+      fromEye(-22, -4), fromEye(-12, -18 - thickness * 0.3), fromEye(6, -22 - thickness * 0.5),
+      fromEye(22, -13 - thickness * 0.6), fromEye(28, -14 - thickness), fromEye(20, -9),
+      fromEye(6, -17), fromEye(-10, -14), fromEye(-20, -2),
+    ]);
+    stroke(lashColor, 1.5, [fromEye(6, 22), fromEye(12, 20), fromEye(17, 15)]);
     if (look.mascara) {
-      stroke(lashColor, 3.5, [[eyeX + side * 21, eyeY - 12], [eyeX + side * 31, eyeY - 18]]);
-      stroke(lashColor, 3.5, [[eyeX + side * 15, eyeY - 18], [eyeX + side * 22, eyeY - 27]]);
-      stroke(lashColor, 3, [[eyeX + side * 6, eyeY - 21], [eyeX + side * 9, eyeY - 30]]);
+      for (const [baseX, baseY, tipX, tipY] of [[6, -23, 5, -11], [14, -21, 10, -9], [21, -17, 13, -5]]) {
+        smoothShape(lashColor, [
+          fromEye(baseX - 1.6, baseY + 1), fromEye(baseX + tipX * 0.3 - 1, baseY + tipY * 0.8),
+          fromEye(baseX + tipX, baseY + tipY), fromEye(baseX + tipX * 0.35 + 1.2, baseY + tipY * 0.7 + 1),
+          fromEye(baseX + 1.6, baseY + 1),
+        ]);
+      }
     }
   }
 
@@ -763,7 +773,10 @@ function drawFace(graphics, centerX, centerY, scale, look) {
   circle(COLORS.flowerPink, 72, -114, 6);
 
   for (const side of [-1, 1]) {
-    stroke(look.brows || NATURAL_BROWS, look.brows ? 6 : 4, [[side * 20, -34], [side * 38, -42], [side * 58, -38]]);
+    const browWidth = look.brows ? 7 : 5;
+    smoothShape(look.brows || NATURAL_BROWS, [
+      [side * 20, -31], [side * 18, -31 - browWidth], [side * 36, -43 - browWidth * 0.6], [side * 60, -38], [side * 37, -40],
+    ]);
   }
 
   if (look.earrings) {
