@@ -104,9 +104,12 @@ const COLORS = {
   barrierLeg: 0x6b6478,
   cone: 0xff8a3d,
   crashFlash: [255, 120, 170],
+  skin: 0xffd9c2,
+  skinShade: 0xf2b8a0,
+  hoodie: 0x7d5bd1,
+  iris: 0x3fb6c9,
   makeupTop: 0xffd6ea,
   makeupBottom: 0xf3b2d8,
-  mirrorFrame: 0xd4a24c,
 };
 
 new Phaser.Game({
@@ -129,7 +132,7 @@ function create() {
   createControls(scene);
 
   scene.cameras.main.setViewport(0, 0, PANEL_WIDTH, GAME_HEIGHT);
-  scene.cameras.add(PANEL_WIDTH, 0, PANEL_WIDTH, GAME_HEIGHT).setScroll(MAKEUP_PANEL_WORLD_X, 0);
+  scene.makeupCamera = scene.cameras.add(PANEL_WIDTH, 0, PANEL_WIDTH, GAME_HEIGHT).setScroll(MAKEUP_PANEL_WORLD_X, 0);
 
   scene.race = {
     distance: 0,
@@ -167,6 +170,7 @@ function update(time, delta) {
   updateCar(scene, time);
   updateHud(scene);
   updateEngineSound(scene);
+  updateMakeup(scene, time);
   scene.controls.pressed = Object.create(null);
 }
 
@@ -351,28 +355,316 @@ function updateSky(scene, seconds) {
   }
 }
 
+const FACE_CENTER_X = MAKEUP_PANEL_WORLD_X + 185;
+const FACE_CENTER_Y = 285;
+const NATURAL_LIPS = 0xd98a84;
+const NATURAL_BROWS = 0x8a5a3c;
+const NATURAL_LASHES = 0x2a1d1d;
+
+const MAKEUP_PARTS = [
+  {
+    key: 'brows',
+    name: 'CEJAS',
+    colors: [0x4a2e22, 0x1f1a1c, 0xc89a5b, 0xe0609a],
+    spots: [[-42, -42, 56, 22], [42, -42, 56, 22]],
+  },
+  {
+    key: 'shadow',
+    name: 'SOMBRA',
+    colors: [0xc77dff, 0x5fb3ff, 0xffb347, 0x7ed99a, 0xff7eb3],
+    spots: [[-42, -16, 58, 28], [42, -16, 58, 28]],
+  },
+  {
+    key: 'mascara',
+    name: 'R\u00cdMEL',
+    colors: [0x1f1a1c, 0x3d6bff, 0x8a3fd1, 0x5a3a2a],
+    spots: [[-42, -4, 56, 32], [42, -4, 56, 32]],
+  },
+  {
+    key: 'blush',
+    name: 'RUBOR',
+    colors: [0xff8fab, 0xffa07a, 0xd98cd9],
+    spots: [[-60, 30, 48, 28], [60, 30, 48, 28]],
+  },
+  {
+    key: 'earrings',
+    name: 'AROS',
+    colors: [0xffcf4a, 0xd9dde8, 0xff7eb3, 0x45d6c4],
+    spots: [[-100, 38, 30, 36], [100, 38, 30, 36]],
+  },
+  {
+    key: 'lips',
+    name: 'LABIOS',
+    colors: [0xe23d5b, 0xff6fa5, 0x9b3dbd, 0xff8566],
+    spots: [[0, 62, 64, 36]],
+  },
+];
+
 function createMakeupPanel(scene) {
   const left = MAKEUP_PANEL_WORLD_X;
-  const centerX = left + PANEL_WIDTH / 2;
-  const centerY = GAME_HEIGHT / 2 - 20;
-  const panel = scene.add.graphics();
-  panel.fillGradientStyle(COLORS.makeupTop, COLORS.makeupTop, COLORS.makeupBottom, COLORS.makeupBottom, 1);
-  panel.fillRect(left, 0, PANEL_WIDTH, GAME_HEIGHT);
-  panel.fillStyle(COLORS.cloud, 0.5);
-  panel.fillEllipse(centerX, centerY, 250, 330);
-  panel.lineStyle(10, COLORS.mirrorFrame, 1);
-  panel.strokeEllipse(centerX, centerY, 250, 330);
-  panel.fillStyle(COLORS.background, 1);
-  panel.fillRect(left, 0, 6, GAME_HEIGHT);
+  scene.makeup = {
+    selectedPart: 0,
+    colorIndexes: MAKEUP_PARTS.map(() => -1),
+    targetIndexes: MAKEUP_PARTS.map((part) => Phaser.Math.Between(0, part.colors.length - 1)),
+    smudged: MAKEUP_PARTS.map(() => false),
+  };
+
+  const backdrop = scene.add.graphics();
+  backdrop.fillGradientStyle(COLORS.makeupTop, COLORS.makeupTop, COLORS.makeupBottom, COLORS.makeupBottom, 1);
+  backdrop.fillRect(left, 0, PANEL_WIDTH, GAME_HEIGHT);
+  for (let bulbX = left + 26; bulbX < left + PANEL_WIDTH; bulbX += 44) {
+    backdrop.fillStyle(COLORS.sunGlow, 0.5);
+    backdrop.fillCircle(bulbX, 8, 11);
+    backdrop.fillStyle(COLORS.sun, 1);
+    backdrop.fillCircle(bulbX, 8, 6);
+  }
+
+  scene.faceGraphics = scene.add.graphics();
+  scene.highlightGraphics = scene.add.graphics();
+  createReferencePhoto(scene);
+  createMakeupToolbar(scene);
+
+  const panelDivider = scene.add.graphics();
+  panelDivider.fillStyle(COLORS.background, 1);
+  panelDivider.fillRect(left, 0, 6, GAME_HEIGHT);
+
+  scene.lookText = scene.add.text(left + 18, 24, '', {
+    ...MAKEUP_TEXT_STYLE,
+    fontSize: '18px',
+    color: '#ffffff',
+    stroke: '#b03a7a',
+    strokeThickness: 5,
+  });
+  refreshMakeup(scene);
+}
+
+const MAKEUP_TEXT_STYLE = {
+  fontFamily: 'Trebuchet MS, Arial',
+  fontStyle: 'bold',
+  color: '#b03a7a',
+};
+
+function createReferencePhoto(scene) {
+  const photo = scene.add.graphics();
+  photo.fillStyle(COLORS.background, 0.2);
+  photo.fillRoundedRect(-50, -60, 106, 132, 4);
+  photo.fillStyle(COLORS.cloud, 1);
+  photo.fillRoundedRect(-54, -66, 106, 132, 4);
+  photo.fillStyle(COLORS.makeupTop, 1);
+  photo.fillRect(-46, -58, 90, 92);
+  const look = lookFrom(scene.makeup.targetIndexes);
+  drawFace(photo, -1, -6, 0.3, look, []);
+  photo.fillStyle(COLORS.cloud, 1);
+  photo.fillRect(-54, 34, 106, 32);
+  const caption = scene.add.text(-1, 50, 'META', { ...MAKEUP_TEXT_STYLE, fontSize: '16px' }).setOrigin(0.5);
+  scene.add.container(MAKEUP_PANEL_WORLD_X + 330, 96, [photo, caption]).setAngle(6);
+}
+
+function createMakeupToolbar(scene) {
+  const left = MAKEUP_PANEL_WORLD_X;
+  const toolbar = scene.add.graphics();
+  toolbar.fillStyle(COLORS.background, 0.15);
+  toolbar.fillRoundedRect(left + 16, 502, PANEL_WIDTH - 24, 92, 18);
+  toolbar.fillStyle(COLORS.cloud, 0.92);
+  toolbar.fillRoundedRect(left + 14, 498, PANEL_WIDTH - 24, 92, 18);
+  scene.swatchGraphics = scene.add.graphics();
+  scene.partNameText = scene.add
+    .text(left + PANEL_WIDTH / 2 + 2, 516, '', { ...MAKEUP_TEXT_STYLE, fontSize: '20px' })
+    .setOrigin(0.5);
   scene.add
-    .text(centerX, centerY, 'MAQUILLAJE\n\npr\u00f3ximamente', {
-      fontFamily: 'Trebuchet MS, Arial',
-      fontSize: '26px',
-      fontStyle: 'bold',
-      color: '#b03a7a',
-      align: 'center',
+    .text(left + PANEL_WIDTH / 2 + 2, 578, '\u25b2\u25bc parte   \u25c0\u25b6 o Bot\u00f3n 1: color', {
+      ...MAKEUP_TEXT_STYLE,
+      fontSize: '12px',
+      color: '#9a6a8a',
     })
     .setOrigin(0.5);
+  scene.crashNoticeText = scene.add
+    .text(FACE_CENTER_X, 150, '', {
+      ...MAKEUP_TEXT_STYLE,
+      fontSize: '22px',
+      color: '#ffffff',
+      stroke: '#e8384f',
+      strokeThickness: 6,
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setAlpha(0);
+}
+
+function lookFrom(colorIndexes) {
+  const look = {};
+  MAKEUP_PARTS.forEach((part, index) => {
+    look[part.key] = colorIndexes[index] >= 0 ? part.colors[colorIndexes[index]] : null;
+  });
+  return look;
+}
+
+function updateMakeup(scene, time) {
+  const makeup = scene.makeup;
+  const partCount = MAKEUP_PARTS.length;
+  let changed = false;
+  if (wasPressed(scene, 'P2_U')) {
+    makeup.selectedPart = (makeup.selectedPart + partCount - 1) % partCount;
+    changed = true;
+  }
+  if (wasPressed(scene, 'P2_D')) {
+    makeup.selectedPart = (makeup.selectedPart + 1) % partCount;
+    changed = true;
+  }
+  if (changed) playSound(scene, 'select');
+
+  const colorStep = wasPressed(scene, 'P2_1') || wasPressed(scene, 'P2_R') ? 1 : wasPressed(scene, 'P2_L') ? -1 : 0;
+  if (colorStep !== 0) {
+    const part = MAKEUP_PARTS[makeup.selectedPart];
+    const current = makeup.colorIndexes[makeup.selectedPart];
+    const start = current < 0 && colorStep < 0 ? 0 : current;
+    makeup.colorIndexes[makeup.selectedPart] = (start + colorStep + part.colors.length) % part.colors.length;
+    makeup.smudged[makeup.selectedPart] = false;
+    playSound(scene, 'paint');
+    changed = true;
+  }
+  if (changed) refreshMakeup(scene);
+  drawSelectionHighlight(scene, time);
+}
+
+function refreshMakeup(scene) {
+  const makeup = scene.makeup;
+  const look = lookFrom(makeup.colorIndexes);
+  const smudges = MAKEUP_PARTS.filter((part, index) => makeup.smudged[index]).map((part) => ({
+    spots: part.spots,
+    color: look[part.key] || NATURAL_LASHES,
+  }));
+  scene.faceGraphics.clear();
+  drawFace(scene.faceGraphics, FACE_CENTER_X, FACE_CENTER_Y, 1, look, smudges);
+
+  const part = MAKEUP_PARTS[makeup.selectedPart];
+  const isMatching = (index) => makeup.colorIndexes[index] === makeup.targetIndexes[index];
+  const matchingCount = MAKEUP_PARTS.filter((unused, index) => isMatching(index)).length;
+  scene.lookText.setText(`Look ${matchingCount}/${MAKEUP_PARTS.length}`);
+  scene.partNameText.setText(`\u25b2 ${part.name} \u25bc${isMatching(makeup.selectedPart) ? '  \u2713' : ''}`);
+
+  const swatches = scene.swatchGraphics;
+  const spacing = 44;
+  const firstX = MAKEUP_PANEL_WORLD_X + PANEL_WIDTH / 2 + 2 - ((part.colors.length - 1) * spacing) / 2;
+  swatches.clear();
+  part.colors.forEach((color, index) => {
+    const x = firstX + index * spacing;
+    const isCurrent = index === makeup.colorIndexes[makeup.selectedPart];
+    if (isCurrent) {
+      swatches.fillStyle(COLORS.curbPink, 1);
+      swatches.fillCircle(x, 548, 20);
+    }
+    swatches.fillStyle(COLORS.cloud, 1);
+    swatches.fillCircle(x, 548, 16);
+    swatches.fillStyle(color, 1);
+    swatches.fillCircle(x, 548, 13);
+  });
+}
+
+function drawSelectionHighlight(scene, time) {
+  const graphics = scene.highlightGraphics;
+  const pulse = 0.55 + Math.sin(time * 0.008) * 0.35;
+  graphics.clear();
+  for (const [offsetX, offsetY, width, height] of MAKEUP_PARTS[scene.makeup.selectedPart].spots) {
+    const x = FACE_CENTER_X + offsetX;
+    const y = FACE_CENTER_Y + offsetY;
+    graphics.lineStyle(4, COLORS.curbPink, pulse * 0.6);
+    graphics.strokeEllipse(x, y, width + 20, height + 20);
+    graphics.lineStyle(2, COLORS.cloud, pulse);
+    graphics.strokeEllipse(x, y, width + 14, height + 14);
+  }
+}
+
+function ruinMakeup(scene) {
+  const makeup = scene.makeup;
+  const painted = MAKEUP_PARTS.map((part, index) => index).filter((index) => makeup.colorIndexes[index] >= 0);
+  const candidates = painted.length ? painted : MAKEUP_PARTS.map((part, index) => index);
+  const partIndex = Phaser.Math.RND.pick(candidates);
+  const part = MAKEUP_PARTS[partIndex];
+  const shift = Phaser.Math.Between(1, part.colors.length - 1);
+  makeup.colorIndexes[partIndex] = (Math.max(0, makeup.colorIndexes[partIndex]) + shift) % part.colors.length;
+  makeup.smudged[partIndex] = true;
+  refreshMakeup(scene);
+
+  scene.makeupCamera.shake(300, 0.015);
+  const notice = scene.crashNoticeText;
+  scene.tweens.killTweensOf(notice);
+  notice.setText(`\u00a1Choque!\nSe arruin\u00f3: ${part.name}`).setAlpha(1).setY(150);
+  scene.tweens.add({ targets: notice, y: 120, alpha: 0, delay: 900, duration: 600 });
+}
+
+function drawFace(graphics, centerX, centerY, scale, look, smudges) {
+  const ellipse = (color, offsetX, offsetY, width, height, alpha = 1) => {
+    graphics.fillStyle(color, alpha);
+    graphics.fillEllipse(centerX + offsetX * scale, centerY + offsetY * scale, width * scale, height * scale);
+  };
+  const circle = (color, offsetX, offsetY, radius) => {
+    graphics.fillStyle(color, 1);
+    graphics.fillCircle(centerX + offsetX * scale, centerY + offsetY * scale, radius * scale);
+  };
+  const stroke = (color, width, points) => {
+    graphics.lineStyle(width * scale, color, 1);
+    graphics.beginPath();
+    points.forEach(([offsetX, offsetY], index) => {
+      const x = centerX + offsetX * scale;
+      const y = centerY + offsetY * scale;
+      if (index === 0) graphics.moveTo(x, y);
+      else graphics.lineTo(x, y);
+    });
+    graphics.strokePath();
+  };
+
+  ellipse(COLORS.passengerHair, 0, -15, 260, 300);
+  graphics.fillStyle(COLORS.passengerHair, 1);
+  graphics.fillRoundedRect(centerX - 130 * scale, centerY - 10 * scale, 260 * scale, 150 * scale, 30 * scale);
+  ellipse(COLORS.hoodie, 0, 210, 300, 160);
+  ellipse(COLORS.skinShade, 0, 100, 58, 80);
+  ellipse(COLORS.skin, -97, 6, 32, 40);
+  ellipse(COLORS.skin, 97, 6, 32, 40);
+  ellipse(COLORS.skin, 0, 0, 190, 235);
+  ellipse(COLORS.passengerHair, -35, -95, 170, 80);
+  ellipse(COLORS.passengerHair, 50, -100, 150, 70);
+  ellipse(COLORS.passengerHair, -86, -50, 40, 110);
+  ellipse(COLORS.passengerHair, 88, -50, 36, 110);
+
+  for (const side of [-1, 1]) {
+    const eyeX = side * 42;
+    const eyeY = -4;
+    if (look.blush) ellipse(look.blush, side * 60, 30, 46, 24, 0.55);
+    if (look.shadow) ellipse(look.shadow, eyeX, eyeY - 10, 54, 30, 0.85);
+    ellipse(COLORS.cloud, eyeX, eyeY, 42, 24);
+    circle(COLORS.iris, eyeX, eyeY + 1, 10);
+    circle(COLORS.background, eyeX, eyeY + 1, 5);
+    circle(COLORS.cloud, eyeX - 3, eyeY - 3, 2.5);
+    const lashColor = look.mascara || NATURAL_LASHES;
+    const lashWidth = look.mascara ? 4 : 2;
+    stroke(lashColor, lashWidth, [[eyeX - side * 21, eyeY + 1], [eyeX - side * 10, eyeY - 11], [eyeX + side * 6, eyeY - 12], [eyeX + side * 21, eyeY - 2]]);
+    if (look.mascara) {
+      stroke(lashColor, 3, [[eyeX + side * 20, eyeY - 4], [eyeX + side * 29, eyeY - 12]]);
+      stroke(lashColor, 3, [[eyeX + side * 13, eyeY - 9], [eyeX + side * 19, eyeY - 19]]);
+    }
+    stroke(look.brows || NATURAL_BROWS, look.brows ? 8 : 5, [[eyeX - side * 22, eyeY - 34], [eyeX + side * 2, eyeY - 42], [eyeX + side * 24, eyeY - 36]]);
+    if (look.earrings) {
+      circle(look.earrings, side * 100, 30, 6);
+      circle(look.earrings, side * 100, 46, 8);
+    }
+  }
+
+  ellipse(COLORS.skinShade, 0, 24, 14, 8);
+  const lipColor = look.lips || NATURAL_LIPS;
+  ellipse(lipColor, -9, 58, 30, 14);
+  ellipse(lipColor, 9, 58, 30, 14);
+  ellipse(lipColor, 0, 66, 46, 16);
+  stroke(blendColor(lipColor, COLORS.background, 0.35), 2, [[-20, 62], [20, 62]]);
+
+  for (const smudge of smudges) {
+    for (const [offsetX, offsetY, width, height] of smudge.spots) {
+      ellipse(smudge.color, offsetX + 10, offsetY + 14, width * 0.55, height * 1.1, 0.45);
+      graphics.fillStyle(smudge.color, 0.7);
+      graphics.fillRoundedRect(centerX + (offsetX - 8) * scale, centerY + (offsetY + 4) * scale, 4 * scale, 28 * scale, 2 * scale);
+      graphics.fillRoundedRect(centerX + (offsetX + 7) * scale, centerY + (offsetY + 6) * scale, 4 * scale, 18 * scale, 2 * scale);
+    }
+  }
 }
 
 function createControls(scene) {
@@ -528,6 +820,7 @@ function detectCrash(scene, time) {
     scene.cameras.main.shake(250, 0.012);
     scene.cameras.main.flash(180, ...COLORS.crashFlash);
     playSound(scene, 'crash');
+    ruinMakeup(scene);
     return;
   }
 }
@@ -650,6 +943,8 @@ function playSound(scene, kind) {
   const volume = context.createGain();
   const now = context.currentTime;
   const sounds = {
+    select: { wave: 'square', from: 700, to: 1000, gain: 0.05, length: 0.06 },
+    paint: { wave: 'triangle', from: 500, to: 950, gain: 0.08, length: 0.1 },
     swoosh: { wave: 'triangle', from: 260, to: 620, gain: 0.08, length: 0.12 },
     crash: { wave: 'sawtooth', from: 220, to: 50, gain: 0.25, length: 0.4 },
   };
