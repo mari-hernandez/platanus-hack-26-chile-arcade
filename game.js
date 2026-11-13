@@ -501,7 +501,7 @@ function createTitleScreen(scene) {
   makeupWord.setOrigin(0, 0.5).setX(titleLeft);
   racingWord.setX(titleLeft + makeupWord.width + titleGap);
   const subtitle = scene.add
-    .text(centerX, 236, 'Lleguen a cada destino con el look igual a la foto', { ...OVERLAY_TEXT_STYLE, fontSize: '20px', stroke: '#1d1230', strokeThickness: 6 })
+    .text(centerX, 236, 'Llega a cada destino con el look perfecto', { ...OVERLAY_TEXT_STYLE, fontSize: '20px', stroke: '#1d1230', strokeThickness: 6 })
     .setOrigin(0.5);
 
   const playButton = scene.add.graphics();
