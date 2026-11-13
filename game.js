@@ -285,6 +285,8 @@ const COLORS = {
 const LEVELS = [
   {
     name: 'Primera cita',
+    isDaytime: true,
+    fogBase: 0,
     arrivalText: 'Llegaron a la primera cita',
     distance: 600,
     startingSpeed: 14,
@@ -302,24 +304,25 @@ const LEVELS = [
     music: 'date',
     selfie: { shirt: PALETTE.blue, hasBowTie: false, prop: 'none' },
     colors: {
-      skyTop: dark(PALETTE.purple, 0.7),
-      skyBottom: light(PALETTE.orange, 0.15),
-      sun: light(PALETTE.yellow, 0.5),
-      sunGlow: PALETTE.pink,
-      fog: dark(PALETTE.purple, 0.5),
-      mountains: dark(PALETTE.purple, 0.55),
-      hills: dark(PALETTE.purple, 0.35),
-      grassLight: dark(PALETTE.purple, 0.72),
-      grassDark: dark(PALETTE.purple, 0.78),
-      sand: dark(PALETTE.purple, 0.6),
+      skyTop: PALETTE.blue,
+      skyBottom: light(PALETTE.pink, 0.8),
+      sun: light(PALETTE.yellow, 0.85),
+      sunGlow: light(PALETTE.yellow, 0.7),
+      fog: light(PALETTE.purple, 0.85),
+      mountains: light(PALETTE.purple, 0.4),
+      hills: light(PALETTE.green, 0.25),
+      grassLight: light(PALETTE.green, 0.15),
+      grassDark: PALETTE.green,
+      sand: light(PALETTE.yellow, 0.65),
       neon: PALETTE.pink,
-      lane: light(PALETTE.blue, 0.3),
+      lane: light(PALETTE.yellow, 0.9),
     },
     outfit: { style: 'blouse', color: light(PALETTE.purple, 0.5), shade: light(PALETTE.purple, 0.3) },
     drawDestination: drawIceCreamShop,
   },
   {
     name: 'Salida de noche',
+    fogBase: 0.12,
     arrivalText: 'Llegaron al cine',
     distance: 800,
     startingSpeed: 16,
@@ -355,6 +358,7 @@ const LEVELS = [
   },
   {
     name: 'Boda',
+    fogBase: 0.08,
     arrivalText: 'Llegaron a la boda',
     distance: 1000,
     startingSpeed: 18,
@@ -390,6 +394,7 @@ const LEVELS = [
   },
   {
     name: 'Wawa',
+    fogBase: 0.12,
     arrivalText: 'Llegaron a casa con la wawa',
     distance: 1200,
     startingSpeed: 20,
@@ -469,7 +474,6 @@ function create(data) {
   scene.cameras.main.setViewport(0, 0, PANEL_WIDTH, GAME_HEIGHT);
   scene.makeupCamera = scene.cameras.add(PANEL_WIDTH, 0, PANEL_WIDTH, GAME_HEIGHT).setScroll(MAKEUP_PANEL_WORLD_X, 0);
   scene.overlayCamera = scene.cameras.add(0, 0, GAME_WIDTH, GAME_HEIGHT).setScroll(OVERLAY_WORLD_X, 0);
-  scene.cameras.main.postFX?.addBloom(PALETTE.white, 1, 1, 1, 0.45, 4);
 
   scene.race = {
     distance: 0,
@@ -994,7 +998,7 @@ function drawLandscape(graphics, level, area) {
   graphics.fillStyle(colors.sunGlow, 0.35);
   graphics.fillCircle(sunX, sunY, 48 * scale);
   paintCircle(graphics, colors.sun, sunX, sunY, 30 * scale);
-  if (!level.isNight) {
+  if (!level.isNight && !level.isDaytime) {
     for (let stripe = 0; stripe < 5; stripe++) {
       const offsetY = (6 + stripe * 5) * scale;
       const halfChord = Math.sqrt(Math.max(0, 900 * scale * scale - offsetY * offsetY));
@@ -1838,7 +1842,8 @@ function detectCrash(scene, time) {
 }
 
 function nightFogAmount(distanceRatio) {
-  return 0.3 + Math.pow(Phaser.Math.Clamp(distanceRatio, 0, 1), 0.7) * 0.6;
+  const base = currentLevel.fogBase;
+  return base + Math.pow(Phaser.Math.Clamp(distanceRatio, 0, 1), 0.7) * (0.85 - base);
 }
 
 function foggedAtDepth(depth) {
