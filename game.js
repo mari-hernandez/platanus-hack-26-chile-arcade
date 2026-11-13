@@ -111,7 +111,8 @@ const COLORS = {
   hair: 0x9a5f3e,
   hairDark: 0x6e3f2a,
   hairShine: 0xc98e64,
-  clothes: 0xa98be8,
+  clothes: 0xb79cf0,
+  clothesShade: 0x957ad9,
   iris: 0x4aa8d8,
   irisDark: 0x24508f,
   irisLight: 0xa8e6ff,
@@ -183,6 +184,10 @@ function update(time, delta) {
 
 function currentSliceIndex(race) {
   return Math.floor(race.distance / ROAD_SLICE_LENGTH);
+}
+
+function randomItem(items) {
+  return items[Math.floor(Math.random() * items.length)];
 }
 
 function seededRandom(sliceIndex, salt) {
@@ -363,7 +368,9 @@ function updateSky(scene, seconds) {
 }
 
 const FACE_CENTER_X = MAKEUP_PANEL_WORLD_X + 238;
-const FACE_CENTER_Y = 300;
+const FACE_CENTER_Y = 322;
+const FACE_SCALE = 0.85;
+const REFERENCE_PHOTO_SIZE = 134;
 const TILE_CENTER_X = MAKEUP_PANEL_WORLD_X + 44;
 const FIRST_TILE_Y = 118;
 const TILE_SPACING = 62;
@@ -400,9 +407,9 @@ function createMakeupPanel(scene) {
   backdrop.fillGradientStyle(COLORS.makeupTop, COLORS.makeupTop, COLORS.makeupBottom, COLORS.makeupBottom, 1);
   backdrop.fillRect(left, 0, PANEL_WIDTH, GAME_HEIGHT);
   backdrop.fillStyle(COLORS.cloud, 0.35);
-  backdrop.fillCircle(FACE_CENTER_X, FACE_CENTER_Y - 10, 175);
+  backdrop.fillCircle(FACE_CENTER_X, FACE_CENTER_Y - 10, 160);
   backdrop.fillStyle(COLORS.cloud, 0.3);
-  backdrop.fillCircle(FACE_CENTER_X, FACE_CENTER_Y - 10, 140);
+  backdrop.fillCircle(FACE_CENTER_X, FACE_CENTER_Y - 10, 128);
 
   scene.faceGraphics = scene.add.graphics();
   scene.tileGraphics = scene.add.graphics();
@@ -424,20 +431,25 @@ function createMakeupPanel(scene) {
 }
 
 function createReferencePhoto(scene) {
-  const photo = scene.add.graphics();
-  photo.fillStyle(COLORS.background, 0.18);
-  photo.fillRoundedRect(-46, -54, 98, 120, 6);
-  photo.fillStyle(COLORS.cloud, 1);
-  photo.fillRoundedRect(-50, -60, 98, 120, 6);
-  photo.fillStyle(COLORS.makeupBottom, 1);
-  photo.fillRect(-43, -53, 84, 84);
-  drawFace(photo, -1, -4, 0.3, lookFrom(scene.makeup.targetIndexes));
-  photo.fillStyle(COLORS.cloud, 1);
-  photo.fillRect(-50, 31, 98, 29);
-  photo.fillStyle(COLORS.curbPink, 0.8);
-  photo.fillRect(-14, -66, 28, 12);
-  const caption = scene.add.text(-1, 45, 'META', { ...MAKEUP_TEXT_STYLE, fontSize: '15px' }).setOrigin(0.5);
-  scene.add.container(MAKEUP_PANEL_WORLD_X + 338, 92, [photo, caption]).setAngle(7);
+  const half = REFERENCE_PHOTO_SIZE / 2;
+  const painter = scene.make.graphics({ x: 0, y: 0 }, false);
+  painter.fillStyle(COLORS.makeupBottom, 1);
+  painter.fillRect(0, 0, REFERENCE_PHOTO_SIZE, REFERENCE_PHOTO_SIZE);
+  drawFace(painter, half, half + 6, 0.44, lookFrom(scene.makeup.targetIndexes));
+  painter.generateTexture('reference-look', REFERENCE_PHOTO_SIZE, REFERENCE_PHOTO_SIZE);
+  painter.destroy();
+
+  const card = scene.add.graphics();
+  card.fillStyle(COLORS.background, 0.18);
+  card.fillRoundedRect(-half - 4, -half - 4, REFERENCE_PHOTO_SIZE + 16, REFERENCE_PHOTO_SIZE + 46, 6);
+  card.fillStyle(COLORS.cloud, 1);
+  card.fillRoundedRect(-half - 8, -half - 8, REFERENCE_PHOTO_SIZE + 16, REFERENCE_PHOTO_SIZE + 46, 6);
+  const photo = scene.add.image(0, 0, 'reference-look');
+  const tape = scene.add.rectangle(0, -half - 8, 44, 16, COLORS.curbPink, 0.75);
+  const caption = scene.add
+    .text(0, half + 18, 'META', { ...MAKEUP_TEXT_STYLE, fontSize: '18px' })
+    .setOrigin(0.5);
+  scene.add.container(MAKEUP_PANEL_WORLD_X + 312, 104, [card, photo, tape, caption]).setAngle(5);
 }
 
 function createMakeupToolbar(scene) {
@@ -513,7 +525,7 @@ function refreshMakeup(scene) {
   const makeup = scene.makeup;
   const look = lookFrom(makeup.colorIndexes);
   scene.faceGraphics.clear();
-  drawFace(scene.faceGraphics, FACE_CENTER_X, FACE_CENTER_Y, 1, look);
+  drawFace(scene.faceGraphics, FACE_CENTER_X, FACE_CENTER_Y, FACE_SCALE, look);
 
   const matchingCount = MAKEUP_PARTS.filter((part, index) => isPartMatching(makeup, index)).length;
   scene.lookText.setText(`Look ${matchingCount}/${MAKEUP_PARTS.length}`);
@@ -618,19 +630,17 @@ function drawSwatches(scene, part) {
 
 function ruinMakeup(scene) {
   const makeup = scene.makeup;
-  const partIndexes = MAKEUP_PARTS.map((part, index) => index);
-  const painted = partIndexes.filter((index) => makeup.colorIndexes[index] >= 0);
-  const partIndex = Phaser.Math.RND.pick(painted.length ? painted : partIndexes);
+  const partIndex = Math.floor(Math.random() * MAKEUP_PARTS.length);
   const part = MAKEUP_PARTS[partIndex];
-  const shift = Phaser.Math.Between(1, part.colors.length - 1);
-  makeup.colorIndexes[partIndex] = (Math.max(0, makeup.colorIndexes[partIndex]) + shift) % part.colors.length;
+  const otherColors = part.colors.map((color, index) => index).filter((index) => index !== makeup.colorIndexes[partIndex]);
+  makeup.colorIndexes[partIndex] = otherColors[Math.floor(Math.random() * otherColors.length)];
   refreshMakeup(scene);
 
   scene.makeupCamera.shake(300, 0.012);
   const notice = scene.crashNoticeText;
   scene.tweens.killTweensOf(notice);
-  notice.setText(`\u00a1Choque!\nCambi\u00f3: ${part.name}`).setAlpha(1).setY(140);
-  scene.tweens.add({ targets: notice, y: 110, alpha: 0, delay: 900, duration: 600 });
+  notice.setText(`\u00a1Choque!\nCambi\u00f3: ${part.name}`).setAlpha(1).setY(230);
+  scene.tweens.add({ targets: notice, y: 200, alpha: 0, delay: 900, duration: 600 });
 }
 
 function drawFace(graphics, centerX, centerY, scale, look) {
@@ -666,13 +676,28 @@ function drawFace(graphics, centerX, centerY, scale, look) {
 
   smoothShape(COLORS.hairDark, mirrored([[0, -150], [70, -142], [122, -102], [140, -34], [132, 36], [146, 96], [130, 150], [104, 140], [90, 168], [60, 150]]));
 
-  ellipse(COLORS.outline, 0, 205, 254, 154);
-  ellipse(COLORS.clothes, 0, 205, 248, 148);
-  triangle(COLORS.cloud, [[-34, 132], [0, 175], [-6, 132]]);
-  triangle(COLORS.cloud, [[34, 132], [0, 175], [6, 132]]);
   graphics.fillStyle(COLORS.skinShade, 1);
   graphics.fillRect(...pointAt(-20, 80), 40 * scale, 60 * scale);
-  triangle(COLORS.skin, [[-20, 132], [20, 132], [0, 168]]);
+  const shoulders = (grow) => mirrored([[0, 128 - grow], [46, 130 - grow], [96 + grow, 140 - grow], [132 + grow, 168 - grow], [146 + grow, 230], [144 + grow, 300]]);
+  smoothShape(COLORS.outline, shoulders(4));
+  smoothShape(COLORS.clothes, shoulders(0));
+  for (const side of [-1, 1]) {
+    ellipse(COLORS.clothesShade, side * 120, 190, 66, 76);
+    ellipse(COLORS.clothes, side * 117, 185, 60, 68);
+    stroke(COLORS.clothesShade, 2, [[side * 102, 160], [side * 108, 204]], 0.7);
+    stroke(COLORS.clothesShade, 2, [[side * 124, 156], [side * 130, 200]], 0.7);
+  }
+  for (const [dotX, dotY] of [[-70, 216], [-40, 190], [-12, 228], [24, 196], [56, 222], [84, 192], [-92, 236]]) {
+    circle(COLORS.cloud, dotX, dotY, 4, 0.6);
+  }
+  ellipse(COLORS.skin, 0, 128, 46, 26);
+  for (const side of [-1, 1]) {
+    ellipse(COLORS.flowerPink, side * 21, 143, 48, 32);
+    ellipse(COLORS.cloud, side * 21, 141, 43, 27);
+  }
+  triangle(COLORS.curbPink, [[0, 150], [-15, 141], [-15, 159]]);
+  triangle(COLORS.curbPink, [[0, 150], [15, 141], [15, 159]]);
+  circle(COLORS.flowerPink, 0, 150, 4.5);
 
   circle(COLORS.outline, 0, -12, 99);
   ellipse(COLORS.outline, 0, 38, 158, 140);
@@ -878,8 +903,8 @@ function spawnObstacles(race) {
       race.obstacles.push({
         lane: lanes[index],
         position: race.nextObstaclePosition,
-        kind: Phaser.Math.RND.pick(['traffic', 'traffic', 'barrier', 'cones']),
-        color: Phaser.Math.RND.pick(COLORS.trafficBodies),
+        kind: randomItem(['traffic', 'traffic', 'barrier', 'cones']),
+        color: randomItem(COLORS.trafficBodies),
         hasHit: false,
       });
     }
