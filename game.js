@@ -285,6 +285,7 @@ const COLORS = {
 const LEVELS = [
   {
     name: 'Primera cita',
+    makeupParts: ['brows', 'blush', 'lips'],
     isDaytime: true,
     fogBase: 0,
     arrivalText: 'Llegaron a la primera cita',
@@ -322,6 +323,7 @@ const LEVELS = [
   },
   {
     name: 'Salida de noche',
+    makeupParts: ['brows', 'shadow', 'blush', 'lips'],
     fogBase: 0.12,
     arrivalText: 'Llegaron al cine',
     distance: 800,
@@ -358,6 +360,7 @@ const LEVELS = [
   },
   {
     name: 'Boda',
+    makeupParts: ['brows', 'shadow', 'blush', 'earrings', 'lips'],
     fogBase: 0.08,
     arrivalText: 'Llegaron a la boda',
     distance: 750,
@@ -394,6 +397,7 @@ const LEVELS = [
   },
   {
     name: 'Wawa',
+    makeupParts: ['brows', 'shadow', 'mascara', 'blush', 'earrings', 'lips'],
     fogBase: 0.12,
     arrivalText: 'Llegaron a casa con la wawa',
     distance: 1200,
@@ -748,8 +752,9 @@ function showResults(scene) {
   scene.phase = 'results';
   const centerX = OVERLAY_WORLD_X + GAME_WIDTH / 2;
   const makeup = scene.makeup;
-  const matchingCount = MAKEUP_PARTS.filter((part, index) => isPartMatching(makeup, index)).length;
-  const isPerfectLook = matchingCount === MAKEUP_PARTS.length;
+  const partCount = makeup.activeParts.length;
+  const matchingCount = makeup.activeParts.filter((index) => isPartMatching(makeup, index)).length;
+  const isPerfectLook = matchingCount === partCount;
   const hasAllSelfies = makeup.selfiesTaken >= currentLevel.selfiesNeeded;
   const isPerfect = isPerfectLook && hasAllSelfies;
   const nextLevel = scene.levelIndex + 1;
@@ -772,8 +777,8 @@ function showResults(scene) {
     card.lineStyle(5, UI.surface, 1);
     card.strokePoints([{ x: centerX + 2, y: 152 }, { x: centerX - 6, y: 166 }, { x: centerX + 6, y: 176 }, { x: centerX - 2, y: 194 }]);
   }
-  const heartsWidth = (MAKEUP_PARTS.length - 1) * 36;
-  MAKEUP_PARTS.forEach((part, index) => drawHeart(card, centerX - heartsWidth / 2 + index * 36, 286, 12, index < matchingCount ? PALETTE.pink : UI.idle));
+  const heartsWidth = (partCount - 1) * 36;
+  makeup.activeParts.forEach((part, index) => drawHeart(card, centerX - heartsWidth / 2 + index * 36, 286, 12, index < matchingCount ? PALETTE.pink : UI.idle));
   const statsY = 328;
   const crashX = currentLevel.selfiesNeeded ? centerX + 52 : centerX - 12;
   if (currentLevel.selfiesNeeded) {
@@ -1102,10 +1107,12 @@ const MAKEUP_PARTS = [
 
 function createMakeupPanel(scene) {
   const left = MAKEUP_PANEL_WORLD_X;
+  const activeParts = MAKEUP_PARTS.map((part, index) => index).filter((index) => currentLevel.makeupParts.includes(MAKEUP_PARTS[index].key));
   scene.makeup = {
-    selectedPart: 0,
+    activeParts,
+    selectedPart: activeParts[0],
     colorIndexes: MAKEUP_PARTS.map(() => -1),
-    targetIndexes: MAKEUP_PARTS.map((part) => Phaser.Math.Between(0, part.colors.length - 1)),
+    targetIndexes: MAKEUP_PARTS.map((part, index) => (activeParts.includes(index) ? Phaser.Math.Between(0, part.colors.length - 1) : -1)),
     selfiesTaken: 0,
     selfieVisibleUntil: 0,
   };
@@ -1173,17 +1180,14 @@ function lookFrom(colorIndexes) {
 
 function updateMakeup(scene) {
   const makeup = scene.makeup;
-  const partCount = MAKEUP_PARTS.length;
-  let changed = false;
-  if (wasPressed(scene, 'P2_U')) {
-    makeup.selectedPart = (makeup.selectedPart + partCount - 1) % partCount;
-    changed = true;
+  const partStep = wasPressed(scene, 'P2_D') ? 1 : wasPressed(scene, 'P2_U') ? -1 : 0;
+  let changed = partStep !== 0;
+  if (changed) {
+    const partCount = makeup.activeParts.length;
+    const position = makeup.activeParts.indexOf(makeup.selectedPart);
+    makeup.selectedPart = makeup.activeParts[(position + partStep + partCount) % partCount];
+    playSound(scene, 'select');
   }
-  if (wasPressed(scene, 'P2_D')) {
-    makeup.selectedPart = (makeup.selectedPart + 1) % partCount;
-    changed = true;
-  }
-  if (changed) playSound(scene, 'select');
 
   const colorStep = wasPressed(scene, 'P2_1') || wasPressed(scene, 'P2_R') ? 1 : wasPressed(scene, 'P2_L') ? -1 : 0;
   if (colorStep !== 0) {
@@ -1378,10 +1382,11 @@ function refreshMakeup(scene) {
 function drawCategoryTiles(scene, look) {
   const graphics = scene.tileGraphics;
   graphics.clear();
-  MAKEUP_PARTS.forEach((part, index) => {
+  scene.makeup.activeParts.forEach((partIndex, position) => {
+    const part = MAKEUP_PARTS[partIndex];
     const x = TILE_CENTER_X;
-    const y = FIRST_TILE_Y + index * TILE_SPACING;
-    const isSelected = index === scene.makeup.selectedPart;
+    const y = FIRST_TILE_Y + position * TILE_SPACING;
+    const isSelected = partIndex === scene.makeup.selectedPart;
     const size = isSelected ? TILE_SIZE + 8 : TILE_SIZE;
     drawPanel(graphics, x, y, size, size, { isSelected });
     drawPartIcon(graphics, part.key, x, y, look[part.key] || part.colors[0]);
@@ -1483,7 +1488,7 @@ function ruinMakeup(scene) {
   const flashSize = TILE_SIZE + 14;
   const flash = scene.add.graphics();
   flash.fillStyle(PALETTE.red, 0.6);
-  flash.fillRoundedRect(TILE_CENTER_X - flashSize / 2, FIRST_TILE_Y + partIndex * TILE_SPACING - flashSize / 2, flashSize, flashSize, UI.radius);
+  flash.fillRoundedRect(TILE_CENTER_X - flashSize / 2, FIRST_TILE_Y + makeup.activeParts.indexOf(partIndex) * TILE_SPACING - flashSize / 2, flashSize, flashSize, UI.radius);
   scene.tweens.add({ targets: flash, alpha: 0, duration: 250, yoyo: true, repeat: 2, onComplete: () => flash.destroy() });
 }
 
