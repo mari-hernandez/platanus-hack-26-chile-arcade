@@ -1683,7 +1683,7 @@ function createCar(scene) {
   paintCircle(painter, COLORS.driverHair, 40, 30, 13);
   paintCircle(painter, COLORS.passengerHair, 80, 30, 13);
   painter.fillCircle(80, 14, 7);
-  paintTriangle(painter, COLORS.bow, 80, 20, 70, 15, 70, 25);
+  paintTriangle(painter, PALETTE.pink, 80, 20, 70, 15, 70, 25);
   painter.fillTriangle(80, 20, 90, 15, 90, 25);
   paintRoundedRect(painter, COLORS.tire, 8, 62, 22, 24, 5);
   painter.fillRoundedRect(90, 62, 22, 24, 5);
