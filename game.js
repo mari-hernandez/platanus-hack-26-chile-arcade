@@ -738,12 +738,8 @@ function drawFace(graphics, centerX, centerY, scale, look) {
     ]);
     stroke(lashColor, 1.5, [fromEye(6, 22), fromEye(12, 20), fromEye(17, 15)]);
     if (look.mascara) {
-      for (const [baseX, baseY, tipX, tipY] of [[6, -23, 5, -11], [14, -21, 10, -9], [21, -17, 13, -5]]) {
-        smoothShape(lashColor, [
-          fromEye(baseX - 1.6, baseY + 1), fromEye(baseX + tipX * 0.75 - 1, baseY + tipY * 0.3 - 1),
-          fromEye(baseX + tipX, baseY + tipY), fromEye(baseX + tipX * 0.8 + 1.2, baseY + tipY * 0.25 + 1),
-          fromEye(baseX + 1.6, baseY + 1),
-        ]);
+      for (const [baseX, baseY, tipX, tipY] of [[12, -24, 17, -31], [19, -21, 26, -27], [25, -17, 32, -20]]) {
+        triangle(lashColor, [fromEye(baseX - 3, baseY + 1), fromEye(baseX + 3, baseY + 3), fromEye(tipX, tipY)]);
       }
     }
   }
