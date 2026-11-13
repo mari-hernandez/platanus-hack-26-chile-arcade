@@ -131,27 +131,26 @@ const COLORS = {
   cinemaTrim: 0x4a3580,
   marquee: 0xffd166,
   curtain: 0xd6336c,
-  palmTrunk: 0xb07a4a,
-  palmLeaves: 0x3fae6a,
-  palmLeavesLight: 0x6fd08a,
-  coconut: 0x7a4a2a,
-  bamboo: 0xe0b07a,
-  bambooDark: 0xb98450,
-  straw: 0xf2c96b,
-  strawDark: 0xd9a845,
   deck: 0xc98a55,
   chapelWall: 0xfffaf5,
   chapelRoof: 0xffb3cf,
   bell: 0xffcf4a,
-  partyLights: [0xff7eb3, 0x9ee6c9, 0xffd166, 0x7cb8ff],
+  bone: 0xf3ead8,
+  flameRed: 0xe8452a,
+  flameOrange: 0xff9a3a,
+  flameYellow: 0xffe27a,
+  roofRed: 0xb83a3a,
+  bottleMilk: 0xfffdf5,
+  bottleRing: 0x7cb8ff,
+  nipple: 0xffb3a7,
   makeupTop: 0xffd6ea,
   makeupBottom: 0xf3b2d8,
 };
 
 const LEVELS = [
   {
-    name: 'Helader\u00eda',
-    arrivalText: 'Llegaron a la helader\u00eda',
+    name: 'Primera cita',
+    arrivalText: 'Llegaron a la primera cita',
     distance: 1200,
     startingSpeed: 14,
     maxSpeed: 26,
@@ -159,6 +158,8 @@ const LEVELS = [
     twoLaneChance: 0.15,
     obstacles: ['traffic', 'cones'],
     horizon: 'mountains',
+    isNight: false,
+    cloudOpacity: 0.9,
     scenery: ['roundTree', 'roundTree', 'blossomTree', 'pine', 'flowerBush'],
     sceneryDensity: 0.4,
     colors: {
@@ -176,7 +177,7 @@ const LEVELS = [
     drawDestination: drawIceCreamShop,
   },
   {
-    name: 'Cine',
+    name: 'Salida de noche',
     arrivalText: 'Llegaron al cine',
     distance: 1600,
     startingSpeed: 16,
@@ -185,74 +186,79 @@ const LEVELS = [
     twoLaneChance: 0.3,
     obstacles: ['traffic', 'traffic', 'barrier', 'cones'],
     horizon: 'city',
+    isNight: true,
+    cloudOpacity: 0.18,
     scenery: ['building', 'building', 'lamp'],
     sceneryDensity: 0.7,
     colors: {
-      skyTop: 0x8fa8ff,
-      skyBottom: 0xffd2b8,
-      sun: 0xfff0d0,
+      skyTop: 0x1f1b4d,
+      skyBottom: 0x8a5aa8,
+      sun: 0xfff6dc,
       sunGlow: 0xffd6a8,
-      fog: 0xf0dce8,
-      mountains: 0xb3a0d6,
-      hills: 0x9a8cc4,
-      grassLight: 0xd8d2e0,
-      grassDark: 0xcbc4d6,
-      sand: 0xbdb3cc,
+      fog: 0x6a5590,
+      mountains: 0x3d3470,
+      hills: 0x56478a,
+      grassLight: 0x8a84a0,
+      grassDark: 0x7f7996,
+      sand: 0x6b6585,
     },
     drawDestination: drawCinema,
   },
   {
-    name: 'Fiesta en la playa',
-    arrivalText: 'Llegaron a la fiesta en la playa',
+    name: 'Boda',
+    arrivalText: 'Llegaron a la boda',
     distance: 2000,
     startingSpeed: 18,
     maxSpeed: 33,
     obstacleGap: [9, 14],
     twoLaneChance: 0.4,
     obstacles: ['traffic', 'barrier', 'cones'],
-    horizon: 'sea',
-    scenery: ['palm', 'palm', 'umbrella'],
-    sceneryDensity: 0.45,
+    horizon: 'mountains',
+    isNight: false,
+    cloudOpacity: 0.9,
+    scenery: ['blossomTree', 'blossomTree', 'roundTree', 'flowerBush'],
+    sceneryDensity: 0.5,
     colors: {
-      skyTop: 0xff9a8b,
-      skyBottom: 0xffe0a3,
-      sun: 0xfff3c4,
-      sunGlow: 0xffb36b,
-      fog: 0xffe2cf,
-      mountains: 0xd68bb0,
-      hills: 0x4fb3d9,
-      grassLight: 0xf7dfa8,
-      grassDark: 0xf0d398,
-      sand: 0xfff0cc,
+      skyTop: 0xffa6c1,
+      skyBottom: 0xffe8c8,
+      sun: 0xfff3dc,
+      sunGlow: 0xffc7a0,
+      fog: 0xffe6ee,
+      mountains: 0xc9a0dc,
+      hills: 0x9ed69a,
+      grassLight: 0x9bd67e,
+      grassDark: 0x8fcb72,
+      sand: 0xfff0e0,
     },
-    drawDestination: drawBeachParty,
+    drawDestination: drawChapel,
   },
   {
-    name: 'Boda',
-    arrivalText: 'Llegaron a la boda',
+    name: 'Wawa',
+    arrivalText: 'Llegaron a casa con la wawa',
     distance: 2400,
     startingSpeed: 20,
     maxSpeed: 36,
     obstacleGap: [8, 12],
     twoLaneChance: 0.5,
     obstacles: ['traffic', 'traffic', 'barrier', 'cones'],
-    horizon: 'mountains',
-    isNight: true,
-    scenery: ['lamp', 'pine', 'blossomTree'],
+    horizon: 'lake',
+    isNight: false,
+    cloudOpacity: 0.12,
+    scenery: ['fire', 'fire', 'skull', 'bones'],
     sceneryDensity: 0.45,
     colors: {
-      skyTop: 0x1c1747,
-      skyBottom: 0x6b4a9e,
-      sun: 0xfff6dc,
-      sunGlow: 0xb9a6ff,
-      fog: 0x5b4a86,
-      mountains: 0x3a2f6b,
-      hills: 0x2f5a5a,
-      grassLight: 0x3f7a5a,
-      grassDark: 0x376f51,
-      sand: 0x8a7aa8,
+      skyTop: 0x2a0a12,
+      skyBottom: 0xc8452a,
+      sun: 0xffd27a,
+      sunGlow: 0xff7a3a,
+      fog: 0x7a2a2a,
+      mountains: 0x4a1520,
+      hills: 0xff7a2a,
+      grassLight: 0x5a1a1a,
+      grassDark: 0x4a1414,
+      sand: 0x2a0f12,
     },
-    drawDestination: drawChapel,
+    drawDestination: drawHomeWithBaby,
   },
 ];
 
@@ -263,8 +269,9 @@ const SCENERY_DRAWERS = {
   flowerBush: drawFlowerBush,
   building: drawBuilding,
   lamp: drawLamp,
-  palm: drawPalm,
-  umbrella: drawUmbrella,
+  fire: drawFire,
+  skull: drawSkull,
+  bones: drawBones,
 };
 
 let currentLevel = LEVELS[0];
@@ -801,7 +808,7 @@ function createSky(scene) {
   scene.clouds = [];
   for (let index = 0; index < 5; index++) {
     const cloud = scene.add.graphics();
-    cloud.fillStyle(COLORS.cloud, currentLevel.isNight ? 0.18 : 0.9);
+    cloud.fillStyle(COLORS.cloud, currentLevel.cloudOpacity);
     cloud.fillEllipse(0, 0, 70, 22);
     cloud.fillEllipse(-18, -8, 34, 24);
     cloud.fillEllipse(12, -12, 40, 30);
@@ -814,8 +821,8 @@ function createSky(scene) {
     createSkyline(scene, blendColor(colors.mountains, colors.fog, 0.35), 90, 1);
     createSkyline(scene, blendColor(colors.hills, colors.fog, 0.15), 50, 2);
   } else {
-    createRidge(scene, blendColor(colors.mountains, colors.fog, 0.35), currentLevel.horizon === 'sea' ? 40 : 75, 1);
-    if (currentLevel.horizon === 'sea') createSea(scene, colors.hills);
+    createRidge(scene, blendColor(colors.mountains, colors.fog, 0.35), currentLevel.horizon === 'lake' ? 40 : 75, 1);
+    if (currentLevel.horizon === 'lake') createLake(scene, colors.hills);
     else createRidge(scene, blendColor(colors.hills, colors.fog, 0.2), 26, 4);
   }
 }
@@ -838,13 +845,13 @@ function createSkyline(scene, color, tallestBuilding, salt) {
   }
 }
 
-function createSea(scene, seaColor) {
-  const sea = scene.add.graphics();
-  sea.fillStyle(seaColor, 1);
-  sea.fillRect(0, HORIZON_Y - 14, PANEL_WIDTH, 30);
-  sea.fillStyle(COLORS.cloud, 0.5);
+function createLake(scene, liquidColor) {
+  const lake = scene.add.graphics();
+  lake.fillStyle(liquidColor, 1);
+  lake.fillRect(0, HORIZON_Y - 14, PANEL_WIDTH, 30);
+  lake.fillStyle(COLORS.cloud, 0.5);
   for (let index = 0; index < 14; index++) {
-    sea.fillRect(seededRandom(index, 11) * PANEL_WIDTH, HORIZON_Y - 10 + seededRandom(index, 12) * 16, 14, 2);
+    lake.fillRect(seededRandom(index, 11) * PANEL_WIDTH, HORIZON_Y - 10 + seededRandom(index, 12) * 16, 14, 2);
   }
 }
 
@@ -1566,45 +1573,6 @@ function drawLamp(graphics, x, groundY, size, fogged) {
   graphics.fillCircle(x, groundY - size * 0.8, size * 0.045);
 }
 
-function drawPalm(graphics, x, groundY, size, fogged, variety) {
-  const lean = variety > 0.5 ? 1 : -1;
-  const segments = 7;
-  let topX = x;
-  let topY = groundY;
-  for (let segment = 0; segment <= segments; segment++) {
-    const progress = segment / segments;
-    topX = x + Math.sin(progress * 1.4) * size * 0.14 * lean;
-    topY = groundY - progress * size * 0.8;
-    graphics.fillStyle(fogged(segment % 2 ? COLORS.palmTrunk : blendColor(COLORS.palmTrunk, COLORS.cloud, 0.2)), 1);
-    graphics.fillCircle(topX, topY, size * 0.032);
-  }
-  [-2.8, -2.2, -1.6, -1.0, -0.4, 0.2].forEach((angle, index) => {
-    const tipX = topX + Math.cos(angle) * size * 0.32;
-    const tipY = topY + Math.sin(angle) * size * 0.2 + size * 0.1;
-    const sideX = Math.sin(angle) * size * 0.04;
-    const sideY = -Math.cos(angle) * size * 0.04;
-    graphics.fillStyle(fogged(index % 2 ? COLORS.palmLeaves : COLORS.palmLeavesLight), 1);
-    graphics.fillTriangle(topX + sideX, topY + sideY, topX - sideX, topY - sideY, tipX, tipY);
-  });
-  graphics.fillStyle(fogged(COLORS.coconut), 1);
-  graphics.fillCircle(topX - size * 0.025, topY + size * 0.03, size * 0.025);
-  graphics.fillCircle(topX + size * 0.025, topY + size * 0.035, size * 0.025);
-}
-
-function drawUmbrella(graphics, x, groundY, size, fogged, variety) {
-  const canopyY = groundY - size * 0.5;
-  const radius = size * 0.26;
-  const accent = COLORS.partyLights[Math.floor(variety * 4) % 4];
-  graphics.fillStyle(fogged(COLORS.cloud), 1);
-  graphics.fillRect(x - size * 0.01, canopyY, size * 0.02, size * 0.5);
-  for (let panel = 0; panel < 6; panel++) {
-    const start = Math.PI + (panel * Math.PI) / 6;
-    graphics.fillStyle(fogged(panel % 2 ? COLORS.cloud : accent), 1);
-    graphics.slice(x, canopyY, radius, start, start + Math.PI / 6, false);
-    graphics.fillPath();
-  }
-}
-
 function drawStar(graphics, x, y, radius, color) {
   const points = [];
   for (let point = 0; point < 10; point++) {
@@ -1614,6 +1582,71 @@ function drawStar(graphics, x, y, radius, color) {
   }
   graphics.fillStyle(color, 1);
   graphics.fillPoints(points, true);
+}
+
+function drawFire(graphics, x, groundY, size, fogged, variety) {
+  const height = size * (0.45 + variety * 0.35);
+  const layers = [
+    [COLORS.flameRed, 0.28, 1],
+    [COLORS.flameOrange, 0.19, 0.78],
+    [COLORS.flameYellow, 0.1, 0.5],
+  ];
+  for (const [color, width, heightShare] of layers) {
+    const flameHeight = height * heightShare;
+    graphics.fillStyle(fogged(color), 1);
+    graphics.fillEllipse(x, groundY - flameHeight * 0.32, size * width, flameHeight * 0.64);
+    graphics.fillTriangle(x - size * width * 0.42, groundY - flameHeight * 0.4, x + size * width * 0.42, groundY - flameHeight * 0.4, x, groundY - flameHeight);
+  }
+}
+
+function drawSkull(graphics, x, groundY, size, fogged) {
+  graphics.fillStyle(fogged(COLORS.bone), 1);
+  graphics.fillCircle(x, groundY - size * 0.17, size * 0.12);
+  graphics.fillRoundedRect(x - size * 0.07, groundY - size * 0.09, size * 0.14, size * 0.08, size * 0.02);
+  graphics.fillStyle(fogged(COLORS.background), 1);
+  graphics.fillCircle(x - size * 0.045, groundY - size * 0.17, size * 0.032);
+  graphics.fillCircle(x + size * 0.045, groundY - size * 0.17, size * 0.032);
+  graphics.fillTriangle(x - size * 0.015, groundY - size * 0.1, x + size * 0.015, groundY - size * 0.1, x, groundY - size * 0.13);
+}
+
+function drawBones(graphics, x, groundY, size, fogged) {
+  graphics.fillStyle(fogged(COLORS.bone), 1);
+  for (const [offsetX, offsetY] of [[0, 0.05], [0.06, 0.12]]) {
+    const centerX = x + offsetX * size;
+    const centerY = groundY - offsetY * size;
+    graphics.fillRect(centerX - size * 0.16, centerY - size * 0.02, size * 0.32, size * 0.04);
+    for (const end of [-1, 1]) {
+      graphics.fillCircle(centerX + end * size * 0.16, centerY - size * 0.025, size * 0.03);
+      graphics.fillCircle(centerX + end * size * 0.16, centerY + size * 0.025, size * 0.03);
+    }
+  }
+}
+
+function drawHomeWithBaby(graphics, position, fogged) {
+  const { x, y: groundY, scale: size } = position;
+  const wallTop = groundY - size * 0.6;
+  graphics.fillStyle(COLORS.background, 0.25);
+  graphics.fillEllipse(x, groundY, size * 1.4, size * 0.08);
+  graphics.fillStyle(fogged(COLORS.shopWall), 1);
+  graphics.fillRect(x - size * 0.55, wallTop, size * 1.1, size * 0.6);
+  graphics.fillStyle(fogged(COLORS.roofRed), 1);
+  graphics.fillTriangle(x - size * 0.7, wallTop + size * 0.02, x + size * 0.7, wallTop + size * 0.02, x, wallTop - size * 0.42);
+  graphics.fillStyle(fogged(COLORS.deck), 1);
+  graphics.fillRect(x - size * 0.12, groundY - size * 0.34, size * 0.24, size * 0.34);
+  graphics.fillStyle(fogged(COLORS.lampBulb), 1);
+  graphics.fillRect(x - size * 0.45, groundY - size * 0.44, size * 0.22, size * 0.18);
+  graphics.fillRect(x + size * 0.23, groundY - size * 0.44, size * 0.22, size * 0.18);
+
+  const bottleBottom = wallTop - size * 0.3;
+  graphics.fillStyle(fogged(COLORS.bottleMilk), 1);
+  graphics.fillRoundedRect(x - size * 0.13, bottleBottom - size * 0.42, size * 0.26, size * 0.42, size * 0.06);
+  graphics.fillStyle(fogged(COLORS.scoopVanilla), 1);
+  graphics.fillRoundedRect(x - size * 0.13, bottleBottom - size * 0.24, size * 0.26, size * 0.24, size * 0.06);
+  graphics.fillStyle(fogged(COLORS.bottleRing), 1);
+  graphics.fillRect(x - size * 0.15, bottleBottom - size * 0.5, size * 0.3, size * 0.09);
+  graphics.fillStyle(fogged(COLORS.nipple), 1);
+  graphics.fillEllipse(x, bottleBottom - size * 0.56, size * 0.14, size * 0.14);
+  graphics.fillCircle(x, bottleBottom - size * 0.64, size * 0.035);
 }
 
 function drawCinema(graphics, position, fogged) {
@@ -1645,38 +1678,6 @@ function drawCinema(graphics, position, fogged) {
   graphics.fillStyle(fogged(COLORS.scoopMint), 1);
   graphics.fillRect(x + size * 0.42, groundY - size * 0.4, size * 0.2, size * 0.28);
   drawStar(graphics, x, wallTop - size * 0.14, size * 0.16, fogged(COLORS.marquee));
-}
-
-function drawBeachParty(graphics, position, fogged) {
-  const { x, y: groundY, scale: size } = position;
-  graphics.fillStyle(COLORS.background, 0.2);
-  graphics.fillEllipse(x, groundY, size * 1.6, size * 0.08);
-  graphics.fillStyle(fogged(COLORS.deck), 1);
-  graphics.fillRect(x - size * 0.68, groundY - size * 0.08, size * 1.36, size * 0.08);
-  graphics.fillStyle(fogged(COLORS.bamboo), 1);
-  graphics.fillRect(x - size * 0.52, groundY - size * 0.52, size * 1.04, size * 0.44);
-  graphics.fillStyle(fogged(COLORS.bambooDark), 1);
-  for (let stick = 0; stick <= 10; stick++) graphics.fillRect(x - size * 0.52 + stick * size * 0.1, groundY - size * 0.52, size * 0.012, size * 0.44);
-  graphics.fillStyle(fogged(COLORS.coconut), 1);
-  graphics.fillRect(x - size * 0.22, groundY - size * 0.4, size * 0.44, size * 0.26);
-  graphics.fillStyle(fogged(COLORS.straw), 1);
-  graphics.fillTriangle(x - size * 0.8, groundY - size * 0.5, x + size * 0.8, groundY - size * 0.5, x, groundY - size * 1.0);
-  graphics.fillStyle(fogged(COLORS.strawDark), 1);
-  for (let fringe = 0; fringe < 16; fringe++) {
-    const fringeX = x - size * 0.8 + fringe * size * 0.1;
-    graphics.fillTriangle(fringeX, groundY - size * 0.5, fringeX + size * 0.1, groundY - size * 0.5, fringeX + size * 0.05, groundY - size * 0.42);
-  }
-  for (let bulb = 0; bulb < 9; bulb++) {
-    const progress = bulb / 8;
-    const bulbX = x - size * 0.75 + progress * size * 1.5;
-    const bulbY = groundY - size * 0.6 + Math.sin(progress * Math.PI) * size * 0.08;
-    graphics.fillStyle(fogged(COLORS.partyLights[bulb % 4]), 1);
-    graphics.fillCircle(bulbX, bulbY, size * 0.03);
-  }
-  graphics.fillStyle(fogged(COLORS.flowerPink), 1);
-  graphics.fillCircle(x - size * 0.2, groundY - size * 1.12, size * 0.08);
-  graphics.fillStyle(fogged(COLORS.scoopMint), 1);
-  graphics.fillCircle(x + size * 0.18, groundY - size * 1.16, size * 0.08);
 }
 
 function drawChapel(graphics, position, fogged) {
