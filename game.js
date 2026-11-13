@@ -144,12 +144,6 @@ const COLORS = {
   bottleMilk: 0xfffdf5,
   bottleRing: 0x7cb8ff,
   nipple: 0xffb3a7,
-  titleSkyTop: 0x5b9be0,
-  titleSkyBottom: 0xc4d7ea,
-  titleSun: 0xffd84a,
-  titleMountainFar: 0x6f7fcf,
-  titleMountainNear: 0x3d4fa3,
-  titleBushes: 0x417a35,
   buttonPurple: 0x7a3fe8,
   buttonPurpleLight: 0x9c6bff,
   makeupTop: 0xffd6ea,
@@ -453,23 +447,10 @@ const OVERLAY_TEXT_STYLE = {
   align: 'center',
 };
 
-function createPaintedBackground(scene) {
-  const left = OVERLAY_WORLD_X;
-  const background = scene.add.graphics();
-  background.fillGradientStyle(COLORS.titleSkyTop, COLORS.titleSkyTop, COLORS.titleSkyBottom, COLORS.titleSkyBottom, 1);
-  background.fillRect(left, 0, GAME_WIDTH, GAME_HEIGHT);
-  for (let stroke = 0; stroke < 40; stroke++) {
-    background.fillStyle(COLORS.cloud, 0.08 + seededRandom(stroke, 21) * 0.14);
-    background.fillRect(left + seededRandom(stroke, 22) * GAME_WIDTH - 60, 250 + seededRandom(stroke, 23) * 90, 50 + seededRandom(stroke, 24) * 150, 2);
-  }
-  background.fillStyle(COLORS.sunGlow, 0.45);
-  background.fillCircle(left + 655, 118, 62);
-  background.fillStyle(COLORS.titleSun, 1);
-  background.fillCircle(left + 655, 118, 42);
-  drawJaggedRidge(background, 470, 190, COLORS.titleMountainFar, 1);
-  drawJaggedRidge(background, 510, 150, COLORS.titleMountainNear, 2);
-  drawJaggedRidge(background, 566, 60, COLORS.titleBushes, 3);
-  return background;
+function drawOverlayLandscape(graphics, level) {
+  graphics.clear();
+  drawLandscape(graphics, level, { left: OVERLAY_WORLD_X, top: 0, width: GAME_WIDTH, horizonY: 488, bottom: GAME_HEIGHT, scale: 2, sunY: 110 });
+  return graphics;
 }
 
 function addBlinkingPrompt(scene, text) {
@@ -483,7 +464,7 @@ function addBlinkingPrompt(scene, text) {
 function createTitleScreen(scene) {
   const left = OVERLAY_WORLD_X;
   const centerX = left + GAME_WIDTH / 2;
-  const art = createPaintedBackground(scene);
+  const art = drawOverlayLandscape(scene.add.graphics(), LEVELS[0]);
   art.fillStyle(COLORS.asphaltLight, 1);
   art.fillRect(left, 560, GAME_WIDTH, 40);
   art.fillStyle(COLORS.laneLine, 1);
@@ -525,17 +506,6 @@ function createTitleScreen(scene) {
   scene.titleLayer = scene.add.container(0, 0, [art, car, makeupWord, racingWord, subtitle, button, startHint, controls]);
 }
 
-function drawJaggedRidge(graphics, baseY, peakHeight, color, salt) {
-  const outline = [{ x: OVERLAY_WORLD_X, y: GAME_HEIGHT }];
-  for (let x = 0, step = 0; x <= GAME_WIDTH; x += 10, step++) {
-    const wave = 0.5 + 0.3 * Math.sin(x * 0.012 + salt * 2) + 0.2 * Math.sin(x * 0.031 + salt * 5);
-    outline.push({ x: OVERLAY_WORLD_X + x, y: baseY - peakHeight * wave - seededRandom(step, salt) * 8 });
-  }
-  outline.push({ x: OVERLAY_WORLD_X + GAME_WIDTH, y: GAME_HEIGHT });
-  graphics.fillStyle(color, 1);
-  graphics.fillPoints(outline, true);
-}
-
 function drawPixelButton(graphics, width, height) {
   const notch = 8;
   const layers = [
@@ -555,7 +525,7 @@ function drawPixelButton(graphics, width, height) {
 
 function createLevelSelectScreen(scene) {
   const centerX = OVERLAY_WORLD_X + GAME_WIDTH / 2;
-  const background = createPaintedBackground(scene);
+  scene.levelSelectBackground = scene.add.graphics();
   const heading = scene.add.text(centerX, 74, 'Elige el destino', { ...HEADING_STYLE, fontSize: '52px' }).setOrigin(0.5);
   heading.setShadow(0, 5, '#1d1230', 0, true, true);
   scene.levelCardsGraphics = scene.add.graphics();
@@ -566,10 +536,11 @@ function createLevelSelectScreen(scene) {
   const hint = scene.add
     .text(centerX, 524, '\u25c0 \u25b6  elegir      START  jugar', { ...OVERLAY_TEXT_STYLE, fontSize: '22px', strokeThickness: 6 })
     .setOrigin(0.5);
-  scene.levelSelectLayer = scene.add.container(0, 0, [background, heading, scene.levelCardsGraphics, ...scene.levelCardTexts.flat(), hint]);
+  scene.levelSelectLayer = scene.add.container(0, 0, [scene.levelSelectBackground, heading, scene.levelCardsGraphics, ...scene.levelCardTexts.flat(), hint]);
 }
 
 function refreshLevelSelect(scene) {
+  drawOverlayLandscape(scene.levelSelectBackground, LEVELS[scene.selectedLevel]);
   const graphics = scene.levelCardsGraphics;
   graphics.clear();
   LEVELS.forEach((level, index) => {
@@ -586,10 +557,7 @@ function refreshLevelSelect(scene) {
     }
     graphics.fillStyle(COLORS.cloud, 1);
     graphics.fillRoundedRect(centerX - 85, top, 170, 280, 18);
-    graphics.fillGradientStyle(level.colors.skyTop, level.colors.skyTop, level.colors.skyBottom, level.colors.skyBottom, 1);
-    graphics.fillRect(centerX - 72, top + 13, 144, 120);
-    graphics.fillStyle(level.colors.grassLight, 1);
-    graphics.fillRect(centerX - 72, top + 133, 144, 50);
+    drawLandscape(graphics, level, { left: centerX - 72, top: top + 13, width: 144, horizonY: top + 112, bottom: top + 183, scale: 0.6, sunY: top + 42 });
     graphics.fillStyle(COLORS.asphaltLight, 1);
     graphics.fillTriangle(centerX - 12, top + 133, centerX + 12, top + 133, centerX + 40, top + 183);
     graphics.fillTriangle(centerX - 12, top + 133, centerX + 40, top + 183, centerX - 40, top + 183);
@@ -647,7 +615,7 @@ function showResults(scene) {
   }
   scene.nextSelectedLevel = isPerfect ? Math.min(nextLevel, LEVELS.length - 1) : scene.levelIndex;
 
-  const art = createPaintedBackground(scene);
+  const art = drawOverlayLandscape(scene.add.graphics(), currentLevel);
   scene.add
     .text(centerX, 70, isPerfect ? '\u00a1Look perfecto!' : '\u00a1Oh no!', { ...HEADING_STYLE, fontSize: '54px', color: isPerfect ? '#ff00d1' : '#5000ff' })
     .setOrigin(0.5)
@@ -834,26 +802,8 @@ function drawFlowerBush(graphics, x, groundY, size, fogged) {
 }
 
 function createSky(scene) {
-  const colors = currentLevel.colors;
   const sky = scene.add.graphics();
-  const skyHeight = HORIZON_Y + 20;
-  sky.fillGradientStyle(colors.skyTop, colors.skyTop, colors.skyBottom, colors.skyBottom, 1);
-  sky.fillRect(0, 0, PANEL_WIDTH, skyHeight);
-  if (currentLevel.isNight) {
-    for (let index = 0; index < 40; index++) {
-      sky.fillStyle(COLORS.cloud, 0.3 + seededRandom(index, 7) * 0.6);
-      sky.fillCircle(seededRandom(index, 8) * PANEL_WIDTH, seededRandom(index, 9) * (HORIZON_Y - 30), 0.8 + seededRandom(index, 10) * 1.4);
-    }
-  }
-  sky.fillStyle(colors.sunGlow, 0.35);
-  sky.fillCircle(300, 105, 48);
-  sky.fillStyle(colors.sun, 1);
-  sky.fillCircle(300, 105, 30);
-  if (currentLevel.isNight) {
-    sky.fillStyle(blendColor(colors.skyTop, colors.skyBottom, 95 / skyHeight), 1);
-    sky.fillCircle(314, 96, 25);
-  }
-
+  drawLandscape(sky, currentLevel, { left: 0, top: 0, width: PANEL_WIDTH, horizonY: HORIZON_Y, bottom: HORIZON_Y + 20, scale: 1, sunY: 105 });
   scene.clouds = [];
   for (let index = 0; index < 5; index++) {
     const cloud = scene.add.graphics();
@@ -865,57 +815,80 @@ function createSky(scene) {
     cloud.setScale(0.6 + seededRandom(index, 2) * 0.6);
     scene.clouds.push(cloud);
   }
-
-  if (currentLevel.horizon === 'city') {
-    createSkyline(scene, blendColor(colors.mountains, colors.fog, 0.35), 90, 1);
-    createSkyline(scene, blendColor(colors.hills, colors.fog, 0.15), 50, 2);
-  } else {
-    createRidge(scene, blendColor(colors.mountains, colors.fog, 0.35), currentLevel.horizon === 'lake' ? 40 : 75, 1);
-    if (currentLevel.horizon === 'lake') createLake(scene, colors.hills);
-    else createRidge(scene, blendColor(colors.hills, colors.fog, 0.2), 26, 4);
-  }
 }
 
-function createSkyline(scene, color, tallestBuilding, salt) {
-  const skyline = scene.add.graphics();
-  const baseY = HORIZON_Y + 12;
-  let x = -10;
-  for (let index = 0; x < PANEL_WIDTH; index++) {
-    const width = 18 + seededRandom(index, salt) * 26;
-    const height = tallestBuilding * (0.35 + seededRandom(index, salt + 3) * 0.65);
-    skyline.fillStyle(color, 1);
-    skyline.fillRect(x, baseY - height, width - 3, height);
-    skyline.fillStyle(COLORS.windowLight, 0.45);
-    for (let windowY = baseY - height + 6; windowY < baseY - 6; windowY += 10) {
-      skyline.fillRect(x + 4, windowY, 3, 4);
-      if (width > 26) skyline.fillRect(x + width - 10, windowY, 3, 4);
+function drawLandscape(graphics, level, area) {
+  const { left, top, width, horizonY, bottom, scale, sunY } = area;
+  const colors = level.colors;
+  const groundY = horizonY + 12 * scale;
+  const sunX = left + width * 0.75;
+  graphics.fillGradientStyle(colors.skyTop, colors.skyTop, colors.skyBottom, colors.skyBottom, 1);
+  graphics.fillRect(left, top, width, groundY - top);
+  graphics.fillStyle(colors.grassLight, 1);
+  graphics.fillRect(left, groundY, width, bottom - groundY);
+  if (level.isNight) {
+    for (let index = 0; index < 40; index++) {
+      graphics.fillStyle(COLORS.cloud, 0.3 + seededRandom(index, 7) * 0.6);
+      graphics.fillCircle(left + seededRandom(index, 8) * width, top + seededRandom(index, 9) * (horizonY - top - 30 * scale), (0.8 + seededRandom(index, 10) * 1.4) * Math.min(scale, 1.5));
     }
-    x += width;
   }
-}
+  graphics.fillStyle(colors.sunGlow, 0.35);
+  graphics.fillCircle(sunX, sunY, 48 * scale);
+  graphics.fillStyle(colors.sun, 1);
+  graphics.fillCircle(sunX, sunY, 30 * scale);
+  if (level.isNight) {
+    graphics.fillStyle(blendColor(colors.skyTop, colors.skyBottom, (sunY - top) / (groundY - top)), 1);
+    graphics.fillCircle(sunX + 14 * scale, sunY - 9 * scale, 25 * scale);
+  }
 
-function createLake(scene, liquidColor) {
-  const lake = scene.add.graphics();
-  lake.fillStyle(liquidColor, 1);
-  lake.fillRect(0, HORIZON_Y - 14, PANEL_WIDTH, 30);
-  lake.fillStyle(COLORS.cloud, 0.5);
+  const farColor = blendColor(colors.mountains, colors.fog, 0.35);
+  if (level.horizon === 'city') {
+    drawSkyline(graphics, area, farColor, 90, 1);
+    drawSkyline(graphics, area, blendColor(colors.hills, colors.fog, 0.15), 50, 2);
+    return;
+  }
+  drawRidge(graphics, area, farColor, level.horizon === 'lake' ? 40 : 75, 1);
+  if (level.horizon !== 'lake') {
+    drawRidge(graphics, area, blendColor(colors.hills, colors.fog, 0.2), 26, 4);
+    return;
+  }
+  graphics.fillStyle(colors.hills, 1);
+  graphics.fillRect(left, horizonY - 14 * scale, width, 30 * scale);
+  graphics.fillStyle(COLORS.cloud, 0.5);
   for (let index = 0; index < 14; index++) {
-    lake.fillRect(seededRandom(index, 11) * PANEL_WIDTH, HORIZON_Y - 10 + seededRandom(index, 12) * 16, 14, 2);
+    graphics.fillRect(left + seededRandom(index, 11) * width, horizonY + (seededRandom(index, 12) * 16 - 10) * scale, 14 * scale, 2 * scale);
   }
 }
 
-function createRidge(scene, color, peakHeight, phase) {
-  const ridge = scene.add.graphics();
-  const baseY = HORIZON_Y + 12;
-  const outline = [{ x: 0, y: baseY + 4 }];
-  for (let x = 0; x <= PANEL_WIDTH; x += 8) {
-    const angle = (x / PANEL_WIDTH) * Math.PI * 2;
+function drawRidge(graphics, area, color, peakHeight, phase) {
+  const { left, width, horizonY, scale } = area;
+  const baseY = horizonY + 12 * scale;
+  const outline = [{ x: left, y: baseY + 4 * scale }];
+  for (let x = 0; x <= width; x += 8) {
+    const angle = (x / width) * Math.PI * 2;
     const height = 0.55 + 0.3 * Math.sin(angle * 2 + phase) + 0.15 * Math.sin(angle * 5 + phase * 3);
-    outline.push({ x, y: baseY - peakHeight * height });
+    outline.push({ x: left + x, y: baseY - peakHeight * scale * height });
   }
-  outline.push({ x: PANEL_WIDTH, y: baseY + 4 });
-  ridge.fillStyle(color, 1);
-  ridge.fillPoints(outline, true);
+  outline.push({ x: left + width, y: baseY + 4 * scale });
+  graphics.fillStyle(color, 1);
+  graphics.fillPoints(outline, true);
+}
+
+function drawSkyline(graphics, area, color, tallestBuilding, salt) {
+  const { left, width, horizonY, scale } = area;
+  const baseY = horizonY + 12 * scale;
+  let x = left - 10 * scale;
+  for (let index = 0; x < left + width; index++) {
+    const buildingWidth = Math.min((18 + seededRandom(index, salt) * 26) * scale, left + width - x);
+    const height = tallestBuilding * scale * (0.35 + seededRandom(index, salt + 3) * 0.65);
+    graphics.fillStyle(color, 1);
+    graphics.fillRect(Math.max(x, left), baseY - height, buildingWidth - 3 * scale - Math.max(0, left - x), height);
+    graphics.fillStyle(COLORS.windowLight, 0.45);
+    for (let windowY = baseY - height + 6 * scale; windowY < baseY - 6 * scale; windowY += 10 * scale) {
+      if (x + 4 * scale > left) graphics.fillRect(x + 4 * scale, windowY, 3 * scale, 4 * scale);
+    }
+    x += buildingWidth;
+  }
 }
 
 function updateSky(scene, seconds) {
