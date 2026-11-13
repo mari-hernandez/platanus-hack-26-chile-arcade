@@ -1562,41 +1562,59 @@ function drawFace(graphics, centerX, centerY, scale, look) {
     }
   }
 
-  for (const side of [-1, 1]) ellipse(COLORS.skin, side * 80, 12, 16, 26);
-  smoothShape(COLORS.skin, mirrored([[0, -100], [50, -94], [78, -62], [84, -14], [78, 34], [60, 72], [30, 98], [0, 106]]), 1, true);
-  smoothShape(COLORS.skinShade, mirrored([[0, -100], [40, -96], [68, -72], [76, -50], [42, -62], [0, -70]]), 0.6);
-  for (const side of [-1, 1]) ellipse(look.blush || light(PALETTE.pink, 0.45), side * 50, 46, 36, 16, look.blush ? 0.5 : 0.3);
-
+  for (const side of [-1, 1]) ellipse(COLORS.skin, side * 82, 14, 16, 26);
+  smoothShape(COLORS.skin, mirrored([[0, -108], [58, -98], [86, -56], [90, 0], [82, 46], [58, 88], [28, 112], [0, 118]]), 1, true);
+  smoothShape(COLORS.skinShade, mirrored([[0, -108], [44, -102], [72, -76], [80, -52], [44, -64], [0, -72]]), 0.6);
   for (const side of [-1, 1]) {
-    const eyeX = side * 36;
-    const eyeY = 6;
-    const fromEye = (alongX, alongY) => [eyeX + side * alongX, eyeY + alongY];
-    if (look.shadow) smoothShape(look.shadow, [fromEye(-25, -3), fromEye(-8, -25), fromEye(18, -28), fromEye(33, -10), fromEye(13, -13)], 0.65);
-    smoothShape(COLORS.cloud, [fromEye(-23, 3), fromEye(-8, -12), fromEye(13, -12), fromEye(26, -1), fromEye(10, 9), fromEye(-10, 9)]);
-    ellipse(COLORS.irisDark, eyeX + side * 1, eyeY, 22, 22);
-    ellipse(COLORS.iris, eyeX + side * 1, eyeY + 2, 17, 15);
-    circle(COLORS.outline, eyeX + side * 1, eyeY + 1, 5);
-    circle(COLORS.cloud, eyeX - side * 4, eyeY - 4, 3);
-    const lashColor = look.mascara || NATURAL_LASHES;
-    const lashWidth = look.mascara ? 4.5 : 3;
-    stroke(lashColor, lashWidth, [fromEye(-24, 3), fromEye(-8, -13), fromEye(13, -13), fromEye(27, -3), fromEye(36, -12)]);
-    stroke(lashColor, 1.2, [fromEye(-13, 9), fromEye(10, 10), fromEye(23, 1)], 0.6);
-    if (look.mascara) {
-      for (const [baseX, baseY, tipX, tipY] of [[10, -14, 15, -23], [19, -10, 27, -18], [27, -4, 36, -8]]) {
-        triangle(lashColor, [fromEye(baseX - 2, baseY + 1), fromEye(baseX + 2, baseY + 2), fromEye(tipX, tipY)]);
-      }
+    ellipse(look.blush || light(PALETTE.pink, 0.45), side * 56, 42, 40, 20, look.blush ? 0.55 : 0.3);
+    if (!look.blush) continue;
+    for (const step of [-7, 0, 7]) {
+      stroke(blendColor(look.blush, COLORS.outline, 0.25), 1.8, [[side * 56 + step - 3, 47], [side * 56 + step + 3, 37]], 0.8);
     }
-    stroke(COLORS.outline, 1.2, [fromEye(-15, -20), fromEye(5, -25), fromEye(23, -17)], 0.35);
-    const browWidth = look.brows ? 5 : 3.5;
-    smoothShape(look.brows || NATURAL_BROWS, [fromEye(-22, -32), fromEye(-20, -32 - browWidth), fromEye(5, -44 - browWidth * 0.4), fromEye(32, -34), fromEye(5, -40)]);
   }
 
-  stroke(COLORS.skinShade, 2, [[4, 14], [7, 34], [1, 40]]);
+  for (const side of [-1, 1]) {
+    const eyeX = side * 38;
+    const eyeY = 10;
+    const fromEye = (alongX, alongY) => [eyeX + side * alongX, eyeY + alongY];
+    if (look.shadow) {
+      ellipse(look.shadow, eyeX + side * 2, eyeY - 18, 60, 34, 0.5);
+      ellipse(look.shadow, eyeX + side * 4, eyeY - 14, 50, 24, 0.6);
+    }
+    stroke(COLORS.outline, 1.5, [fromEye(-16, -27), fromEye(4, -33), fromEye(22, -25)], 0.45);
+    ellipse(COLORS.cloud, eyeX, eyeY, 38, 42);
+    ellipse(COLORS.iris, eyeX, eyeY + 3, 29, 36);
+    ellipse(COLORS.irisDark, eyeX, eyeY - 4, 29, 23, 0.55);
+    ellipse(COLORS.outline, eyeX, eyeY + 4, 13, 19);
+    ellipse(COLORS.irisLight, eyeX, eyeY + 14, 17, 8, 0.7);
+    circle(COLORS.cloud, eyeX - side * 6, eyeY - 6, 6);
+    circle(COLORS.cloud, eyeX + side * 6, eyeY + 11, 3);
+    const lashColor = look.mascara || NATURAL_LASHES;
+    const thickness = look.mascara ? 6 : 3.5;
+    smoothShape(lashColor, [
+      fromEye(-21, -4), fromEye(-12, -18 - thickness * 0.3), fromEye(6, -21 - thickness * 0.5),
+      fromEye(21, -13 - thickness * 0.6), fromEye(27, -14 - thickness), fromEye(19, -9),
+      fromEye(6, -16), fromEye(-10, -13), fromEye(-19, -2),
+    ]);
+    stroke(lashColor, 1.5, [fromEye(6, 21), fromEye(12, 19), fromEye(16, 14)]);
+    if (look.mascara) {
+      for (const [baseX, baseY, tipX, tipY] of [[12, -23, 17, -30], [19, -20, 26, -26], [24, -16, 31, -19]]) {
+        triangle(lashColor, [fromEye(baseX - 3, baseY + 1), fromEye(baseX + 3, baseY + 3), fromEye(tipX, tipY)]);
+      }
+    }
+    const browWidth = look.brows ? 7 : 5;
+    smoothShape(look.brows || NATURAL_BROWS, [fromEye(-18, -41), fromEye(-20, -41 - browWidth), fromEye(-2, -53 - browWidth * 0.6), fromEye(22, -48), fromEye(-1, -50)]);
+  }
+
+  ellipse(COLORS.skinShade, 1, 47, 13, 7, 0.9);
+  ellipse(COLORS.noseTip, 0, 46, 9, 5);
+  circle(COLORS.cloud, -2, 44, 1.6, 0.9);
   const lipColor = look.lips || NATURAL_LIPS;
-  smoothShape(lipColor, [[-20, 66], [-8, 60], [0, 63], [8, 60], [20, 66], [0, 69]]);
-  smoothShape(lipColor, [[-19, 67], [0, 70], [19, 67], [10, 77], [0, 79], [-10, 77]]);
-  stroke(blendColor(lipColor, COLORS.outline, 0.4), 1.2, [[-19, 67], [0, 70], [19, 67]]);
-  ellipse(COLORS.cloud, 5, 74, 7, 2.5, look.lips ? 0.7 : 0.35);
+  ellipse(lipColor, -6, 68, 18, 9);
+  ellipse(lipColor, 6, 68, 18, 9);
+  ellipse(lipColor, 0, 73, 24, 11);
+  stroke(blendColor(lipColor, COLORS.outline, 0.4), 1.5, [[-11, 70], [0, 71], [11, 70]]);
+  ellipse(COLORS.cloud, 5, 74, 8, 3, look.lips ? 0.7 : 0.4);
 
   for (const side of [-1, 1]) {
     smoothShape(COLORS.hair, [[side * 4, -112], [side * 46, -110], [side * 84, -74], [side * 96, -10], [side * 104, 90], [side * 112, 200], [side * 92, 210], [side * 84, 100], [side * 78, 20], [side * 64, -40], [side * 36, -82], [side * 12, -100]], 1, true);
