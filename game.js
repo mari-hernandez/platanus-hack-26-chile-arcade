@@ -1617,7 +1617,7 @@ function drawFace(graphics, centerX, centerY, scale, look) {
   ellipse(COLORS.cloud, 5, 74, 8, 3, look.lips ? 0.7 : 0.4);
 
   for (const side of [-1, 1]) {
-    smoothShape(COLORS.hair, [[side * 4, -118], [side * 48, -118], [side * 86, -92], [side * 100, -40], [side * 102, 40], [side * 104, 140], [side * 106, 214], [side * 84, 214], [side * 82, 140], [side * 80, 40], [side * 76, -20], [side * 64, -50], [side * 36, -86], [side * 12, -104]], 1, true);
+    smoothShape(COLORS.hair, [[side * 4, -118], [side * 48, -118], [side * 86, -92], [side * 100, -40], [side * 102, 40], [side * 104, 140], [side * 108, 300], [side * 84, 300], [side * 82, 140], [side * 80, 40], [side * 76, -20], [side * 64, -50], [side * 36, -86], [side * 12, -104]], 1, true);
     stroke(COLORS.hairShine, 4, [[side * 30, -100], [side * 68, -70], [side * 86, -14]], 0.55);
     stroke(COLORS.hairShine, 3, [[side * 96, 40], [side * 100, 120]], 0.4);
     stroke(COLORS.hairDark, 2, [[side * 50, -96], [side * 82, -30], [side * 92, 80]], 0.5);
