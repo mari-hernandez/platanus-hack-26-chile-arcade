@@ -689,8 +689,7 @@ function createTitleScreen(scene) {
       flags,
       ...titleWord('MAKEUP', -22, '92px', [light(PALETTE.pink, 0.4), PALETTE.pink, dark(PALETTE.pink, 0.2), dark(PALETTE.pink, 0.4)]),
       ...titleWord('RACING', 64, '50px', [light(PALETTE.yellow, 0.4), PALETTE.yellow, PALETTE.orange, dark(PALETTE.orange, 0.25)]),
-    ])
-    .setAngle(-4);
+    ]);
   const subtitle = scene.add
     .text(centerX, 244, 'Llega a cada destino con el look perfecto', { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large })
     .setOrigin(0.5);
