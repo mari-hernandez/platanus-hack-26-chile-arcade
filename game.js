@@ -292,7 +292,7 @@ const LEVELS = [
     isDaytime: true,
     fogBase: 0,
     arrivalText: 'Llegaron a la primera cita',
-    distance: 400,
+    distance: 300,
     startingSpeed: 14,
     maxSpeed: 26,
     obstacleGap: [12, 18],
