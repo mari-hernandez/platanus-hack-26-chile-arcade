@@ -1822,6 +1822,7 @@ function detectCrash(scene, time) {
     scene.cameras.main.flash(180, (COLORS.crashFlash >> 16) & 255, (COLORS.crashFlash >> 8) & 255, COLORS.crashFlash & 255);
     playSound(scene, 'crash');
     ruinMakeup(scene);
+    if (currentLevel.hasCryingBaby) wakeBaby(scene);
     return;
   }
 }
@@ -2274,10 +2275,15 @@ function updateMusic(scene, time) {
     music.step += 1;
     music.nextStepTime += stepSeconds;
   }
-  if (currentLevel.hasCryingBaby && scene.phase === 'playing' && time > music.nextCryAt) {
-    playBabyCry(context);
-    music.nextCryAt = time + Phaser.Math.Between(5000, 7000);
-  }
+  if (currentLevel.hasCryingBaby && scene.phase === 'playing' && time > music.nextCryAt) wakeBaby(scene);
+}
+
+function wakeBaby(scene) {
+  const context = audioContextOf(scene);
+  if (!context || !scene.music) return;
+  const crashes = scene.race.crashes;
+  playBabyCry(context, 1 + Math.min(crashes, 4) * 0.15);
+  scene.music.nextCryAt = scene.time.now + Math.max(1500, Phaser.Math.Between(5000, 7000) - crashes * 1000);
 }
 
 function playVoiceStep(context, voice, step, startTime, stepSeconds) {
@@ -2359,15 +2365,15 @@ function playDrum(context, hit, startTime) {
   source.stop(startTime + 0.2);
 }
 
-function playBabyCry(context) {
+function playBabyCry(context, loudness = 1) {
   const start = context.currentTime + 0.05;
   for (const [offset, length] of [[0, 1.1], [1.45, 0.9], [2.7, 1.4]]) {
-    playWail(context, start + offset, length);
+    playWail(context, start + offset, length, loudness);
     playInhale(context, start + offset + length + 0.06);
   }
 }
 
-function playWail(context, begin, length) {
+function playWail(context, begin, length, loudness) {
   const end = begin + length;
   const voice = context.createOscillator();
   const vibrato = context.createOscillator();
@@ -2389,10 +2395,10 @@ function playWail(context, begin, length) {
   roughness.connect(roughnessDepth);
   roughnessDepth.connect(voice.frequency);
   volume.gain.setValueAtTime(0.0001, begin);
-  volume.gain.exponentialRampToValueAtTime(1, begin + 0.07);
-  volume.gain.setValueAtTime(1, end - 0.15);
+  volume.gain.exponentialRampToValueAtTime(loudness, begin + 0.07);
+  volume.gain.setValueAtTime(loudness, end - 0.15);
   volume.gain.exponentialRampToValueAtTime(0.0001, end);
-  for (const [closed, open, quality, loudness] of [[350, 1150, 6, 1], [900, 2300, 9, 0.6], [2800, 3600, 12, 0.35]]) {
+  for (const [closed, open, quality, share] of [[350, 1150, 6, 1], [900, 2300, 9, 0.6], [2800, 3600, 12, 0.35]]) {
     const formant = context.createBiquadFilter();
     const level = context.createGain();
     formant.type = 'bandpass';
@@ -2401,7 +2407,7 @@ function playWail(context, begin, length) {
     formant.frequency.exponentialRampToValueAtTime(open, begin + 0.12);
     formant.frequency.setValueAtTime(open, end - 0.15);
     formant.frequency.exponentialRampToValueAtTime(closed * 1.4, end);
-    level.gain.value = loudness;
+    level.gain.value = share;
     voice.connect(formant);
     formant.connect(level);
     level.connect(volume);
