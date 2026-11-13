@@ -157,7 +157,7 @@ const LEVELS = [
   {
     name: 'Primera cita',
     arrivalText: 'Llegaron a la primera cita',
-    distance: 1200,
+    distance: 600,
     startingSpeed: 14,
     maxSpeed: 26,
     obstacleGap: [12, 18],
@@ -187,7 +187,7 @@ const LEVELS = [
   {
     name: 'Salida de noche',
     arrivalText: 'Llegaron al cine',
-    distance: 1600,
+    distance: 800,
     startingSpeed: 16,
     maxSpeed: 30,
     obstacleGap: [10, 16],
@@ -217,7 +217,7 @@ const LEVELS = [
   {
     name: 'Boda',
     arrivalText: 'Llegaron a la boda',
-    distance: 2000,
+    distance: 1000,
     startingSpeed: 18,
     maxSpeed: 33,
     obstacleGap: [9, 14],
@@ -247,7 +247,7 @@ const LEVELS = [
   {
     name: 'Wawa',
     arrivalText: 'Llegaron a casa con la wawa',
-    distance: 2400,
+    distance: 1200,
     startingSpeed: 20,
     maxSpeed: 36,
     obstacleGap: [8, 12],
