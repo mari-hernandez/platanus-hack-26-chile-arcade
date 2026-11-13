@@ -67,91 +67,117 @@ const PROGRESS_BAR_X = 16;
 const PROGRESS_BAR_WIDTH = 318;
 const START_BUTTONS = ['START1', 'START2', 'P1_1', 'P2_1'];
 
-const COLORS = {
-  background: 0x1d1230,
-  sunGlow: 0xfff6c8,
-  sun: 0xfffbe6,
-  cloud: 0xffffff,
-  curbPink: 0xff5f9e,
-  curbWhite: 0xfff4fa,
-  asphaltLight: 0x5d6178,
-  asphaltDark: 0x585c72,
-  laneLine: 0xfffbea,
-  shadow: 0x2f5e2c,
-  trunk: 0x8a5a3b,
-  leaves: 0x4fa84a,
-  leavesHighlight: 0x7ccd5f,
-  blossom: 0xf48fb8,
-  blossomHighlight: 0xffc4dc,
-  pineTrunk: 0x7a4f33,
-  pineDark: 0x2f8a5a,
-  pineLight: 0x3ca56c,
-  bush: 0x5cb850,
-  flowerPink: 0xff7eb3,
-  flowerYellow: 0xfff07a,
-  windshield: 0xbfe8ff,
-  driverHair: 0x3a2a2a,
-  passengerHair: 0x8b5a3c,
-  bow: 0xff5f9e,
-  carBody: 0xffc93c,
-  carHighlight: 0xffe27a,
-  carShade: 0xe0a520,
-  tire: 0x26232e,
-  bumper: 0x4a4458,
-  tailLight: 0xe8384f,
-  tailLightGlow: 0xff9aa8,
-  plate: 0xffffff,
-  trafficBodies: [0x7fd6c2, 0xb69cf0, 0x7cb8ff, 0xff9f7a],
-  trafficGlass: 0x2c3550,
-  barrierStripe: 0xff5f9e,
-  barrierLeg: 0x6b6478,
-  cone: 0xff8a3d,
-  spikeMetal: 0xd7dcec,
-  spikeShade: 0x8a90a8,
-  crashFlash: [255, 120, 170],
+const PALETTE = {
+  ink: 0x1d1230,
+  white: 0xffffff,
+  pink: 0xff5f9e,
+  purple: 0x7a3fe8,
+  blue: 0x5bb8ff,
+  mint: 0x6fd6b0,
+  green: 0x5cb850,
+  yellow: 0xffcf4a,
+  orange: 0xff8a3d,
+  red: 0xe8384f,
+  brown: 0x8b5a3c,
   skin: 0xffe3d3,
-  skinShade: 0xf5c2ad,
-  noseTip: 0xffb5b0,
-  outline: 0x5e3340,
-  hair: 0x9a5f3e,
-  hairDark: 0x6e3f2a,
-  hairShine: 0xc98e64,
-  iris: 0x4aa8d8,
-  irisDark: 0x24508f,
-  irisLight: 0xa8e6ff,
-  shopWall: 0xfff4e6,
-  shopTrim: 0x9ee6c9,
-  iceCreamCone: 0xf3b860,
-  coneLines: 0xd9963f,
-  scoopStrawberry: 0xff9ec7,
-  scoopMint: 0x9ee6c9,
-  scoopVanilla: 0xfff1d6,
-  cherry: 0xe8384f,
-  windowLight: 0xfff8e1,
-  lampPost: 0x4a4458,
-  lampBulb: 0xfff3b0,
-  buildingColors: [0xf7b2c4, 0xb9d7f2, 0xf6d6a8, 0xc9b8f0],
-  cinemaWall: 0x6b4fa8,
-  cinemaTrim: 0x4a3580,
-  marquee: 0xffd166,
-  curtain: 0xd6336c,
-  deck: 0xc98a55,
-  chapelWall: 0xfffaf5,
-  chapelRoof: 0xffb3cf,
-  bell: 0xffcf4a,
-  bone: 0xf3ead8,
-  flameRed: 0xe8452a,
-  flameOrange: 0xff9a3a,
-  flameYellow: 0xffe27a,
-  roofRed: 0xb83a3a,
-  bottleMilk: 0xfffdf5,
-  bottleRing: 0x7cb8ff,
-  nipple: 0xffb3a7,
-  buttonPurple: 0x7a3fe8,
-  buttonPurpleLight: 0x9c6bff,
-  buttonIdle: 0xe9ddff,
-  makeupTop: 0xffd6ea,
-  makeupBottom: 0xf3b2d8,
+};
+
+function light(color, amount) {
+  return blendColor(color, PALETTE.white, amount);
+}
+
+function dark(color, amount) {
+  return blendColor(color, PALETTE.ink, amount);
+}
+
+function css(color) {
+  return `#${color.toString(16).padStart(6, '0')}`;
+}
+
+const COLORS = {
+  background: PALETTE.ink,
+  sunGlow: light(PALETTE.yellow, 0.7),
+  sun: light(PALETTE.yellow, 0.85),
+  cloud: PALETTE.white,
+  curbPink: PALETTE.pink,
+  curbWhite: light(PALETTE.pink, 0.92),
+  asphaltLight: light(PALETTE.ink, 0.3),
+  asphaltDark: light(PALETTE.ink, 0.27),
+  laneLine: light(PALETTE.yellow, 0.9),
+  shadow: dark(PALETTE.green, 0.55),
+  trunk: PALETTE.brown,
+  leaves: PALETTE.green,
+  leavesHighlight: light(PALETTE.green, 0.25),
+  blossom: light(PALETTE.pink, 0.35),
+  blossomHighlight: light(PALETTE.pink, 0.65),
+  pineTrunk: dark(PALETTE.brown, 0.1),
+  pineDark: dark(PALETTE.mint, 0.4),
+  pineLight: dark(PALETTE.mint, 0.25),
+  bush: PALETTE.green,
+  flowerPink: light(PALETTE.pink, 0.2),
+  flowerYellow: light(PALETTE.yellow, 0.4),
+  windshield: light(PALETTE.blue, 0.6),
+  driverHair: dark(PALETTE.brown, 0.6),
+  passengerHair: PALETTE.brown,
+  carBody: PALETTE.yellow,
+  carHighlight: light(PALETTE.yellow, 0.4),
+  carShade: dark(PALETTE.yellow, 0.15),
+  tire: PALETTE.ink,
+  bumper: light(PALETTE.ink, 0.2),
+  tailLight: PALETTE.red,
+  tailLightGlow: light(PALETTE.red, 0.5),
+  plate: PALETTE.white,
+  trafficBodies: [PALETTE.mint, light(PALETTE.purple, 0.4), PALETTE.blue, light(PALETTE.orange, 0.25)],
+  trafficGlass: light(PALETTE.ink, 0.1),
+  barrierStripe: PALETTE.pink,
+  barrierLeg: light(PALETTE.ink, 0.35),
+  cone: PALETTE.orange,
+  spikeMetal: light(PALETTE.ink, 0.85),
+  spikeShade: light(PALETTE.ink, 0.5),
+  crashFlash: light(PALETTE.pink, 0.2),
+  skin: PALETTE.skin,
+  skinShade: dark(PALETTE.skin, 0.1),
+  noseTip: light(PALETTE.pink, 0.6),
+  outline: dark(PALETTE.brown, 0.4),
+  hair: light(PALETTE.brown, 0.08),
+  hairDark: dark(PALETTE.brown, 0.25),
+  hairShine: light(PALETTE.brown, 0.35),
+  iris: PALETTE.blue,
+  irisDark: dark(PALETTE.blue, 0.5),
+  irisLight: light(PALETTE.blue, 0.6),
+  shopWall: light(PALETTE.yellow, 0.9),
+  shopTrim: light(PALETTE.mint, 0.3),
+  iceCreamCone: dark(PALETTE.yellow, 0.1),
+  coneLines: dark(PALETTE.yellow, 0.3),
+  scoopStrawberry: light(PALETTE.pink, 0.45),
+  scoopMint: light(PALETTE.mint, 0.3),
+  scoopVanilla: light(PALETTE.yellow, 0.8),
+  cherry: PALETTE.red,
+  windowLight: light(PALETTE.yellow, 0.85),
+  lampPost: light(PALETTE.ink, 0.2),
+  lampBulb: light(PALETTE.yellow, 0.6),
+  buildingColors: [light(PALETTE.pink, 0.5), light(PALETTE.blue, 0.55), light(PALETTE.yellow, 0.55), light(PALETTE.purple, 0.55)],
+  cinemaWall: dark(PALETTE.purple, 0.2),
+  cinemaTrim: dark(PALETTE.purple, 0.45),
+  marquee: light(PALETTE.yellow, 0.2),
+  curtain: dark(PALETTE.pink, 0.15),
+  deck: light(PALETTE.brown, 0.3),
+  chapelWall: light(PALETTE.pink, 0.97),
+  chapelRoof: light(PALETTE.pink, 0.5),
+  bell: PALETTE.yellow,
+  bone: light(PALETTE.yellow, 0.85),
+  flameRed: PALETTE.red,
+  flameOrange: PALETTE.orange,
+  flameYellow: light(PALETTE.yellow, 0.3),
+  roofRed: dark(PALETTE.red, 0.25),
+  bottleMilk: PALETTE.white,
+  bottleRing: PALETTE.blue,
+  nipple: light(PALETTE.orange, 0.55),
+  buttonPurple: PALETTE.purple,
+  buttonPurpleLight: light(PALETTE.purple, 0.25),
+  buttonIdle: light(PALETTE.purple, 0.85),
+  makeupTop: light(PALETTE.pink, 0.8),
+  makeupBottom: light(PALETTE.pink, 0.55),
 };
 
 const LEVELS = [
@@ -171,18 +197,18 @@ const LEVELS = [
     scenery: ['roundTree', 'roundTree', 'blossomTree', 'pine', 'flowerBush'],
     sceneryDensity: 0.4,
     colors: {
-      skyTop: 0x5bb8ff,
-      skyBottom: 0xffdcee,
-      sun: 0xfffbe6,
-      sunGlow: 0xfff6c8,
-      fog: 0xe3e3f7,
-      mountains: 0x9d8fd8,
-      hills: 0x8fcf8a,
-      grassLight: 0x86d06f,
-      grassDark: 0x78c262,
-      sand: 0xf6dfae,
+      skyTop: PALETTE.blue,
+      skyBottom: light(PALETTE.pink, 0.8),
+      sun: light(PALETTE.yellow, 0.85),
+      sunGlow: light(PALETTE.yellow, 0.7),
+      fog: light(PALETTE.purple, 0.85),
+      mountains: light(PALETTE.purple, 0.4),
+      hills: light(PALETTE.green, 0.25),
+      grassLight: light(PALETTE.green, 0.15),
+      grassDark: PALETTE.green,
+      sand: light(PALETTE.yellow, 0.65),
     },
-    outfit: { style: 'blouse', color: 0xb79cf0, shade: 0x957ad9 },
+    outfit: { style: 'blouse', color: light(PALETTE.purple, 0.5), shade: light(PALETTE.purple, 0.3) },
     drawDestination: drawIceCreamShop,
   },
   {
@@ -201,18 +227,18 @@ const LEVELS = [
     scenery: ['building', 'building', 'lamp'],
     sceneryDensity: 0.7,
     colors: {
-      skyTop: 0x1f1b4d,
-      skyBottom: 0x8a5aa8,
-      sun: 0xfff6dc,
-      sunGlow: 0xffd6a8,
-      fog: 0x6a5590,
-      mountains: 0x3d3470,
-      hills: 0x56478a,
-      grassLight: 0x8a84a0,
-      grassDark: 0x7f7996,
-      sand: 0x6b6585,
+      skyTop: dark(PALETTE.purple, 0.75),
+      skyBottom: dark(PALETTE.purple, 0.2),
+      sun: light(PALETTE.yellow, 0.85),
+      sunGlow: light(PALETTE.orange, 0.6),
+      fog: dark(PALETTE.purple, 0.45),
+      mountains: dark(PALETTE.purple, 0.6),
+      hills: dark(PALETTE.purple, 0.4),
+      grassLight: light(PALETTE.ink, 0.5),
+      grassDark: light(PALETTE.ink, 0.46),
+      sand: light(PALETTE.ink, 0.4),
     },
-    outfit: { style: 'party', color: 0x2e3a7a, shade: 0x1f285a },
+    outfit: { style: 'party', color: dark(PALETTE.blue, 0.6), shade: dark(PALETTE.blue, 0.75) },
     drawDestination: drawCinema,
   },
   {
@@ -231,18 +257,18 @@ const LEVELS = [
     scenery: ['blossomTree', 'blossomTree', 'roundTree', 'flowerBush'],
     sceneryDensity: 0.5,
     colors: {
-      skyTop: 0xffa6c1,
-      skyBottom: 0xffe8c8,
-      sun: 0xfff3dc,
-      sunGlow: 0xffc7a0,
-      fog: 0xffe6ee,
-      mountains: 0xc9a0dc,
-      hills: 0x9ed69a,
-      grassLight: 0x9bd67e,
-      grassDark: 0x8fcb72,
-      sand: 0xfff0e0,
+      skyTop: light(PALETTE.pink, 0.45),
+      skyBottom: light(PALETTE.yellow, 0.75),
+      sun: light(PALETTE.yellow, 0.85),
+      sunGlow: light(PALETTE.orange, 0.55),
+      fog: light(PALETTE.pink, 0.85),
+      mountains: light(PALETTE.purple, 0.5),
+      hills: light(PALETTE.green, 0.4),
+      grassLight: light(PALETTE.green, 0.3),
+      grassDark: light(PALETTE.green, 0.2),
+      sand: light(PALETTE.pink, 0.9),
     },
-    outfit: { style: 'bride', color: 0xfffaf5, shade: 0xe6dbe6 },
+    outfit: { style: 'bride', color: light(PALETTE.pink, 0.97), shade: light(PALETTE.purple, 0.8) },
     drawDestination: drawChapel,
   },
   {
@@ -261,18 +287,18 @@ const LEVELS = [
     scenery: ['fire', 'fire', 'skull', 'bones'],
     sceneryDensity: 0.45,
     colors: {
-      skyTop: 0x2a0a12,
-      skyBottom: 0xc8452a,
-      sun: 0xffd27a,
-      sunGlow: 0xff7a3a,
-      fog: 0x7a2a2a,
-      mountains: 0x4a1520,
-      hills: 0xff7a2a,
-      grassLight: 0x5a1a1a,
-      grassDark: 0x4a1414,
-      sand: 0x2a0f12,
+      skyTop: dark(PALETTE.red, 0.8),
+      skyBottom: dark(PALETTE.orange, 0.25),
+      sun: light(PALETTE.yellow, 0.4),
+      sunGlow: PALETTE.orange,
+      fog: dark(PALETTE.red, 0.45),
+      mountains: dark(PALETTE.red, 0.65),
+      hills: PALETTE.orange,
+      grassLight: dark(PALETTE.red, 0.6),
+      grassDark: dark(PALETTE.red, 0.65),
+      sand: dark(PALETTE.red, 0.8),
     },
-    outfit: { style: 'hoodie', color: 0x9ee6c9, shade: 0x6fc9a8 },
+    outfit: { style: 'hoodie', color: light(PALETTE.mint, 0.25), shade: PALETTE.mint },
     drawDestination: drawHomeWithBaby,
   },
 ];
@@ -298,7 +324,7 @@ new Phaser.Game({
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
   parent: 'game-root',
-  backgroundColor: COLORS.background,
+  backgroundColor: css(COLORS.background),
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -442,16 +468,16 @@ function createFaceTexture(scene, key, look, width, height, scale, background) {
 
 const HEADING_STYLE = {
   fontFamily: 'Arial Black, Impact, sans-serif',
-  color: '#ff00d1',
-  stroke: '#1d1230',
+  color: css(PALETTE.pink),
+  stroke: css(PALETTE.ink),
   strokeThickness: 10,
 };
 
 const OVERLAY_TEXT_STYLE = {
   fontFamily: 'Trebuchet MS, Arial',
   fontStyle: 'bold',
-  color: '#ffffff',
-  stroke: '#1d1230',
+  color: css(PALETTE.white),
+  stroke: css(PALETTE.ink),
   strokeThickness: 10,
   align: 'center',
 };
@@ -481,12 +507,12 @@ function createTitleScreen(scene) {
   const car = scene.add.image(left + 160, 598, 'car').setOrigin(0.5, 1).setScale(0.8);
 
   const makeupWord = scene.add
-    .text(centerX + 8, 140, 'Makeup', { fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '78px', color: '#ff00d1', stroke: '#1d1230', strokeThickness: 12 })
+    .text(centerX + 8, 140, 'Makeup', { fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '78px', color: css(PALETTE.pink), stroke: css(PALETTE.ink), strokeThickness: 12 })
     .setOrigin(1, 0.5);
   const racingWord = scene.add
-    .text(centerX + 18, 160, 'Racing', { fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '72px', fontStyle: 'italic', color: '#5000ff', stroke: '#6e0404', strokeThickness: 10 })
+    .text(centerX + 18, 160, 'Racing', { fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '72px', fontStyle: 'italic', color: css(PALETTE.purple), stroke: css(dark(PALETTE.red, 0.6)), strokeThickness: 10 })
     .setOrigin(0, 0.5);
-  for (const word of [makeupWord, racingWord]) word.setShadow(0, 6, '#1d1230', 0, true, true);
+  for (const word of [makeupWord, racingWord]) word.setShadow(0, 6, css(PALETTE.ink), 0, true, true);
   const titleGap = 14;
   const titleLeft = centerX - (makeupWord.width + titleGap + racingWord.width) / 2;
   makeupWord.setOrigin(0, 0.5).setX(titleLeft);
@@ -498,7 +524,7 @@ function createTitleScreen(scene) {
   const playButton = scene.add.graphics();
   drawPixelButton(playButton, 230, 72);
   const playLabel = scene.add
-    .text(0, 0, 'JUGAR', { fontFamily: 'Courier New, monospace', fontStyle: 'bold', fontSize: '40px', color: '#ffffff', stroke: '#1d1230', strokeThickness: 6 })
+    .text(0, 0, 'JUGAR', { fontFamily: 'Courier New, monospace', fontStyle: 'bold', fontSize: '40px', color: css(PALETTE.white), stroke: css(PALETTE.ink), strokeThickness: 6 })
     .setOrigin(0.5);
   const button = scene.add.container(centerX, 330, [playButton, playLabel]);
   scene.tweens.add({ targets: button, scale: 1.08, duration: 500, yoyo: true, repeat: -1 });
@@ -540,10 +566,10 @@ function createLevelSelectScreen(scene) {
   const centerX = OVERLAY_WORLD_X + GAME_WIDTH / 2;
   scene.levelSelectBackground = scene.add.graphics();
   const heading = scene.add.text(centerX, 74, 'Elige el destino', { ...HEADING_STYLE, fontSize: '52px' }).setOrigin(0.5);
-  heading.setShadow(0, 5, '#1d1230', 0, true, true);
+  heading.setShadow(0, 5, css(PALETTE.ink), 0, true, true);
   scene.levelCardsGraphics = scene.add.graphics();
   scene.levelCardTexts = LEVELS.map(() => [
-    scene.add.text(0, 0, '', { ...MAKEUP_TEXT_STYLE, fontSize: '15px', color: '#7a3fe8' }).setOrigin(0.5),
+    scene.add.text(0, 0, '', { ...MAKEUP_TEXT_STYLE, fontSize: '15px', color: css(PALETTE.purple) }).setOrigin(0.5),
     scene.add.text(0, 0, '', { ...MAKEUP_TEXT_STYLE, fontSize: '18px', align: 'center', wordWrap: { width: 150 } }).setOrigin(0.5),
   ]);
   const hint = scene.add
@@ -589,7 +615,7 @@ function refreshLevelSelect(scene) {
     }
     const [numberText, nameText] = scene.levelCardTexts[index];
     numberText.setPosition(centerX, top + 206).setText(`NIVEL ${index + 1}`);
-    nameText.setPosition(centerX, top + 238).setText(level.name).setColor(isLocked ? '#9a8aa6' : '#c2457f');
+    nameText.setPosition(centerX, top + 238).setText(level.name).setColor(isLocked ? css(light(PALETTE.ink, 0.5)) : css(dark(PALETTE.pink, 0.3)));
   });
 }
 
@@ -638,14 +664,14 @@ function showResults(scene) {
       ...HEADING_STYLE,
       fontSize: '32px',
       strokeThickness: 8,
-      color: isPerfect ? '#ff00d1' : '#5000ff',
+      color: isPerfect ? css(PALETTE.pink) : css(PALETTE.purple),
     })
     .setOrigin(0.5);
   const summary = scene.add
     .text(centerX, 198, `Look ${matchingCount}/${MAKEUP_PARTS.length}   \u00b7   ${scene.race.crashes} choques`, { ...MAKEUP_TEXT_STYLE, fontSize: '20px' })
     .setOrigin(0.5);
   const unlockNotice = scene.add
-    .text(centerX, 226, unlocksNextLevel ? `Desbloquearon: ${LEVELS[nextLevel].name}` : '', { ...MAKEUP_TEXT_STYLE, fontSize: '16px', color: '#7a3fe8' })
+    .text(centerX, 226, unlocksNextLevel ? `Desbloquearon: ${LEVELS[nextLevel].name}` : '', { ...MAKEUP_TEXT_STYLE, fontSize: '16px', color: css(PALETTE.purple) })
     .setOrigin(0.5);
 
   const retryOption = ['Reintentar', { levelIndex: scene.levelIndex, startLevel: true }];
@@ -658,12 +684,12 @@ function showResults(scene) {
     const y = 286 + index * 66;
     const button = scene.add.graphics({ x: centerX, y });
     const text = scene.add
-      .text(centerX, y, label, { fontFamily: 'Courier New, monospace', fontStyle: 'bold', fontSize: '26px', color: '#ffffff', stroke: '#1d1230', strokeThickness: 5 })
+      .text(centerX, y, label, { fontFamily: 'Courier New, monospace', fontStyle: 'bold', fontSize: '26px', color: css(PALETTE.white), stroke: css(PALETTE.ink), strokeThickness: 5 })
       .setOrigin(0.5);
     return { button, text, restartOptions };
   });
   const hint = scene.add
-    .text(centerX, 474, '\u25b2\u25bc elegir    START aceptar', { ...MAKEUP_TEXT_STYLE, fontSize: '14px', color: '#9a6a8a' })
+    .text(centerX, 474, '\u25b2\u25bc elegir    START aceptar', { ...MAKEUP_TEXT_STYLE, fontSize: '14px', color: css(light(PALETTE.ink, 0.45)) })
     .setOrigin(0.5);
   scene.selectedResultOption = 0;
   refreshResultsMenu(scene);
@@ -679,7 +705,7 @@ function refreshResultsMenu(scene) {
     const isSelected = index === scene.selectedResultOption;
     option.button.clear();
     drawPixelButton(option.button, 300, 54, isSelected);
-    option.text.setColor(isSelected ? '#ffffff' : '#4a3580').setStroke(isSelected ? '#1d1230' : '#ffffff', 5);
+    option.text.setColor(isSelected ? css(PALETTE.white) : css(dark(PALETTE.purple, 0.45))).setStroke(isSelected ? css(PALETTE.ink) : css(PALETTE.white), 5);
   });
 }
 
@@ -949,23 +975,23 @@ const FIRST_TILE_Y = 118;
 const TILE_SPACING = 62;
 const TILE_SIZE = 50;
 const SWATCH_Y = 550;
-const NATURAL_LIPS = 0xf09a9a;
-const NATURAL_BROWS = 0x7a4a34;
-const NATURAL_LASHES = 0x3a2328;
+const NATURAL_LIPS = light(PALETTE.red, 0.45);
+const NATURAL_BROWS = dark(PALETTE.brown, 0.15);
+const NATURAL_LASHES = dark(PALETTE.brown, 0.6);
 
 const MAKEUP_PARTS = [
-  { key: 'brows', name: 'CEJAS', colors: [0x4a2e22, 0x1f1a1c, 0xd8a85f, 0xe0609a] },
-  { key: 'shadow', name: 'SOMBRA', colors: [0xc77dff, 0x5fb3ff, 0xffb347, 0x6fd6a0, 0xff7eb3] },
-  { key: 'mascara', name: 'R\u00cdMEL', colors: [0x1f1a1c, 0x3d6bff, 0x8a3fd1, 0x5a3a2a] },
-  { key: 'blush', name: 'RUBOR', colors: [0xff8fab, 0xffa07a, 0xd98cd9] },
-  { key: 'earrings', name: 'AROS', colors: [0xffcf4a, 0xd9dde8, 0xff7eb3, 0x45d6c4] },
-  { key: 'lips', name: 'LABIOS', colors: [0xe23d5b, 0xff6fa5, 0x9b3dbd, 0xff8566] },
+  { key: 'brows', name: 'CEJAS', colors: [dark(PALETTE.brown, 0.4), PALETTE.ink, dark(PALETTE.yellow, 0.2), PALETTE.pink] },
+  { key: 'shadow', name: 'SOMBRA', colors: [light(PALETTE.purple, 0.3), PALETTE.blue, light(PALETTE.orange, 0.2), PALETTE.mint, light(PALETTE.pink, 0.2)] },
+  { key: 'mascara', name: 'R\u00cdMEL', colors: [PALETTE.ink, dark(PALETTE.blue, 0.3), PALETTE.purple, dark(PALETTE.brown, 0.3)] },
+  { key: 'blush', name: 'RUBOR', colors: [light(PALETTE.pink, 0.3), light(PALETTE.orange, 0.35), light(PALETTE.purple, 0.45)] },
+  { key: 'earrings', name: 'AROS', colors: [PALETTE.yellow, light(PALETTE.ink, 0.85), PALETTE.pink, PALETTE.mint] },
+  { key: 'lips', name: 'LABIOS', colors: [PALETTE.red, light(PALETTE.pink, 0.1), dark(PALETTE.purple, 0.1), light(PALETTE.orange, 0.15)] },
 ];
 
 const MAKEUP_TEXT_STYLE = {
   fontFamily: 'Trebuchet MS, Arial',
   fontStyle: 'bold',
-  color: '#c2457f',
+  color: css(dark(PALETTE.pink, 0.3)),
 };
 
 function createMakeupPanel(scene) {
@@ -1028,15 +1054,15 @@ function createMakeupToolbar(scene) {
     .text(left + PANEL_WIDTH / 2 + 3, 578, '\u25b2\u25bc parte    \u25c0\u25b6 o Bot\u00f3n 1: color', {
       ...MAKEUP_TEXT_STYLE,
       fontSize: '11px',
-      color: '#b98aa6',
+      color: css(light(PALETTE.ink, 0.55)),
     })
     .setOrigin(0.5);
   scene.crashNoticeText = scene.add
     .text(FACE_CENTER_X, 140, '', {
       ...MAKEUP_TEXT_STYLE,
       fontSize: '22px',
-      color: '#ffffff',
-      stroke: '#e8384f',
+      color: css(PALETTE.white),
+      stroke: css(PALETTE.red),
       strokeThickness: 6,
       align: 'center',
     })
@@ -1578,7 +1604,7 @@ function detectCrash(scene, time) {
     race.speed *= 0.35;
     race.recoveringUntil = time + CRASH_RECOVERY_MS;
     scene.cameras.main.shake(250, 0.012);
-    scene.cameras.main.flash(180, ...COLORS.crashFlash);
+    scene.cameras.main.flash(180, (COLORS.crashFlash >> 16) & 255, (COLORS.crashFlash >> 8) & 255, COLORS.crashFlash & 255);
     playSound(scene, 'crash');
     ruinMakeup(scene);
     return;
@@ -1911,8 +1937,8 @@ function createHud(scene) {
     fontFamily: 'Trebuchet MS, Arial',
     fontSize: '16px',
     fontStyle: 'bold',
-    color: '#ffffff',
-    stroke: '#1d1230',
+    color: css(PALETTE.white),
+    stroke: css(PALETTE.ink),
     strokeThickness: 5,
   };
   scene.progressGraphics = scene.add.graphics();
@@ -1920,7 +1946,7 @@ function createHud(scene) {
   currentLevel.drawDestination(finishIcon, { x: PROGRESS_BAR_X + PROGRESS_BAR_WIDTH + 28, y: 40, scale: 26 }, (color) => color);
   scene.remainingText = scene.add.text(PROGRESS_BAR_X, 34, '', style);
   scene.speedText = scene.add.text(PROGRESS_BAR_X + PROGRESS_BAR_WIDTH, 34, '', style).setOrigin(1, 0);
-  scene.crashText = scene.add.text(PROGRESS_BAR_X, 56, '', { ...style, color: '#ffb3d1' });
+  scene.crashText = scene.add.text(PROGRESS_BAR_X, 56, '', { ...style, color: css(light(PALETTE.pink, 0.55)) });
 }
 
 function updateHud(scene) {
