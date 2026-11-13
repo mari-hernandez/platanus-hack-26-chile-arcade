@@ -375,6 +375,7 @@ const LEVELS = [
     scenery: ['fire', 'fire', 'skull', 'bones'],
     sceneryDensity: 0.45,
     selfiesNeeded: 3,
+    hasBaby: true,
     colors: {
       skyTop: dark(PALETTE.red, 0.8),
       skyBottom: dark(PALETTE.orange, 0.25),
@@ -1135,6 +1136,7 @@ function takeSelfie(scene) {
   painter.fillRect(0, 0, SELFIE_PHOTO_WIDTH, SELFIE_PHOTO_HEIGHT);
   drawBoyfriend(painter, 88, 118, 0.5);
   drawFace(painter, 176, 112, 0.46, lookFrom(makeup.colorIndexes));
+  if (currentLevel.hasBaby) drawBaby(painter, 130, 162, 0.44);
   replaceTexture(scene, painter, 'selfie', SELFIE_PHOTO_WIDTH, SELFIE_PHOTO_HEIGHT);
   painter.destroy();
 
@@ -1203,6 +1205,32 @@ function drawBoyfriend(graphics, centerX, centerY, scale) {
   graphics.beginPath();
   graphics.arc(...at(0, 44), 22 * scale, 0.2, Math.PI - 0.2);
   graphics.strokePath();
+}
+
+function drawBaby(graphics, centerX, centerY, scale) {
+  const at = (offsetX, offsetY) => [centerX + offsetX * scale, centerY + offsetY * scale];
+  const circle = (color, offsetX, offsetY, radius) => {
+    graphics.fillStyle(color, 1);
+    graphics.fillCircle(...at(offsetX, offsetY), radius * scale);
+  };
+  graphics.fillStyle(light(PALETTE.yellow, 0.55), 1);
+  graphics.fillEllipse(...at(0, 70), 170 * scale, 110 * scale);
+  circle(COLORS.outline, 0, 0, 64);
+  circle(PALETTE.skin, 0, 0, 60);
+  graphics.lineStyle(7 * scale, COLORS.hair, 1);
+  graphics.beginPath();
+  graphics.arc(...at(6, -56), 14 * scale, Math.PI, Math.PI * 2.4);
+  graphics.strokePath();
+  graphics.lineStyle(5 * scale, COLORS.outline, 1);
+  for (const side of [-1, 1]) {
+    graphics.beginPath();
+    graphics.arc(...at(side * 22, -2), 9 * scale, 0.2, Math.PI - 0.2);
+    graphics.strokePath();
+    graphics.fillStyle(light(PALETTE.pink, 0.4), 1);
+    graphics.fillEllipse(...at(side * 36, 18), 22 * scale, 12 * scale);
+  }
+  circle(PALETTE.pink, 0, 28, 14);
+  circle(light(PALETTE.pink, 0.5), 0, 28, 7);
 }
 
 function isPartMatching(makeup, partIndex) {
