@@ -1060,7 +1060,7 @@ function refreshMakeup(scene) {
   drawFace(scene.faceGraphics, FACE_CENTER_X, FACE_CENTER_Y, FACE_SCALE, look);
 
   const part = MAKEUP_PARTS[makeup.selectedPart];
-  scene.partNameText.setText(`${part.name}${isPartMatching(makeup, makeup.selectedPart) ? '  \u2713' : ''}`);
+  scene.partNameText.setText(part.name);
   drawCategoryTiles(scene, look);
   drawSwatches(scene, part);
 }
@@ -1080,16 +1080,6 @@ function drawCategoryTiles(scene, look) {
     graphics.fillStyle(isSelected ? COLORS.flowerPink : COLORS.makeupTop, 1);
     graphics.fillRoundedRect(x - size / 2 + 4, y - size / 2 + 4, size - 8, size - 8, 12);
     drawPartIcon(graphics, part.key, x, y, look[part.key] || part.colors[0]);
-    if (isPartMatching(scene.makeup, index)) {
-      graphics.fillStyle(COLORS.pineLight, 1);
-      graphics.fillCircle(x + size / 2 - 4, y - size / 2 + 4, 9);
-      graphics.lineStyle(3, COLORS.cloud, 1);
-      graphics.beginPath();
-      graphics.moveTo(x + size / 2 - 9, y - size / 2 + 4);
-      graphics.lineTo(x + size / 2 - 5, y - size / 2 + 8);
-      graphics.lineTo(x + size / 2 + 1, y - size / 2);
-      graphics.strokePath();
-    }
   });
 }
 
