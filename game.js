@@ -53,7 +53,9 @@ const CAR_SCREEN_Y = HORIZON_Y + PERSPECTIVE_HEIGHT / CAR_DEPTH + 16;
 const CAR_IMAGE_SCALE = 0.85;
 const FIRST_OBSTACLE_POSITION = 60;
 const CRASH_RECOVERY_MS = 1500;
-const JUMP_DURATION_MS = 450;
+const JUMP_DISTANCE = 10;
+const SHORTEST_JUMP_MS = 270;
+const LONGEST_JUMP_MS = 480;
 const CRYING_BABY_HEIGHT = 130;
 const SELFIE_DURATION_MS = 1800;
 const SELFIE_PHOTO_WIDTH = 260;
@@ -488,7 +490,8 @@ function create(data) {
     carX: 0,
     crashes: 0,
     recoveringUntil: 0,
-    jumpStartedAt: -JUMP_DURATION_MS,
+    jumpStartedAt: -LONGEST_JUMP_MS,
+    jumpDuration: LONGEST_JUMP_MS,
     landedAt: -1000,
     wasAirborne: false,
     obstacles: [],
@@ -1742,6 +1745,7 @@ function steerCar(scene, time, seconds) {
   const jumpPressed = wasPressed(scene, 'P1_U') || wasPressed(scene, 'P1_1');
   if (jumpPressed && jumpHeightAt(race, time) === 0) {
     race.jumpStartedAt = time;
+    race.jumpDuration = Phaser.Math.Clamp((JUMP_DISTANCE / race.speed) * 1000, SHORTEST_JUMP_MS, LONGEST_JUMP_MS);
     playSound(scene, 'jump');
   }
   const previousLane = race.lane;
@@ -1753,7 +1757,7 @@ function steerCar(scene, time, seconds) {
 }
 
 function jumpHeightAt(race, time) {
-  const progress = (time - race.jumpStartedAt) / JUMP_DURATION_MS;
+  const progress = (time - race.jumpStartedAt) / race.jumpDuration;
   return progress > 0 && progress < 1 ? Math.sin(progress * Math.PI) : 0;
 }
 
@@ -1783,7 +1787,7 @@ function spawnObstacles(race) {
     const lanes = Phaser.Utils.Array.Shuffle([-1, 0, 1]);
     if (Math.random() < currentLevel.spikeRowChance) {
       for (const lane of lanes) race.obstacles.push({ lane, position: race.nextObstaclePosition, kind: 'spikes', hasHit: false });
-      race.nextObstaclePosition += Phaser.Math.Between(...currentLevel.obstacleGap);
+      race.nextObstaclePosition += Phaser.Math.Between(...currentLevel.obstacleGap) + JUMP_DISTANCE;
       continue;
     }
     const chanceOfTwoBlockedLanes = currentLevel.twoLaneChance * Math.min(1, race.distance / (currentLevel.distance * 0.5));
