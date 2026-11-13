@@ -280,8 +280,6 @@ const COLORS = {
   bottleMilk: PALETTE.white,
   bottleRing: PALETTE.blue,
   nipple: light(PALETTE.orange, 0.55),
-  makeupTop: light(PALETTE.pink, 0.8),
-  makeupBottom: light(PALETTE.pink, 0.55),
 };
 
 const LEVELS = [
@@ -1071,7 +1069,8 @@ function createMakeupPanel(scene) {
   };
 
   const backdrop = scene.add.graphics();
-  backdrop.fillGradientStyle(COLORS.makeupTop, COLORS.makeupTop, COLORS.makeupBottom, COLORS.makeupBottom, 1);
+  drawLandscape(backdrop, currentLevel, { left, top: 0, width: PANEL_WIDTH, horizonY: 430, bottom: GAME_HEIGHT, scale: 1.5, sunY: 250 });
+  backdrop.fillStyle(PALETTE.white, 0.3);
   backdrop.fillRect(left, 0, PANEL_WIDTH, GAME_HEIGHT);
   backdrop.fillStyle(COLORS.cloud, 0.35);
   backdrop.fillCircle(FACE_CENTER_X, FACE_CENTER_Y - 10, 160);
@@ -1093,7 +1092,7 @@ function createMakeupPanel(scene) {
 
 function createReferencePhoto(scene) {
   const half = REFERENCE_PHOTO_SIZE / 2;
-  createFaceTexture(scene, 'reference-look', lookFrom(scene.makeup.targetIndexes), REFERENCE_PHOTO_SIZE, REFERENCE_PHOTO_SIZE, 0.44, COLORS.makeupBottom);
+  createFaceTexture(scene, 'reference-look', lookFrom(scene.makeup.targetIndexes), REFERENCE_PHOTO_SIZE, REFERENCE_PHOTO_SIZE, 0.44, light(currentLevel.colors.skyBottom, 0.3));
 
   const card = scene.add.graphics();
   card.fillStyle(UI.shadow, 0.3);
