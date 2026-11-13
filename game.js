@@ -2283,6 +2283,7 @@ function wakeBaby(scene) {
   if (!context || !scene.music) return;
   const crashes = scene.race.crashes;
   playBabyCry(context, 1 + Math.min(crashes, 4) * 0.15);
+  showCryingBaby(scene);
   scene.music.nextCryAt = scene.time.now + Math.max(1500, Phaser.Math.Between(5000, 7000) - crashes * 1000);
 }
 
@@ -2363,6 +2364,20 @@ function playDrum(context, hit, startTime) {
   volume.connect(context.destination);
   source.start(startTime);
   source.stop(startTime + 0.2);
+}
+
+function showCryingBaby(scene) {
+  if (!scene.textures.exists('crying-baby')) {
+    const painter = scene.make.graphics({ x: 0, y: 0 }, false);
+    paintCircle(painter, PALETTE.white, 50, 50, 48);
+    drawBaby(painter, 50, 44, 0.55);
+    painter.generateTexture('crying-baby', 100, 100);
+    painter.destroy();
+  }
+  const bubble = scene.add.image(scene.car.x, CAR_SCREEN_Y - 130, 'crying-baby').setDepth(9).setScale(0.3);
+  scene.tweens.add({ targets: bubble, scale: 1, duration: 250, ease: 'Back.Out' });
+  scene.tweens.add({ targets: bubble, angle: { from: -8, to: 8 }, duration: 90, yoyo: true, repeat: 8 });
+  scene.tweens.add({ targets: bubble, alpha: 0, delay: 1700, duration: 300, onComplete: () => bubble.destroy() });
 }
 
 function playBabyCry(context, loudness = 1) {
