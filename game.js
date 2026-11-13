@@ -116,8 +116,6 @@ const COLORS = {
   hair: 0x9a5f3e,
   hairDark: 0x6e3f2a,
   hairShine: 0xc98e64,
-  clothes: 0xb79cf0,
-  clothesShade: 0x957ad9,
   iris: 0x4aa8d8,
   irisDark: 0x24508f,
   irisLight: 0xa8e6ff,
@@ -183,6 +181,7 @@ const LEVELS = [
       grassDark: 0x78c262,
       sand: 0xf6dfae,
     },
+    outfit: { style: 'blouse', color: 0xb79cf0, shade: 0x957ad9 },
     drawDestination: drawIceCreamShop,
   },
   {
@@ -212,6 +211,7 @@ const LEVELS = [
       grassDark: 0x7f7996,
       sand: 0x6b6585,
     },
+    outfit: { style: 'party', color: 0x2e3a7a, shade: 0x1f285a },
     drawDestination: drawCinema,
   },
   {
@@ -241,6 +241,7 @@ const LEVELS = [
       grassDark: 0x8fcb72,
       sand: 0xfff0e0,
     },
+    outfit: { style: 'bride', color: 0xfffaf5, shade: 0xe6dbe6 },
     drawDestination: drawChapel,
   },
   {
@@ -270,6 +271,7 @@ const LEVELS = [
       grassDark: 0x4a1414,
       sand: 0x2a0f12,
     },
+    outfit: { style: 'hoodie', color: 0x9ee6c9, shade: 0x6fc9a8 },
     drawDestination: drawHomeWithBaby,
   },
 ];
@@ -1197,37 +1199,68 @@ function drawFace(graphics, centerX, centerY, scale, look) {
     graphics.strokePath();
   };
 
-  const smoothShape = (color, points) => {
+  const smoothShape = (color, points, alpha = 1) => {
     const outline = new Phaser.Curves.Spline(points.concat([points[0]]).map((point) => new Phaser.Math.Vector2(...pointAt(...point))));
-    graphics.fillStyle(color, 1);
+    graphics.fillStyle(color, alpha);
     graphics.fillPoints(outline.getPoints(points.length * 8), true);
   };
   const mirrored = (rightHalf) => rightHalf.concat(rightHalf.slice(1).reverse().map(([x, y]) => [-x, y]));
 
+  const outfit = currentLevel.outfit;
+  if (outfit.style === 'bride') {
+    smoothShape(COLORS.cloud, mirrored([[0, -168], [96, -156], [166, -60], [180, 80], [176, 230], [0, 230]]), 0.55);
+  }
   smoothShape(COLORS.hairDark, mirrored([[0, -150], [70, -142], [122, -102], [140, -34], [132, 36], [146, 96], [130, 150], [104, 140], [90, 168], [60, 150]]));
 
   graphics.fillStyle(COLORS.skinShade, 1);
   graphics.fillRect(...pointAt(-20, 80), 40 * scale, 60 * scale);
   const shoulders = (grow) => mirrored([[0, 128 - grow], [46, 130 - grow], [96 + grow, 140 - grow], [132 + grow, 168 - grow], [146 + grow, 230], [144 + grow, 300]]);
+  const isOffShoulder = outfit.style === 'party' || outfit.style === 'bride';
+  if (outfit.style === 'hoodie') ellipse(outfit.shade, 0, 140, 176, 84);
   smoothShape(COLORS.outline, shoulders(4));
-  smoothShape(COLORS.clothes, shoulders(0));
-  for (const side of [-1, 1]) {
-    ellipse(COLORS.clothesShade, side * 120, 190, 66, 76);
-    ellipse(COLORS.clothes, side * 117, 185, 60, 68);
-    stroke(COLORS.clothesShade, 2, [[side * 102, 160], [side * 108, 204]], 0.7);
-    stroke(COLORS.clothesShade, 2, [[side * 124, 156], [side * 130, 200]], 0.7);
+  smoothShape(isOffShoulder ? COLORS.skin : outfit.color, shoulders(0));
+
+  if (outfit.style === 'blouse') {
+    for (const side of [-1, 1]) {
+      ellipse(outfit.shade, side * 120, 190, 66, 76);
+      ellipse(outfit.color, side * 117, 185, 60, 68);
+      stroke(outfit.shade, 2, [[side * 102, 160], [side * 108, 204]], 0.7);
+      stroke(outfit.shade, 2, [[side * 124, 156], [side * 130, 200]], 0.7);
+    }
+    for (const [dotX, dotY] of [[-70, 216], [-40, 190], [-12, 228], [24, 196], [56, 222], [84, 192], [-92, 236]]) {
+      circle(COLORS.cloud, dotX, dotY, 4, 0.6);
+    }
+    ellipse(COLORS.skin, 0, 128, 46, 26);
+    for (const side of [-1, 1]) {
+      ellipse(COLORS.flowerPink, side * 21, 143, 48, 32);
+      ellipse(COLORS.cloud, side * 21, 141, 43, 27);
+    }
+    triangle(COLORS.curbPink, [[0, 150], [-15, 141], [-15, 159]]);
+    triangle(COLORS.curbPink, [[0, 150], [15, 141], [15, 159]]);
+    circle(COLORS.flowerPink, 0, 150, 4.5);
   }
-  for (const [dotX, dotY] of [[-70, 216], [-40, 190], [-12, 228], [24, 196], [56, 222], [84, 192], [-92, 236]]) {
-    circle(COLORS.cloud, dotX, dotY, 4, 0.6);
+
+  if (isOffShoulder) {
+    const dress = (grow) => mirrored([[0, 152 - grow], [62, 148 - grow], [118 + grow, 158 - grow], [148 + grow, 226], [146 + grow, 300]]);
+    smoothShape(COLORS.outline, dress(3));
+    smoothShape(outfit.color, dress(0));
+    if (outfit.style === 'party') {
+      for (let sequin = 0; sequin < 16; sequin++) circle(COLORS.cloud, -110 + seededRandom(sequin, 31) * 220, 166 + seededRandom(sequin, 32) * 70, 2.5, 0.75);
+      for (let pearl = -4; pearl <= 4; pearl++) circle(COLORS.scoopVanilla, pearl * 8, 124 + pearl * pearl * 0.9, 3.5);
+    } else {
+      for (let scallop = -6; scallop <= 6; scallop++) circle(COLORS.cloud, scallop * 18, 152 + Math.abs(scallop) * 0.4, 8);
+      for (let dot = -5; dot <= 5; dot++) circle(outfit.shade, dot * 18 + 9, 168, 2.5);
+    }
   }
-  ellipse(COLORS.skin, 0, 128, 46, 26);
-  for (const side of [-1, 1]) {
-    ellipse(COLORS.flowerPink, side * 21, 143, 48, 32);
-    ellipse(COLORS.cloud, side * 21, 141, 43, 27);
+
+  if (outfit.style === 'hoodie') {
+    ellipse(COLORS.skin, 0, 128, 46, 26);
+    stroke(outfit.shade, 10, [[-52, 136], [-26, 158], [0, 164], [26, 158], [52, 136]]);
+    for (const side of [-1, 1]) {
+      stroke(COLORS.cloud, 3, [[side * 14, 160], [side * 17, 208]]);
+      circle(COLORS.cloud, side * 17, 210, 4);
+    }
   }
-  triangle(COLORS.curbPink, [[0, 150], [-15, 141], [-15, 159]]);
-  triangle(COLORS.curbPink, [[0, 150], [15, 141], [15, 159]]);
-  circle(COLORS.flowerPink, 0, 150, 4.5);
 
   circle(COLORS.outline, 0, -12, 99);
   ellipse(COLORS.outline, 0, 38, 158, 140);
@@ -1294,9 +1327,16 @@ function drawFace(graphics, centerX, centerY, scale, look) {
   stroke(COLORS.hairDark, 2, [[-24, -84], [20, -70], [62, -54]], 0.4);
   stroke(COLORS.hairShine, 6, [[-74, -100], [-34, -120], [8, -126]], 0.6);
   stroke(COLORS.hairShine, 5, [[38, -122], [62, -112]], 0.6);
-  triangle(COLORS.curbPink, [[72, -114], [50, -128], [52, -98]]);
-  triangle(COLORS.curbPink, [[72, -114], [94, -128], [92, -98]]);
-  circle(COLORS.flowerPink, 72, -114, 6);
+  if (outfit.style === 'bride') {
+    [[-66, -116], [-36, -132], [0, -138], [36, -132], [66, -116]].forEach(([flowerX, flowerY], index) => {
+      circle(COLORS.cloud, flowerX, flowerY, 11);
+      circle(index % 2 ? COLORS.flowerPink : COLORS.flowerYellow, flowerX, flowerY, 4.5);
+    });
+  } else {
+    triangle(COLORS.curbPink, [[72, -114], [50, -128], [52, -98]]);
+    triangle(COLORS.curbPink, [[72, -114], [94, -128], [92, -98]]);
+    circle(COLORS.flowerPink, 72, -114, 6);
+  }
 
   for (const side of [-1, 1]) {
     const browWidth = look.brows ? 7 : 5;
