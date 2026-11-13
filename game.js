@@ -53,6 +53,9 @@ const CAR_SCREEN_Y = HORIZON_Y + PERSPECTIVE_HEIGHT / CAR_DEPTH + 16;
 const CAR_IMAGE_SCALE = 0.85;
 const FIRST_OBSTACLE_POSITION = 60;
 const CRASH_RECOVERY_MS = 1500;
+const JUMP_DURATION_MS = 650;
+const JUMP_HEIGHT_PX = 70;
+const JUMP_HEIGHT_TO_CLEAR_SPIKES = 0.3;
 const KMH_PER_SPEED_UNIT = 6;
 const LAST_OBSTACLE_MARGIN = 30;
 const CAR_STOP_OFFSET = 4;
@@ -103,6 +106,8 @@ const COLORS = {
   barrierStripe: 0xff5f9e,
   barrierLeg: 0x6b6478,
   cone: 0xff8a3d,
+  spikeMetal: 0xd7dcec,
+  spikeShade: 0x8a90a8,
   crashFlash: [255, 120, 170],
   skin: 0xffe3d3,
   skinShade: 0xf5c2ad,
@@ -159,7 +164,8 @@ const LEVELS = [
     maxSpeed: 26,
     obstacleGap: [12, 18],
     twoLaneChance: 0.15,
-    obstacles: ['traffic', 'cones'],
+    obstacles: ['traffic', 'cones', 'spikes'],
+    spikeRowChance: 0.08,
     horizon: 'mountains',
     isNight: false,
     cloudOpacity: 0.9,
@@ -187,7 +193,8 @@ const LEVELS = [
     maxSpeed: 30,
     obstacleGap: [10, 16],
     twoLaneChance: 0.3,
-    obstacles: ['traffic', 'traffic', 'barrier', 'cones'],
+    obstacles: ['traffic', 'traffic', 'barrier', 'cones', 'spikes'],
+    spikeRowChance: 0.12,
     horizon: 'city',
     isNight: true,
     cloudOpacity: 0.18,
@@ -215,7 +222,8 @@ const LEVELS = [
     maxSpeed: 33,
     obstacleGap: [9, 14],
     twoLaneChance: 0.4,
-    obstacles: ['traffic', 'barrier', 'cones'],
+    obstacles: ['traffic', 'barrier', 'cones', 'spikes'],
+    spikeRowChance: 0.15,
     horizon: 'mountains',
     isNight: false,
     cloudOpacity: 0.9,
@@ -243,7 +251,8 @@ const LEVELS = [
     maxSpeed: 36,
     obstacleGap: [8, 12],
     twoLaneChance: 0.5,
-    obstacles: ['traffic', 'traffic', 'barrier', 'cones'],
+    obstacles: ['traffic', 'traffic', 'barrier', 'cones', 'spikes'],
+    spikeRowChance: 0.2,
     horizon: 'lake',
     isNight: false,
     cloudOpacity: 0.12,
@@ -316,6 +325,7 @@ function create(data) {
     crashes: 0,
     elapsedSeconds: 0,
     recoveringUntil: 0,
+    jumpStartedAt: -JUMP_DURATION_MS,
     obstacles: [],
     nextObstaclePosition: FIRST_OBSTACLE_POSITION,
   };
@@ -395,7 +405,7 @@ function updateLevelSelect(scene, startPressed) {
 
 function driveRace(scene, time, seconds) {
   const race = scene.race;
-  steerCar(scene, seconds);
+  steerCar(scene, time, seconds);
   if (scene.phase === 'playing') {
     const progressToMaxSpeed = Math.min(1, race.distance / (currentLevel.distance * DISTANCE_SHARE_TO_REACH_MAX_SPEED));
     const cruisingSpeed = currentLevel.startingSpeed + (currentLevel.maxSpeed - currentLevel.startingSpeed) * progressToMaxSpeed;
@@ -497,7 +507,7 @@ function createTitleScreen(scene) {
     .text(centerX, 388, 'Presiona START', { ...OVERLAY_TEXT_STYLE, fontSize: '18px', strokeThickness: 5 })
     .setOrigin(0.5);
   const controls = scene.add
-    .text(centerX, 430, 'J1 maneja  \u25c0 \u25b6        J2 maquilla  \u25b2 \u25bc \u25c0 \u25b6  Bot\u00f3n 1', {
+    .text(centerX, 430, 'J1 maneja  \u25c0 \u25b6  salta \u25b2      J2 maquilla  \u25b2 \u25bc \u25c0 \u25b6  Bot\u00f3n 1', {
       ...OVERLAY_TEXT_STYLE,
       fontSize: '17px',
       strokeThickness: 5,
@@ -1401,8 +1411,13 @@ function createCar(scene) {
   scene.car = scene.add.image(ROAD_CENTER_X, CAR_SCREEN_Y, 'car').setOrigin(0.5, 1).setScale(CAR_IMAGE_SCALE);
 }
 
-function steerCar(scene, seconds) {
+function steerCar(scene, time, seconds) {
   const race = scene.race;
+  const jumpPressed = wasPressed(scene, 'P1_U') || wasPressed(scene, 'P1_1');
+  if (jumpPressed && jumpHeightAt(race, time) === 0) {
+    race.jumpStartedAt = time;
+    playSound(scene, 'jump');
+  }
   const previousLane = race.lane;
   if (wasPressed(scene, 'P1_L')) race.lane = Math.max(-1, race.lane - 1);
   if (wasPressed(scene, 'P1_R')) race.lane = Math.min(1, race.lane + 1);
@@ -1411,12 +1426,20 @@ function steerCar(scene, seconds) {
   race.cameraX = race.carX * 0.5;
 }
 
+function jumpHeightAt(race, time) {
+  const progress = (time - race.jumpStartedAt) / JUMP_DURATION_MS;
+  return progress > 0 && progress < 1 ? Math.sin(progress * Math.PI) : 0;
+}
+
 function updateCar(scene, time) {
   const race = scene.race;
   const position = screenPositionAt(scene, CAR_DEPTH, race.carX);
   const isRecovering = time < race.recoveringUntil;
   const bounce = Math.sin(time * 0.03) * 1.2;
-  scene.car.setPosition(position.x, CAR_SCREEN_Y + bounce);
+  const jumpHeight = jumpHeightAt(race, time);
+  scene.car.setPosition(position.x, CAR_SCREEN_Y + bounce - jumpHeight * JUMP_HEIGHT_PX);
+  scene.car.setScale(CAR_IMAGE_SCALE * (1 + jumpHeight * 0.08));
+  scene.carShadow.setScale(1 - jumpHeight * 0.45);
   scene.car.setAngle((race.lane * LANE_WIDTH - race.carX) * 45);
   scene.car.setAlpha(isRecovering && Math.floor(time / 100) % 2 === 0 ? 0.35 : 1);
   scene.carShadow.setPosition(position.x, CAR_SCREEN_Y - 4);
@@ -1427,6 +1450,11 @@ function spawnObstacles(race) {
   const lastObstaclePosition = currentLevel.distance - LAST_OBSTACLE_MARGIN;
   while (race.nextObstaclePosition < Math.min(race.distance + FARTHEST_VISIBLE_DEPTH, lastObstaclePosition)) {
     const lanes = Phaser.Utils.Array.Shuffle([-1, 0, 1]);
+    if (Math.random() < currentLevel.spikeRowChance) {
+      for (const lane of lanes) race.obstacles.push({ lane, position: race.nextObstaclePosition, kind: 'spikes', hasHit: false });
+      race.nextObstaclePosition += Phaser.Math.Between(...currentLevel.obstacleGap);
+      continue;
+    }
     const chanceOfTwoBlockedLanes = currentLevel.twoLaneChance * Math.min(1, race.distance / (currentLevel.distance * 0.5));
     const blockedLanes = Math.random() < chanceOfTwoBlockedLanes ? 2 : 1;
     for (let index = 0; index < blockedLanes; index++) {
@@ -1454,7 +1482,8 @@ function detectCrash(scene, time) {
     const depthFromCar = depthOf(race, obstacle) - CAR_DEPTH;
     const isAlongside = depthFromCar > -0.15 && depthFromCar < 0.3;
     const isSameLane = Math.abs(obstacle.lane * LANE_WIDTH - race.carX) < LANE_WIDTH * 0.6;
-    if (obstacle.hasHit || !isAlongside || !isSameLane) continue;
+    const isJumpingOverSpikes = obstacle.kind === 'spikes' && jumpHeightAt(race, time) > JUMP_HEIGHT_TO_CLEAR_SPIKES;
+    if (obstacle.hasHit || !isAlongside || !isSameLane || isJumpingOverSpikes) continue;
     obstacle.hasHit = true;
     race.crashes += 1;
     race.speed *= 0.35;
@@ -1494,7 +1523,7 @@ function drawObstacles(scene) {
     if (!isVisibleDepth(depth)) continue;
     const position = screenPositionAt(scene, depth, obstacle.lane * LANE_WIDTH);
     const fogged = foggedAtDepth(depth);
-    const draw = { traffic: drawTrafficCar, barrier: drawBarrier, cones: drawCones }[obstacle.kind];
+    const draw = { traffic: drawTrafficCar, barrier: drawBarrier, cones: drawCones, spikes: drawSpikes }[obstacle.kind];
     draw(graphics, position.x, position.y, position.scale, fogged, obstacle.color);
   }
 }
@@ -1759,6 +1788,23 @@ function drawBarrier(graphics, x, groundY, size, fogged) {
   }
 }
 
+function drawSpikes(graphics, x, groundY, size, fogged) {
+  const width = size * 0.3;
+  const spikeCount = 5;
+  const spikeWidth = width / spikeCount;
+  const baseHeight = size * 0.03;
+  const spikeTop = groundY - size * 0.14;
+  graphics.fillStyle(fogged(COLORS.marquee), 1);
+  graphics.fillRect(x - width / 2, groundY - baseHeight, width, baseHeight);
+  for (let spike = 0; spike < spikeCount; spike++) {
+    const left = x - width / 2 + spike * spikeWidth;
+    graphics.fillStyle(fogged(COLORS.spikeMetal), 1);
+    graphics.fillTriangle(left, groundY - baseHeight, left + spikeWidth, groundY - baseHeight, left + spikeWidth / 2, spikeTop);
+    graphics.fillStyle(fogged(COLORS.spikeShade), 1);
+    graphics.fillTriangle(left + spikeWidth / 2, groundY - baseHeight, left + spikeWidth, groundY - baseHeight, left + spikeWidth / 2, spikeTop);
+  }
+}
+
 function drawCones(graphics, x, groundY, size, fogged) {
   for (const offset of [-0.08, 0, 0.08]) {
     const coneX = x + offset * size;
@@ -1845,6 +1891,7 @@ function playSound(scene, kind) {
   const sounds = {
     select: { wave: 'square', from: 700, to: 1000, gain: 0.05, length: 0.06 },
     paint: { wave: 'triangle', from: 500, to: 950, gain: 0.08, length: 0.1 },
+    jump: { wave: 'square', from: 300, to: 760, gain: 0.07, length: 0.16 },
     swoosh: { wave: 'triangle', from: 260, to: 620, gain: 0.08, length: 0.12 },
     crash: { wave: 'sawtooth', from: 220, to: 50, gain: 0.25, length: 0.4 },
   };
