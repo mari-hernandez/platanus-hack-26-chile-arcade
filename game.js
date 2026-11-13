@@ -1526,7 +1526,7 @@ function drawFace(graphics, centerX, centerY, scale, look) {
   const isOffShoulder = outfit.style === 'party' || outfit.style === 'bride';
 
   if (outfit.style === 'bride') smoothShape(COLORS.cloud, mirrored([[0, -170], [90, -150], [150, -40], [168, 120], [176, 300], [0, 300]]), 0.5);
-  smoothShape(COLORS.hairDark, mirrored([[0, -148], [56, -142], [98, -112], [118, -36], [116, 70], [122, 190], [128, 300], [0, 300]]), 1, true);
+  smoothShape(COLORS.hairDark, mirrored([[0, -150], [60, -146], [104, -118], [124, -60], [126, 10], [118, 90], [128, 180], [140, 300], [0, 300]]), 1, true);
 
   smoothShape(COLORS.skin, mirrored([[0, 60], [20, 62], [22, 170], [0, 176]]), 1, true);
   ellipse(COLORS.skinShade, 0, 96, 44, 26);
@@ -1563,7 +1563,7 @@ function drawFace(graphics, centerX, centerY, scale, look) {
   }
 
   for (const side of [-1, 1]) ellipse(COLORS.skin, side * 82, 14, 16, 26);
-  smoothShape(COLORS.skin, mirrored([[0, -110], [54, -102], [82, -64], [88, -10], [80, 36], [58, 80], [30, 106], [0, 116]]), 1, true);
+  smoothShape(COLORS.skin, mirrored([[0, -110], [54, -104], [82, -70], [88, -18], [82, 26], [66, 66], [40, 98], [14, 114], [0, 116]]), 1, true);
   smoothShape(COLORS.skinShade, mirrored([[0, -108], [44, -102], [72, -76], [80, -52], [44, -64], [0, -72]]), 0.6);
   for (const side of [-1, 1]) {
     ellipse(look.blush || light(PALETTE.pink, 0.45), side * 56, 42, 40, 20, look.blush ? 0.55 : 0.3);
@@ -1617,7 +1617,7 @@ function drawFace(graphics, centerX, centerY, scale, look) {
   ellipse(COLORS.cloud, 5, 74, 8, 3, look.lips ? 0.7 : 0.4);
 
   for (const side of [-1, 1]) {
-    smoothShape(COLORS.hair, [[side * 4, -116], [side * 44, -114], [side * 78, -90], [side * 94, -36], [side * 104, 90], [side * 112, 200], [side * 92, 210], [side * 84, 100], [side * 78, 20], [side * 64, -40], [side * 36, -82], [side * 12, -100]], 1, true);
+    smoothShape(COLORS.hair, [[side * 4, -118], [side * 48, -118], [side * 86, -92], [side * 102, -40], [side * 100, 20], [side * 94, 70], [side * 104, 140], [side * 120, 210], [side * 98, 214], [side * 80, 150], [side * 74, 80], [side * 78, 20], [side * 66, -40], [side * 36, -84], [side * 12, -104]], 1, true);
     stroke(COLORS.hairShine, 4, [[side * 30, -100], [side * 68, -70], [side * 86, -14]], 0.55);
     stroke(COLORS.hairShine, 3, [[side * 96, 40], [side * 100, 120]], 0.4);
     stroke(COLORS.hairDark, 2, [[side * 50, -96], [side * 82, -30], [side * 92, 80]], 0.5);
