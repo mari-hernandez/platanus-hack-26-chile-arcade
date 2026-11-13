@@ -517,7 +517,7 @@ function update(time, delta) {
   const scene = this;
   const seconds = Math.min(delta, 50) / 1000;
   const startPressed = START_BUTTONS.some((button) => wasPressed(scene, button));
-  if (scene.phase === 'title' && startPressed) showLevelSelect(scene, unlockedLevelCount - 1);
+  if (scene.phase === 'title' && startPressed) showLevelSelect(scene, ALL_LEVELS_UNLOCKED ? 0 : unlockedLevelCount - 1);
   else if (scene.phase === 'select') updateLevelSelect(scene, startPressed);
   else if (scene.phase === 'intro' && startPressed) beginDriving(scene);
   else if (scene.phase === 'results') updateResultsMenu(scene, startPressed);
