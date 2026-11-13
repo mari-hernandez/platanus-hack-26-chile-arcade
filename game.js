@@ -436,25 +436,38 @@ function createFaceTexture(scene, key, look, width, height, scale, background) {
   painter.destroy();
 }
 
+const HEADING_STYLE = {
+  fontFamily: 'Arial Black, Impact, sans-serif',
+  color: '#ff00d1',
+  stroke: '#1d1230',
+  strokeThickness: 10,
+};
+
 const OVERLAY_TEXT_STYLE = {
   fontFamily: 'Trebuchet MS, Arial',
   fontStyle: 'bold',
   color: '#ffffff',
-  stroke: '#e8458f',
+  stroke: '#1d1230',
   strokeThickness: 10,
   align: 'center',
 };
 
-function createOverlayBackground(scene, topColor, bottomColor) {
+function createPaintedBackground(scene) {
+  const left = OVERLAY_WORLD_X;
   const background = scene.add.graphics();
-  background.fillGradientStyle(topColor, topColor, bottomColor, bottomColor, 1);
-  background.fillRect(OVERLAY_WORLD_X, 0, GAME_WIDTH, GAME_HEIGHT);
-  for (let bulbX = OVERLAY_WORLD_X + 30; bulbX < OVERLAY_WORLD_X + GAME_WIDTH; bulbX += 52) {
-    background.fillStyle(COLORS.sunGlow, 0.5);
-    background.fillCircle(bulbX, 10, 12);
-    background.fillStyle(COLORS.sun, 1);
-    background.fillCircle(bulbX, 10, 7);
+  background.fillGradientStyle(COLORS.titleSkyTop, COLORS.titleSkyTop, COLORS.titleSkyBottom, COLORS.titleSkyBottom, 1);
+  background.fillRect(left, 0, GAME_WIDTH, GAME_HEIGHT);
+  for (let stroke = 0; stroke < 40; stroke++) {
+    background.fillStyle(COLORS.cloud, 0.08 + seededRandom(stroke, 21) * 0.14);
+    background.fillRect(left + seededRandom(stroke, 22) * GAME_WIDTH - 60, 250 + seededRandom(stroke, 23) * 90, 50 + seededRandom(stroke, 24) * 150, 2);
   }
+  background.fillStyle(COLORS.sunGlow, 0.45);
+  background.fillCircle(left + 655, 118, 62);
+  background.fillStyle(COLORS.titleSun, 1);
+  background.fillCircle(left + 655, 118, 42);
+  drawJaggedRidge(background, 470, 190, COLORS.titleMountainFar, 1);
+  drawJaggedRidge(background, 510, 150, COLORS.titleMountainNear, 2);
+  drawJaggedRidge(background, 566, 60, COLORS.titleBushes, 3);
   return background;
 }
 
@@ -469,20 +482,7 @@ function addBlinkingPrompt(scene, text) {
 function createTitleScreen(scene) {
   const left = OVERLAY_WORLD_X;
   const centerX = left + GAME_WIDTH / 2;
-  const art = scene.add.graphics();
-  art.fillGradientStyle(COLORS.titleSkyTop, COLORS.titleSkyTop, COLORS.titleSkyBottom, COLORS.titleSkyBottom, 1);
-  art.fillRect(left, 0, GAME_WIDTH, GAME_HEIGHT);
-  for (let stroke = 0; stroke < 40; stroke++) {
-    art.fillStyle(COLORS.cloud, 0.08 + seededRandom(stroke, 21) * 0.14);
-    art.fillRect(left + seededRandom(stroke, 22) * GAME_WIDTH - 60, 250 + seededRandom(stroke, 23) * 90, 50 + seededRandom(stroke, 24) * 150, 2);
-  }
-  art.fillStyle(COLORS.sunGlow, 0.45);
-  art.fillCircle(left + 655, 118, 62);
-  art.fillStyle(COLORS.titleSun, 1);
-  art.fillCircle(left + 655, 118, 42);
-  drawJaggedRidge(art, 470, 190, COLORS.titleMountainFar, 1);
-  drawJaggedRidge(art, 510, 150, COLORS.titleMountainNear, 2);
-  drawJaggedRidge(art, 566, 60, COLORS.titleBushes, 3);
+  const art = createPaintedBackground(scene);
   art.fillStyle(COLORS.asphaltLight, 1);
   art.fillRect(left, 560, GAME_WIDTH, 40);
   art.fillStyle(COLORS.laneLine, 1);
@@ -501,7 +501,7 @@ function createTitleScreen(scene) {
   makeupWord.setOrigin(0, 0.5).setX(titleLeft);
   racingWord.setX(titleLeft + makeupWord.width + titleGap);
   const subtitle = scene.add
-    .text(centerX, 236, 'Llega a cada destino con el look perfecto', { ...OVERLAY_TEXT_STYLE, fontSize: '20px', stroke: '#1d1230', strokeThickness: 6 })
+    .text(centerX, 236, 'Llega a cada destino con el look perfecto', { ...OVERLAY_TEXT_STYLE, fontSize: '20px', strokeThickness: 6 })
     .setOrigin(0.5);
 
   const playButton = scene.add.graphics();
@@ -512,13 +512,12 @@ function createTitleScreen(scene) {
   const button = scene.add.container(centerX, 330, [playButton, playLabel]);
   scene.tweens.add({ targets: button, scale: 1.08, duration: 500, yoyo: true, repeat: -1 });
   const startHint = scene.add
-    .text(centerX, 388, 'Presiona START', { ...OVERLAY_TEXT_STYLE, fontSize: '18px', stroke: '#1d1230', strokeThickness: 5 })
+    .text(centerX, 388, 'Presiona START', { ...OVERLAY_TEXT_STYLE, fontSize: '18px', strokeThickness: 5 })
     .setOrigin(0.5);
   const controls = scene.add
     .text(centerX, 430, 'J1 maneja  \u25c0 \u25b6        J2 maquilla  \u25b2 \u25bc \u25c0 \u25b6  Bot\u00f3n 1', {
       ...OVERLAY_TEXT_STYLE,
       fontSize: '17px',
-      stroke: '#1d1230',
       strokeThickness: 5,
     })
     .setOrigin(0.5);
@@ -555,17 +554,16 @@ function drawPixelButton(graphics, width, height) {
 
 function createLevelSelectScreen(scene) {
   const centerX = OVERLAY_WORLD_X + GAME_WIDTH / 2;
-  const background = createOverlayBackground(scene, COLORS.makeupTop, COLORS.clothes);
-  const heading = scene.add
-    .text(centerX, 74, 'ELIGE EL DESTINO', { ...OVERLAY_TEXT_STYLE, fontSize: '48px', strokeThickness: 12 })
-    .setOrigin(0.5);
+  const background = createPaintedBackground(scene);
+  const heading = scene.add.text(centerX, 74, 'Elige el destino', { ...HEADING_STYLE, fontSize: '52px' }).setOrigin(0.5);
+  heading.setShadow(0, 5, '#1d1230', 0, true, true);
   scene.levelCardsGraphics = scene.add.graphics();
   scene.levelCardTexts = LEVELS.map(() => [
-    scene.add.text(0, 0, '', { ...MAKEUP_TEXT_STYLE, fontSize: '15px' }).setOrigin(0.5),
+    scene.add.text(0, 0, '', { ...MAKEUP_TEXT_STYLE, fontSize: '15px', color: '#7a3fe8' }).setOrigin(0.5),
     scene.add.text(0, 0, '', { ...MAKEUP_TEXT_STYLE, fontSize: '18px', align: 'center', wordWrap: { width: 150 } }).setOrigin(0.5),
   ]);
   const hint = scene.add
-    .text(centerX, 522, '\u25c0 \u25b6  elegir      START  jugar', { ...MAKEUP_TEXT_STYLE, fontSize: '22px' })
+    .text(centerX, 524, '\u25c0 \u25b6  elegir      START  jugar', { ...OVERLAY_TEXT_STYLE, fontSize: '22px', strokeThickness: 6 })
     .setOrigin(0.5);
   scene.levelSelectLayer = scene.add.container(0, 0, [background, heading, scene.levelCardsGraphics, ...scene.levelCardTexts.flat(), hint]);
 }
@@ -582,8 +580,8 @@ function refreshLevelSelect(scene) {
     graphics.fillStyle(COLORS.background, 0.18);
     graphics.fillRoundedRect(centerX - 80, top + 8, 170, 280, 18);
     if (isSelected) {
-      graphics.fillStyle(COLORS.curbPink, 1);
-      graphics.fillRoundedRect(centerX - 91, top - 7, 182, 294, 22);
+      graphics.fillStyle(COLORS.buttonPurple, 1);
+      graphics.fillRoundedRect(centerX - 92, top - 7, 184, 294, 22);
     }
     graphics.fillStyle(COLORS.cloud, 1);
     graphics.fillRoundedRect(centerX - 85, top, 170, 280, 18);
@@ -648,15 +646,13 @@ function showResults(scene) {
   }
   scene.nextSelectedLevel = isPerfect ? Math.min(nextLevel, LEVELS.length - 1) : scene.levelIndex;
 
-  const art = createOverlayBackground(scene, isPerfect ? COLORS.scoopMint : COLORS.makeupTop, isPerfect ? COLORS.makeupTop : COLORS.clothes);
+  const art = createPaintedBackground(scene);
   scene.add
-    .text(centerX, 70, isPerfect ? '\u00a1LOOK PERFECTO!' : '\u00a1OH NO!', { ...OVERLAY_TEXT_STYLE, fontSize: '54px', strokeThickness: 12 })
-    .setOrigin(0.5);
+    .text(centerX, 70, isPerfect ? '\u00a1Look perfecto!' : '\u00a1Oh no!', { ...HEADING_STYLE, fontSize: '54px', color: isPerfect ? '#ff00d1' : '#5000ff' })
+    .setOrigin(0.5)
+    .setShadow(0, 5, '#1d1230', 0, true, true);
   scene.add
-    .text(centerX, 128, unlocksNextLevel ? `\u00a1Desbloquearon: ${LEVELS[nextLevel].name}!` : isPerfect ? `${currentLevel.arrivalText} regias` : `${currentLevel.arrivalText}, pero el look no estaba listo`, {
-      ...MAKEUP_TEXT_STYLE,
-      fontSize: '20px',
-    })
+    .text(centerX, 128, unlocksNextLevel ? `\u00a1Desbloquearon: ${LEVELS[nextLevel].name}!` : isPerfect ? `${currentLevel.arrivalText} regias` : `${currentLevel.arrivalText}, pero el look no estaba listo`, { ...OVERLAY_TEXT_STYLE, fontSize: '20px', strokeThickness: 6 })
     .setOrigin(0.5);
 
   const photos = [
@@ -678,10 +674,8 @@ function showResults(scene) {
   const seconds = String(Math.floor(race.elapsedSeconds % 60)).padStart(2, '0');
   scene.add
     .text(centerX, 492, `Look ${matchingCount}/${MAKEUP_PARTS.length}     Choques ${race.crashes}     Tiempo ${minutes}:${seconds}`, {
-      ...MAKEUP_TEXT_STYLE,
+      ...OVERLAY_TEXT_STYLE,
       fontSize: '22px',
-      color: '#ffffff',
-      stroke: '#c2457f',
       strokeThickness: 6,
     })
     .setOrigin(0.5);
