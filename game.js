@@ -1,3 +1,4 @@
+(() => {
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
 const PANEL_WIDTH = GAME_WIDTH / 2;
@@ -1903,3 +1904,4 @@ function playMelody(scene, frequencies) {
     oscillator.stop(start + 0.3);
   });
 }
+})();
