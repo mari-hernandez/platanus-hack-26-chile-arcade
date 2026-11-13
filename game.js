@@ -414,7 +414,8 @@ const SCENERY_DRAWERS = {
 };
 
 let currentLevel = LEVELS[0];
-let unlockedLevelCount = 1;
+const ALL_LEVELS_UNLOCKED = true;
+let unlockedLevelCount = ALL_LEVELS_UNLOCKED ? LEVELS.length : 1;
 let hasLoadedProgress = false;
 
 new Phaser.Game({
@@ -673,7 +674,7 @@ function refreshLevelSelect(scene) {
 }
 
 function loadProgress(scene) {
-  if (hasLoadedProgress || !window.platanusArcadeStorage) return;
+  if (ALL_LEVELS_UNLOCKED || hasLoadedProgress || !window.platanusArcadeStorage) return;
   hasLoadedProgress = true;
   window.platanusArcadeStorage
     .get(PROGRESS_STORAGE_KEY)
