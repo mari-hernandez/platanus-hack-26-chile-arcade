@@ -1512,164 +1512,119 @@ function drawFace(graphics, centerX, centerY, scale, look) {
     });
     graphics.strokePath();
   };
-
   const smoothShape = (color, points, alpha = 1, hasOutline = false) => {
     const outline = new Phaser.Curves.Spline(points.concat([points[0]]).map((point) => new Phaser.Math.Vector2(...pointAt(...point))));
     const curvePoints = outline.getPoints(points.length * 8);
     graphics.fillStyle(color, alpha);
     graphics.fillPoints(curvePoints, true);
     if (!hasOutline) return;
-    graphics.lineStyle(3 * scale, COLORS.outline, 1);
+    graphics.lineStyle(2.5 * scale, COLORS.outline, 1);
     graphics.strokePoints(curvePoints, true);
   };
   const mirrored = (rightHalf) => rightHalf.concat(rightHalf.slice(1).reverse().map(([x, y]) => [-x, y]));
-
   const outfit = currentLevel.outfit;
-  if (outfit.style === 'bride') {
-    smoothShape(COLORS.cloud, mirrored([[0, -168], [96, -156], [166, -60], [180, 80], [176, 230], [0, 230]]), 0.55);
-  }
-  smoothShape(COLORS.hairDark, mirrored([[0, -150], [70, -142], [122, -102], [140, -34], [132, 36], [146, 96], [130, 150], [104, 140], [90, 168], [60, 150]]), 1, true);
-
-  smoothShape(COLORS.skin, mirrored([[0, 70], [24, 72], [26, 150], [0, 156]]), 1, true);
-  ellipse(COLORS.skinShade, 0, 104, 56, 30);
-  const shoulders = (grow) => mirrored([[0, 128 - grow], [46, 130 - grow], [96 + grow, 140 - grow], [132 + grow, 168 - grow], [146 + grow, 230], [144 + grow, 300]]);
   const isOffShoulder = outfit.style === 'party' || outfit.style === 'bride';
-  if (outfit.style === 'hoodie') ellipse(outfit.shade, 0, 140, 176, 84);
-  smoothShape(isOffShoulder ? COLORS.skin : outfit.color, shoulders(0), 1, true);
+
+  if (outfit.style === 'bride') smoothShape(COLORS.cloud, mirrored([[0, -170], [90, -150], [150, -40], [168, 120], [176, 300], [0, 300]]), 0.5);
+  smoothShape(COLORS.hairDark, mirrored([[0, -140], [64, -136], [106, -100], [118, -36], [116, 70], [122, 190], [128, 300], [0, 300]]), 1, true);
+
+  smoothShape(COLORS.skin, mirrored([[0, 60], [20, 62], [22, 170], [0, 176]]), 1, true);
+  ellipse(COLORS.skinShade, 0, 96, 44, 26);
+  if (outfit.style === 'hoodie') ellipse(outfit.shade, 0, 182, 150, 70);
+  smoothShape(isOffShoulder ? COLORS.skin : outfit.color, mirrored([[0, 160], [40, 162], [94, 178], [122, 206], [134, 260], [136, 300]]), 1, true);
 
   if (outfit.style === 'blouse') {
+    for (const [dotX, dotY] of [[-80, 240], [-44, 214], [-10, 250], [30, 222], [66, 246], [96, 214]]) circle(COLORS.cloud, dotX, dotY, 4, 0.6);
+    ellipse(COLORS.skin, 0, 160, 38, 20);
     for (const side of [-1, 1]) {
-      ellipse(outfit.shade, side * 120, 190, 66, 76);
-      ellipse(outfit.color, side * 117, 185, 60, 68);
-      stroke(outfit.shade, 2, [[side * 102, 160], [side * 108, 204]], 0.7);
-      stroke(outfit.shade, 2, [[side * 124, 156], [side * 130, 200]], 0.7);
+      ellipse(COLORS.flowerPink, side * 18, 174, 40, 26);
+      ellipse(COLORS.cloud, side * 18, 172, 36, 22);
     }
-    for (const [dotX, dotY] of [[-70, 216], [-40, 190], [-12, 228], [24, 196], [56, 222], [84, 192], [-92, 236]]) {
-      circle(COLORS.cloud, dotX, dotY, 4, 0.6);
-    }
-    ellipse(COLORS.skin, 0, 128, 46, 26);
-    for (const side of [-1, 1]) {
-      ellipse(COLORS.flowerPink, side * 21, 143, 48, 32);
-      ellipse(COLORS.cloud, side * 21, 141, 43, 27);
-    }
-    triangle(COLORS.curbPink, [[0, 150], [-15, 141], [-15, 159]]);
-    triangle(COLORS.curbPink, [[0, 150], [15, 141], [15, 159]]);
-    circle(COLORS.flowerPink, 0, 150, 4.5);
+    triangle(COLORS.curbPink, [[0, 180], [-13, 172], [-13, 188]]);
+    triangle(COLORS.curbPink, [[0, 180], [13, 172], [13, 188]]);
+    circle(COLORS.flowerPink, 0, 180, 4);
   }
-
   if (isOffShoulder) {
-    const dress = (grow) => mirrored([[0, 152 - grow], [62, 148 - grow], [118 + grow, 158 - grow], [148 + grow, 226], [146 + grow, 300]]);
-    smoothShape(outfit.color, dress(0), 1, true);
+    smoothShape(outfit.color, mirrored([[0, 196], [60, 190], [114, 200], [138, 246], [138, 300]]), 1, true);
     if (outfit.style === 'party') {
-      for (let sequin = 0; sequin < 16; sequin++) circle(COLORS.cloud, -110 + seededRandom(sequin, 31) * 220, 166 + seededRandom(sequin, 32) * 70, 2.5, 0.75);
-      for (let pearl = -4; pearl <= 4; pearl++) circle(COLORS.scoopVanilla, pearl * 8, 124 + pearl * pearl * 0.9, 3.5);
+      for (let sequin = 0; sequin < 16; sequin++) circle(COLORS.cloud, -110 + seededRandom(sequin, 31) * 220, 210 + seededRandom(sequin, 32) * 70, 2.5, 0.75);
+      for (let pearl = -4; pearl <= 4; pearl++) circle(COLORS.scoopVanilla, pearl * 7, 150 + pearl * pearl * 0.8, 3);
     } else {
-      for (let scallop = -6; scallop <= 6; scallop++) circle(COLORS.cloud, scallop * 18, 152 + Math.abs(scallop) * 0.4, 8);
-      for (let dot = -5; dot <= 5; dot++) circle(outfit.shade, dot * 18 + 9, 168, 2.5);
+      for (let scallop = -6; scallop <= 6; scallop++) circle(COLORS.cloud, scallop * 18, 196 + Math.abs(scallop) * 0.4, 8);
     }
   }
-
   if (outfit.style === 'hoodie') {
-    ellipse(COLORS.skin, 0, 128, 46, 26);
-    stroke(outfit.shade, 10, [[-52, 136], [-26, 158], [0, 164], [26, 158], [52, 136]]);
+    ellipse(COLORS.skin, 0, 162, 36, 18);
+    stroke(outfit.shade, 9, [[-46, 166], [-22, 184], [0, 190], [22, 184], [46, 166]]);
     for (const side of [-1, 1]) {
-      stroke(COLORS.cloud, 3, [[side * 14, 160], [side * 17, 208]]);
-      circle(COLORS.cloud, side * 17, 210, 4);
+      stroke(COLORS.cloud, 3, [[side * 12, 188], [side * 15, 236]]);
+      circle(COLORS.cloud, side * 15, 238, 4);
     }
   }
 
-  smoothShape(COLORS.skin, mirrored([[0, -110], [62, -100], [94, -56], [98, 0], [90, 46], [64, 90], [30, 116], [0, 122]]), 1, true);
-  smoothShape(COLORS.skinShade, [[-90, -46], [-60, -58], [-30, -52], [0, -56], [34, -48], [66, -42], [92, -26], [92, -16], [60, -30], [24, -38], [-10, -44], [-44, -44], [-86, -34]], 0.7);
-  for (const side of [-1, 1]) ellipse(light(PALETTE.pink, 0.45), side * 58, 44, 34, 16, 0.35);
-
-  if (look.blush) {
-    for (const side of [-1, 1]) {
-      ellipse(look.blush, side * 60, 40, 42, 22, 0.55);
-      for (const step of [-7, 0, 7]) {
-        stroke(blendColor(look.blush, COLORS.outline, 0.25), 1.8, [[side * 60 + step - 3, 45], [side * 60 + step + 3, 35]], 0.8);
-      }
-    }
-  }
+  for (const side of [-1, 1]) ellipse(COLORS.skin, side * 80, 12, 16, 26);
+  smoothShape(COLORS.skin, mirrored([[0, -100], [50, -94], [78, -62], [84, -14], [78, 34], [60, 72], [30, 98], [0, 106]]), 1, true);
+  smoothShape(COLORS.skinShade, mirrored([[0, -100], [40, -96], [68, -72], [76, -50], [42, -62], [0, -70]]), 0.6);
+  for (const side of [-1, 1]) ellipse(look.blush || light(PALETTE.pink, 0.45), side * 50, 46, 36, 16, look.blush ? 0.5 : 0.3);
 
   for (const side of [-1, 1]) {
-    const eyeX = side * 40;
-    const eyeY = 10;
-    if (look.shadow) {
-      ellipse(look.shadow, eyeX + side * 2, eyeY - 18, 62, 34, 0.5);
-      ellipse(look.shadow, eyeX + side * 4, eyeY - 14, 52, 24, 0.6);
-    }
-    stroke(COLORS.outline, 1.5, [[eyeX - side * 16, eyeY - 27], [eyeX + side * 4, eyeY - 33], [eyeX + side * 22, eyeY - 25]], 0.45);
-    ellipse(COLORS.cloud, eyeX, eyeY, 40, 44);
-    ellipse(COLORS.iris, eyeX, eyeY + 3, 30, 38);
-    ellipse(COLORS.irisDark, eyeX, eyeY - 4, 30, 24, 0.55);
-    ellipse(COLORS.outline, eyeX, eyeY + 4, 14, 20);
-    ellipse(COLORS.irisLight, eyeX, eyeY + 14, 18, 8, 0.7);
-    circle(COLORS.cloud, eyeX - side * 6, eyeY - 6, 6);
-    circle(COLORS.cloud, eyeX + side * 6, eyeY + 11, 3);
-
-    const lashColor = look.mascara || NATURAL_LASHES;
-    const thickness = look.mascara ? 6 : 3.5;
+    const eyeX = side * 36;
+    const eyeY = 6;
     const fromEye = (alongX, alongY) => [eyeX + side * alongX, eyeY + alongY];
-    smoothShape(lashColor, [
-      fromEye(-22, -4), fromEye(-12, -18 - thickness * 0.3), fromEye(6, -22 - thickness * 0.5),
-      fromEye(22, -13 - thickness * 0.6), fromEye(28, -14 - thickness), fromEye(20, -9),
-      fromEye(6, -17), fromEye(-10, -14), fromEye(-20, -2),
-    ]);
-    stroke(lashColor, 1.5, [fromEye(6, 22), fromEye(12, 20), fromEye(17, 15)]);
+    if (look.shadow) smoothShape(look.shadow, [fromEye(-25, -3), fromEye(-8, -25), fromEye(18, -28), fromEye(33, -10), fromEye(13, -13)], 0.65);
+    smoothShape(COLORS.cloud, [fromEye(-23, 3), fromEye(-8, -12), fromEye(13, -12), fromEye(26, -1), fromEye(10, 9), fromEye(-10, 9)]);
+    ellipse(COLORS.irisDark, eyeX + side * 1, eyeY, 22, 22);
+    ellipse(COLORS.iris, eyeX + side * 1, eyeY + 2, 17, 15);
+    circle(COLORS.outline, eyeX + side * 1, eyeY + 1, 5);
+    circle(COLORS.cloud, eyeX - side * 4, eyeY - 4, 3);
+    const lashColor = look.mascara || NATURAL_LASHES;
+    const lashWidth = look.mascara ? 4.5 : 3;
+    stroke(lashColor, lashWidth, [fromEye(-24, 3), fromEye(-8, -13), fromEye(13, -13), fromEye(27, -3), fromEye(36, -12)]);
+    stroke(lashColor, 1.2, [fromEye(-13, 9), fromEye(10, 10), fromEye(23, 1)], 0.6);
     if (look.mascara) {
-      for (const [baseX, baseY, tipX, tipY] of [[12, -24, 17, -31], [19, -21, 26, -27], [25, -17, 32, -20]]) {
-        triangle(lashColor, [fromEye(baseX - 3, baseY + 1), fromEye(baseX + 3, baseY + 3), fromEye(tipX, tipY)]);
+      for (const [baseX, baseY, tipX, tipY] of [[10, -14, 15, -23], [19, -10, 27, -18], [27, -4, 36, -8]]) {
+        triangle(lashColor, [fromEye(baseX - 2, baseY + 1), fromEye(baseX + 2, baseY + 2), fromEye(tipX, tipY)]);
       }
     }
+    stroke(COLORS.outline, 1.2, [fromEye(-15, -20), fromEye(5, -25), fromEye(23, -17)], 0.35);
+    const browWidth = look.brows ? 5 : 3.5;
+    smoothShape(look.brows || NATURAL_BROWS, [fromEye(-22, -32), fromEye(-20, -32 - browWidth), fromEye(5, -44 - browWidth * 0.4), fromEye(32, -34), fromEye(5, -40)]);
   }
 
-  ellipse(COLORS.skinShade, 1, 47, 13, 7, 0.9);
-  ellipse(COLORS.noseTip, 0, 46, 9, 5);
-  circle(COLORS.cloud, -2, 44, 1.6, 0.9);
+  stroke(COLORS.skinShade, 2, [[4, 14], [7, 34], [1, 40]]);
   const lipColor = look.lips || NATURAL_LIPS;
-  ellipse(lipColor, -6, 66, 18, 9);
-  ellipse(lipColor, 6, 66, 18, 9);
-  ellipse(lipColor, 0, 71, 24, 11);
-  stroke(blendColor(lipColor, COLORS.outline, 0.4), 1.5, [[-11, 68], [0, 69], [11, 68]]);
-  ellipse(COLORS.cloud, 5, 72, 8, 3, look.lips ? 0.7 : 0.4);
+  smoothShape(lipColor, [[-20, 66], [-8, 60], [0, 63], [8, 60], [20, 66], [0, 69]]);
+  smoothShape(lipColor, [[-19, 67], [0, 70], [19, 67], [10, 77], [0, 79], [-10, 77]]);
+  stroke(blendColor(lipColor, COLORS.outline, 0.4), 1.2, [[-19, 67], [0, 70], [19, 67]]);
+  ellipse(COLORS.cloud, 5, 74, 7, 2.5, look.lips ? 0.7 : 0.35);
 
-  smoothShape(COLORS.hair, [
-    [100, -30], [112, -84], [80, -124], [20, -138], [-50, -130], [-102, -96], [-114, -40], [-106, 12],
-    [-96, 62], [-88, 100], [-80, 60], [-84, 10], [-80, -46], [-62, -62], [-48, -58], [-34, -72], [-10, -62],
-    [8, -66], [30, -54], [52, -58], [70, -46], [96, -30],
-  ], 1, true);
-  smoothShape(COLORS.hair, [[94, -52], [110, 0], [108, 60], [98, 106], [88, 92], [90, 40], [86, -10]], 1, true);
-  for (const strand of [[[-56, -64], [-46, -94], [-30, -120]], [[-14, -66], [-4, -96], [12, -124]], [[36, -58], [48, -86], [56, -110]]]) {
-    stroke(COLORS.hairDark, 2.5, strand, 0.55);
+  for (const side of [-1, 1]) {
+    smoothShape(COLORS.hair, [[side * 4, -112], [side * 46, -110], [side * 84, -74], [side * 96, -10], [side * 104, 90], [side * 112, 200], [side * 92, 210], [side * 84, 100], [side * 78, 20], [side * 64, -40], [side * 36, -82], [side * 12, -100]], 1, true);
+    stroke(COLORS.hairShine, 4, [[side * 30, -100], [side * 68, -70], [side * 86, -14]], 0.55);
+    stroke(COLORS.hairShine, 3, [[side * 96, 40], [side * 100, 120]], 0.4);
+    stroke(COLORS.hairDark, 2, [[side * 50, -96], [side * 82, -30], [side * 92, 80]], 0.5);
   }
-  stroke(COLORS.hairShine, 7, [[-82, -94], [-44, -112], [0, -118], [42, -112], [78, -96]], 0.55);
+
   if (outfit.style === 'bride') {
-    [[-66, -116], [-36, -132], [0, -138], [36, -132], [66, -116]].forEach(([flowerX, flowerY], index) => {
-      circle(COLORS.cloud, flowerX, flowerY, 11);
-      circle(index % 2 ? COLORS.flowerPink : COLORS.flowerYellow, flowerX, flowerY, 4.5);
+    [[-60, -116], [-32, -130], [0, -134], [32, -130], [60, -116]].forEach(([flowerX, flowerY], index) => {
+      circle(COLORS.cloud, flowerX, flowerY, 10);
+      circle(index % 2 ? COLORS.flowerPink : COLORS.flowerYellow, flowerX, flowerY, 4);
     });
   } else {
-    triangle(COLORS.curbPink, [[72, -114], [50, -128], [52, -98]]);
-    triangle(COLORS.curbPink, [[72, -114], [94, -128], [92, -98]]);
-    circle(COLORS.flowerPink, 72, -114, 6);
-  }
-
-  for (const side of [-1, 1]) {
-    const browWidth = look.brows ? 7 : 5;
-    smoothShape(look.brows || NATURAL_BROWS, [
-      [side * 20, -31], [side * 18, -31 - browWidth], [side * 36, -43 - browWidth * 0.6], [side * 60, -38], [side * 37, -40],
-    ]);
+    triangle(COLORS.curbPink, [[76, -100], [56, -114], [58, -86]]);
+    triangle(COLORS.curbPink, [[76, -100], [96, -114], [94, -86]]);
+    circle(COLORS.flowerPink, 76, -100, 5);
   }
 
   if (look.earrings) {
     for (const side of [-1, 1]) {
-      const x = side * 94;
-      stroke(look.earrings, 2, [[x, 48], [x, 60]]);
-      circle(look.earrings, x, 48, 3.5);
-      triangle(look.earrings, [[x - 8, 64], [x + 8, 64], [x, 80]]);
-      circle(look.earrings, x - 4, 63, 4.5);
-      circle(look.earrings, x + 4, 63, 4.5);
-      circle(COLORS.cloud, x - 3, 62, 1.8, 0.8);
+      const x = side * 86;
+      stroke(look.earrings, 2, [[x, 30], [x, 42]]);
+      circle(look.earrings, x, 30, 3);
+      triangle(look.earrings, [[x - 7, 46], [x + 7, 46], [x, 62]]);
+      circle(look.earrings, x - 3.5, 45, 4);
+      circle(look.earrings, x + 3.5, 45, 4);
+      circle(COLORS.cloud, x - 2.5, 44, 1.6, 0.8);
     }
   }
 }
