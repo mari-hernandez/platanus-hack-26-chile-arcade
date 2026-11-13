@@ -2271,7 +2271,7 @@ function updateMusic(scene, time) {
   }
   if (currentLevel.hasCryingBaby && scene.phase === 'playing' && time > music.nextCryAt) {
     playBabyCry(context);
-    music.nextCryAt = time + Phaser.Math.Between(2500, 4000);
+    music.nextCryAt = time + Phaser.Math.Between(5000, 7000);
   }
 }
 
@@ -2355,46 +2355,72 @@ function playDrum(context, hit, startTime) {
 }
 
 function playBabyCry(context) {
-  const start = context.currentTime;
-  for (const [offset, length] of [[0, 0.8], [1.05, 0.18], [1.3, 0.18], [1.6, 1.2]]) {
-    const begin = start + offset;
-    const end = begin + length;
-    const voice = context.createOscillator();
-    const vibrato = context.createOscillator();
-    const vibratoDepth = context.createGain();
-    const volume = context.createGain();
-    voice.type = 'sawtooth';
-    voice.frequency.setValueAtTime(400, begin);
-    voice.frequency.linearRampToValueAtTime(560, begin + 0.08);
-    voice.frequency.linearRampToValueAtTime(530, end - 0.15);
-    voice.frequency.linearRampToValueAtTime(360, end);
-    vibrato.frequency.value = 6;
-    vibratoDepth.gain.value = 18;
-    vibrato.connect(vibratoDepth);
-    vibratoDepth.connect(voice.frequency);
-    volume.gain.setValueAtTime(0.001, begin);
-    volume.gain.linearRampToValueAtTime(0.4, begin + 0.06);
-    volume.gain.setValueAtTime(0.4, end - 0.12);
-    volume.gain.exponentialRampToValueAtTime(0.001, end);
-    for (const [from, to, quality, share] of [[650, 1150, 5, 1], [2000, 2700, 7, 0.6]]) {
-      const mouth = context.createBiquadFilter();
-      const loudness = context.createGain();
-      mouth.type = 'bandpass';
-      mouth.Q.value = quality;
-      mouth.frequency.setValueAtTime(from, begin);
-      mouth.frequency.linearRampToValueAtTime(to, begin + 0.12);
-      mouth.frequency.linearRampToValueAtTime(from, end);
-      loudness.gain.value = share;
-      voice.connect(mouth);
-      mouth.connect(loudness);
-      loudness.connect(volume);
-    }
-    volume.connect(context.destination);
-    for (const node of [voice, vibrato]) {
-      node.start(begin);
-      node.stop(end);
-    }
+  const start = context.currentTime + 0.05;
+  for (const [offset, length] of [[0, 1.1], [1.45, 0.9], [2.7, 1.4]]) {
+    playWail(context, start + offset, length);
+    playInhale(context, start + offset + length + 0.06);
   }
+}
+
+function playWail(context, begin, length) {
+  const end = begin + length;
+  const voice = context.createOscillator();
+  const vibrato = context.createOscillator();
+  const vibratoDepth = context.createGain();
+  const roughness = context.createOscillator();
+  const roughnessDepth = context.createGain();
+  const volume = context.createGain();
+  voice.type = 'sawtooth';
+  voice.frequency.setValueAtTime(420, begin);
+  voice.frequency.linearRampToValueAtTime(610, begin + length * 0.3);
+  voice.frequency.linearRampToValueAtTime(520, end - 0.12);
+  voice.frequency.exponentialRampToValueAtTime(330, end);
+  vibrato.frequency.value = 5.5;
+  vibratoDepth.gain.value = 22;
+  roughness.frequency.value = 31;
+  roughnessDepth.gain.value = 9;
+  vibrato.connect(vibratoDepth);
+  vibratoDepth.connect(voice.frequency);
+  roughness.connect(roughnessDepth);
+  roughnessDepth.connect(voice.frequency);
+  volume.gain.setValueAtTime(0.0001, begin);
+  volume.gain.exponentialRampToValueAtTime(1, begin + 0.07);
+  volume.gain.setValueAtTime(1, end - 0.15);
+  volume.gain.exponentialRampToValueAtTime(0.0001, end);
+  for (const [closed, open, quality, loudness] of [[350, 1150, 6, 1], [900, 2300, 9, 0.6], [2800, 3600, 12, 0.35]]) {
+    const formant = context.createBiquadFilter();
+    const level = context.createGain();
+    formant.type = 'bandpass';
+    formant.Q.value = quality;
+    formant.frequency.setValueAtTime(closed, begin);
+    formant.frequency.exponentialRampToValueAtTime(open, begin + 0.12);
+    formant.frequency.setValueAtTime(open, end - 0.15);
+    formant.frequency.exponentialRampToValueAtTime(closed * 1.4, end);
+    level.gain.value = loudness;
+    voice.connect(formant);
+    formant.connect(level);
+    level.connect(volume);
+  }
+  volume.connect(context.destination);
+  for (const node of [voice, vibrato, roughness]) {
+    node.start(begin);
+    node.stop(end);
+  }
+}
+
+function playInhale(context, begin) {
+  const squeak = context.createOscillator();
+  const volume = context.createGain();
+  squeak.type = 'sine';
+  squeak.frequency.setValueAtTime(900, begin);
+  squeak.frequency.linearRampToValueAtTime(1400, begin + 0.18);
+  volume.gain.setValueAtTime(0.0001, begin);
+  volume.gain.linearRampToValueAtTime(0.08, begin + 0.06);
+  volume.gain.exponentialRampToValueAtTime(0.0001, begin + 0.2);
+  squeak.connect(volume);
+  volume.connect(context.destination);
+  squeak.start(begin);
+  squeak.stop(begin + 0.22);
 }
 })();
 
