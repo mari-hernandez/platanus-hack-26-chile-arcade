@@ -208,8 +208,8 @@ const COLORS = {
   cloud: PALETTE.white,
   curbPink: PALETTE.pink,
   curbWhite: light(PALETTE.pink, 0.92),
-  asphaltLight: light(PALETTE.ink, 0.3),
-  asphaltDark: light(PALETTE.ink, 0.27),
+  asphaltLight: light(PALETTE.ink, 0.2),
+  asphaltDark: light(PALETTE.ink, 0.17),
   laneLine: light(PALETTE.yellow, 0.9),
   shadow: dark(PALETTE.green, 0.55),
   trunk: PALETTE.brown,
@@ -295,23 +295,25 @@ const LEVELS = [
     spikeRowChance: 0.08,
     horizon: 'mountains',
     isNight: false,
-    cloudOpacity: 0.9,
+    cloudOpacity: 0.3,
     scenery: ['roundTree', 'roundTree', 'blossomTree', 'pine', 'flowerBush'],
     sceneryDensity: 0.4,
     selfiesNeeded: 0,
     music: 'date',
     selfie: { shirt: PALETTE.blue, hasBowTie: false, prop: 'none' },
     colors: {
-      skyTop: PALETTE.blue,
-      skyBottom: light(PALETTE.pink, 0.8),
-      sun: light(PALETTE.yellow, 0.85),
-      sunGlow: light(PALETTE.yellow, 0.7),
-      fog: light(PALETTE.purple, 0.85),
-      mountains: light(PALETTE.purple, 0.4),
-      hills: light(PALETTE.green, 0.25),
-      grassLight: light(PALETTE.green, 0.15),
-      grassDark: PALETTE.green,
-      sand: light(PALETTE.yellow, 0.65),
+      skyTop: dark(PALETTE.purple, 0.7),
+      skyBottom: light(PALETTE.orange, 0.15),
+      sun: light(PALETTE.yellow, 0.5),
+      sunGlow: PALETTE.pink,
+      fog: dark(PALETTE.purple, 0.5),
+      mountains: dark(PALETTE.purple, 0.55),
+      hills: dark(PALETTE.purple, 0.35),
+      grassLight: dark(PALETTE.purple, 0.72),
+      grassDark: dark(PALETTE.purple, 0.78),
+      sand: dark(PALETTE.purple, 0.6),
+      neon: PALETTE.pink,
+      lane: light(PALETTE.blue, 0.3),
     },
     outfit: { style: 'blouse', color: light(PALETTE.purple, 0.5), shade: light(PALETTE.purple, 0.3) },
     drawDestination: drawIceCreamShop,
@@ -328,23 +330,25 @@ const LEVELS = [
     spikeRowChance: 0.12,
     horizon: 'city',
     isNight: true,
-    cloudOpacity: 0.18,
+    cloudOpacity: 0.15,
     scenery: ['building', 'building', 'lamp'],
     sceneryDensity: 0.7,
     selfiesNeeded: 1,
     music: 'night',
     selfie: { shirt: dark(PALETTE.purple, 0.3), hasBowTie: false, prop: 'popcorn' },
     colors: {
-      skyTop: dark(PALETTE.purple, 0.75),
-      skyBottom: dark(PALETTE.purple, 0.2),
+      skyTop: dark(PALETTE.purple, 0.85),
+      skyBottom: dark(PALETTE.purple, 0.35),
       sun: light(PALETTE.yellow, 0.85),
-      sunGlow: light(PALETTE.orange, 0.6),
-      fog: dark(PALETTE.purple, 0.45),
-      mountains: dark(PALETTE.purple, 0.6),
-      hills: dark(PALETTE.purple, 0.4),
-      grassLight: light(PALETTE.ink, 0.5),
-      grassDark: light(PALETTE.ink, 0.46),
-      sand: light(PALETTE.ink, 0.4),
+      sunGlow: light(PALETTE.purple, 0.3),
+      fog: dark(PALETTE.purple, 0.55),
+      mountains: dark(PALETTE.purple, 0.65),
+      hills: dark(PALETTE.purple, 0.5),
+      grassLight: dark(PALETTE.blue, 0.78),
+      grassDark: dark(PALETTE.blue, 0.82),
+      sand: dark(PALETTE.blue, 0.65),
+      neon: light(PALETTE.blue, 0.2),
+      lane: PALETTE.pink,
     },
     outfit: { style: 'party', color: dark(PALETTE.blue, 0.6), shade: dark(PALETTE.blue, 0.75) },
     drawDestination: drawCinema,
@@ -361,23 +365,25 @@ const LEVELS = [
     spikeRowChance: 0.15,
     horizon: 'mountains',
     isNight: false,
-    cloudOpacity: 0.9,
+    cloudOpacity: 0.3,
     scenery: ['blossomTree', 'blossomTree', 'roundTree', 'flowerBush'],
     sceneryDensity: 0.5,
     selfiesNeeded: 2,
     music: 'wedding',
     selfie: { shirt: dark(PALETTE.purple, 0.65), hasBowTie: true, prop: 'confetti' },
     colors: {
-      skyTop: light(PALETTE.pink, 0.45),
-      skyBottom: light(PALETTE.yellow, 0.75),
+      skyTop: dark(PALETTE.pink, 0.55),
+      skyBottom: light(PALETTE.yellow, 0.45),
       sun: light(PALETTE.yellow, 0.85),
-      sunGlow: light(PALETTE.orange, 0.55),
-      fog: light(PALETTE.pink, 0.85),
-      mountains: light(PALETTE.purple, 0.5),
-      hills: light(PALETTE.green, 0.4),
-      grassLight: light(PALETTE.green, 0.3),
-      grassDark: light(PALETTE.green, 0.2),
-      sand: light(PALETTE.pink, 0.9),
+      sunGlow: light(PALETTE.pink, 0.3),
+      fog: dark(PALETTE.pink, 0.4),
+      mountains: dark(PALETTE.pink, 0.55),
+      hills: dark(PALETTE.pink, 0.45),
+      grassLight: dark(PALETTE.pink, 0.7),
+      grassDark: dark(PALETTE.pink, 0.75),
+      sand: dark(PALETTE.pink, 0.6),
+      neon: light(PALETTE.yellow, 0.4),
+      lane: light(PALETTE.pink, 0.6),
     },
     outfit: { style: 'bride', color: light(PALETTE.pink, 0.97), shade: light(PALETTE.purple, 0.8) },
     drawDestination: drawChapel,
@@ -402,16 +408,18 @@ const LEVELS = [
     selfie: { shirt: PALETTE.blue, hasBowTie: false, prop: 'baby', isExhausted: true },
     hasCryingBaby: true,
     colors: {
-      skyTop: dark(PALETTE.red, 0.8),
-      skyBottom: dark(PALETTE.orange, 0.25),
+      skyTop: dark(PALETTE.red, 0.85),
+      skyBottom: dark(PALETTE.orange, 0.1),
       sun: light(PALETTE.yellow, 0.4),
       sunGlow: PALETTE.orange,
-      fog: dark(PALETTE.red, 0.45),
-      mountains: dark(PALETTE.red, 0.65),
+      fog: dark(PALETTE.red, 0.55),
+      mountains: dark(PALETTE.red, 0.7),
       hills: PALETTE.orange,
-      grassLight: dark(PALETTE.red, 0.6),
-      grassDark: dark(PALETTE.red, 0.65),
-      sand: dark(PALETTE.red, 0.8),
+      grassLight: dark(PALETTE.red, 0.72),
+      grassDark: dark(PALETTE.red, 0.78),
+      sand: dark(PALETTE.red, 0.85),
+      neon: PALETTE.orange,
+      lane: light(PALETTE.yellow, 0.3),
     },
     outfit: { style: 'hoodie', color: light(PALETTE.mint, 0.25), shade: PALETTE.mint },
     drawDestination: drawHomeWithBaby,
@@ -461,6 +469,7 @@ function create(data) {
   scene.cameras.main.setViewport(0, 0, PANEL_WIDTH, GAME_HEIGHT);
   scene.makeupCamera = scene.cameras.add(PANEL_WIDTH, 0, PANEL_WIDTH, GAME_HEIGHT).setScroll(MAKEUP_PANEL_WORLD_X, 0);
   scene.overlayCamera = scene.cameras.add(0, 0, GAME_WIDTH, GAME_HEIGHT).setScroll(OVERLAY_WORLD_X, 0);
+  scene.cameras.main.postFX?.addBloom(PALETTE.white, 1, 1, 1, 0.45, 4);
 
   scene.race = {
     distance: 0,
@@ -471,6 +480,8 @@ function create(data) {
     crashes: 0,
     recoveringUntil: 0,
     jumpStartedAt: -JUMP_DURATION_MS,
+    landedAt: -1000,
+    wasAirborne: false,
     obstacles: [],
     nextObstaclePosition: FIRST_OBSTACLE_POSITION,
   };
@@ -637,7 +648,7 @@ function createTitleScreen(scene) {
     .text(centerX + 8, 140, 'Makeup', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.hero })
     .setOrigin(1, 0.5);
   const racingWord = scene.add
-    .text(centerX + 18, 160, 'Racing', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.hero, fontStyle: 'italic', color: css(PALETTE.purple), stroke: css(dark(PALETTE.red, 0.6)) })
+    .text(centerX + 18, 160, 'Racing', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.hero, fontStyle: 'italic', color: css(light(PALETTE.blue, 0.2)) })
     .setOrigin(0, 0.5);
   for (const word of [makeupWord, racingWord]) word.setShadow(0, 6, css(UI.textStroke), 0, true, true);
   const titleGap = 14;
@@ -789,6 +800,7 @@ function showResults(scene) {
   scene.levelSelectLayer.setVisible(false);
   scene.overlayCamera.setVisible(true);
   playMusic(scene, null);
+  if (isPerfect) scene.sparks.explode(50, centerX, 150);
   playMelody(scene, isPerfect ? [523, 659, 784, 1047] : [392, 330, 262]);
 }
 
@@ -885,19 +897,25 @@ function drawRoad(scene) {
     const near = slices[index];
     const far = slices[index + 1];
     const distanceRatio = (near.depth - NEAREST_VISIBLE_DEPTH) / (FARTHEST_VISIBLE_DEPTH - NEAREST_VISIBLE_DEPTH);
-    const fogAmount = Math.pow(Phaser.Math.Clamp(distanceRatio, 0, 1), 0.7) * 0.9;
-    const fogged = (color) => blendColor(color, currentLevel.colors.fog, fogAmount);
+    const fogAmount = nightFogAmount(distanceRatio);
+    const colors = currentLevel.colors;
+    const fogged = (color) => blendColor(color, colors.fog, fogAmount);
+    const glowing = (color) => blendColor(color, colors.fog, fogAmount * 0.6);
     const isStripe = ((near.index >> 1) & 1) === 1;
 
-    paintRect(graphics, fogged(isStripe ? currentLevel.colors.grassLight : currentLevel.colors.grassDark), 0, far.y, PANEL_WIDTH, near.y - far.y + 1);
+    paintRect(graphics, fogged(isStripe ? colors.grassLight : colors.grassDark), 0, far.y, PANEL_WIDTH, near.y - far.y + 1);
+    if (near.index % 4 === 0) {
+      graphics.fillStyle(glowing(colors.neon), 0.4);
+      graphics.fillRect(0, near.y - 1, PANEL_WIDTH, 1 + near.scale * 0.004);
+    }
     for (const side of [-1, 1]) {
-      fillTrapezoid(graphics, fogged(currentLevel.colors.sand), near, far, side * 1.2, 0.12);
-      fillTrapezoid(graphics, fogged(isStripe ? COLORS.curbPink : COLORS.curbWhite), near, far, side * 1.05, 0.06);
+      fillTrapezoid(graphics, fogged(colors.sand), near, far, side * 1.2, 0.12);
+      fillTrapezoid(graphics, glowing(colors.neon), near, far, side * 1.04, 0.035);
     }
     fillTrapezoid(graphics, fogged(isStripe ? COLORS.asphaltLight : COLORS.asphaltDark), near, far, 0, 1);
     if (isStripe) {
       for (const side of [-1, 1]) {
-        fillTrapezoid(graphics, fogged(COLORS.laneLine), near, far, side / 3, 0.025);
+        fillTrapezoid(graphics, glowing(colors.lane), near, far, side / 3, 0.025);
       }
     }
     drawRoadsideScenery(graphics, near, fogAmount);
@@ -976,6 +994,13 @@ function drawLandscape(graphics, level, area) {
   graphics.fillStyle(colors.sunGlow, 0.35);
   graphics.fillCircle(sunX, sunY, 48 * scale);
   paintCircle(graphics, colors.sun, sunX, sunY, 30 * scale);
+  if (!level.isNight) {
+    for (let stripe = 0; stripe < 5; stripe++) {
+      const offsetY = (6 + stripe * 5) * scale;
+      const halfChord = Math.sqrt(Math.max(0, 900 * scale * scale - offsetY * offsetY));
+      paintRect(graphics, blendColor(colors.skyTop, colors.skyBottom, 0.8), sunX - halfChord, sunY + offsetY, halfChord * 2, (1 + stripe * 0.6) * scale);
+    }
+  }
   if (level.isNight) {
     paintCircle(graphics, blendColor(colors.skyTop, colors.skyBottom, (sunY - top) / (groundY - top)), sunX + 14 * scale, sunY - 9 * scale, 25 * scale);
   }
@@ -986,7 +1011,7 @@ function drawLandscape(graphics, level, area) {
     drawSkyline(graphics, area, blendColor(colors.hills, colors.fog, 0.15), 50, 2);
     return;
   }
-  drawRidge(graphics, area, farColor, level.horizon === 'lake' ? 40 : 75, 1);
+  drawRidge(graphics, area, farColor, level.horizon === 'lake' ? 40 : 75, 1, colors.neon);
   if (level.horizon !== 'lake') {
     drawRidge(graphics, area, blendColor(colors.hills, colors.fog, 0.2), 26, 4);
     return;
@@ -998,7 +1023,7 @@ function drawLandscape(graphics, level, area) {
   }
 }
 
-function drawRidge(graphics, area, color, peakHeight, phase) {
+function drawRidge(graphics, area, color, peakHeight, phase, rimColor) {
   const { left, width, horizonY, scale } = area;
   const baseY = horizonY + 12 * scale;
   const outline = [{ x: left, y: baseY + 4 * scale }];
@@ -1010,6 +1035,9 @@ function drawRidge(graphics, area, color, peakHeight, phase) {
   outline.push({ x: left + width, y: baseY + 4 * scale });
   graphics.fillStyle(color, 1);
   graphics.fillPoints(outline, true);
+  if (!rimColor) return;
+  graphics.lineStyle(2 * scale, rimColor, 0.9);
+  graphics.strokePoints(outline.slice(1, -1));
 }
 
 function drawSkyline(graphics, area, color, tallestBuilding, salt) {
@@ -1070,8 +1098,16 @@ function createMakeupPanel(scene) {
 
   const backdrop = scene.add.graphics();
   drawLandscape(backdrop, currentLevel, { left, top: 0, width: PANEL_WIDTH, horizonY: 430, bottom: GAME_HEIGHT, scale: 1.5, sunY: 250 });
-  backdrop.fillStyle(PALETTE.white, 0.3);
+  backdrop.fillStyle(PALETTE.ink, 0.25);
   backdrop.fillRect(left, 0, PANEL_WIDTH, GAME_HEIGHT);
+  for (let bulb = 0; bulb < 11; bulb++) {
+    const angle = Math.PI * (1.08 + bulb * 0.084);
+    const bulbX = FACE_CENTER_X + Math.cos(angle) * 178;
+    const bulbY = FACE_CENTER_Y - 10 + Math.sin(angle) * 178;
+    backdrop.fillStyle(PALETTE.yellow, 0.3);
+    backdrop.fillCircle(bulbX, bulbY, 13);
+    paintCircle(backdrop, light(PALETTE.yellow, 0.7), bulbX, bulbY, 7);
+  }
   backdrop.fillStyle(COLORS.cloud, 0.35);
   backdrop.fillCircle(FACE_CENTER_X, FACE_CENTER_Y - 10, 160);
   backdrop.fillStyle(COLORS.cloud, 0.3);
@@ -1177,10 +1213,23 @@ function takeSelfie(scene) {
   frame.fillCircle(7, SELFIE_PHOTO_HEIGHT / 2 + 26, 7);
   frame.fillTriangle(-14, SELFIE_PHOTO_HEIGHT / 2 + 28, 14, SELFIE_PHOTO_HEIGHT / 2 + 28, 0, SELFIE_PHOTO_HEIGHT / 2 + 42);
   const photo = scene.add.image(0, 0, 'selfie');
-  const selfie = scene.add.container(PANEL_WIDTH / 2, 300, [frame, photo]).setAngle(-4).setScale(0.6).setDepth(10);
+  const selfie = scene.add.container(OVERLAY_WORLD_X + PANEL_WIDTH / 2, 300, [frame, photo]).setAngle(-4).setScale(0.6).setDepth(10);
+  scene.titleLayer.setVisible(false);
+  scene.levelSelectLayer.setVisible(false);
+  scene.overlayCamera.setVisible(true);
   scene.tweens.add({ targets: selfie, scale: 1.25, duration: 220, ease: 'Back.Out' });
+  scene.sparks.explode(24, OVERLAY_WORLD_X + PANEL_WIDTH / 2, 300);
   scene.time.delayedCall(SELFIE_DURATION_MS, () => {
-    scene.tweens.add({ targets: selfie, alpha: 0, scale: 0.8, duration: 200, onComplete: () => selfie.destroy() });
+    scene.tweens.add({
+      targets: selfie,
+      alpha: 0,
+      scale: 0.8,
+      duration: 200,
+      onComplete: () => {
+        selfie.destroy();
+        if (scene.phase === 'playing') scene.overlayCamera.setVisible(false);
+      },
+    });
   });
 }
 
@@ -1686,6 +1735,16 @@ function createCar(scene) {
     frequency: 70,
   });
   scene.car = scene.add.image(ROAD_CENTER_X, CAR_SCREEN_Y, 'car').setOrigin(0.5, 1).setScale(CAR_IMAGE_SCALE);
+  scene.sparks = scene.add
+    .particles(0, 0, 'puff', {
+      emitting: false,
+      lifespan: 650,
+      speed: { min: 120, max: 300 },
+      scale: { start: 0.7, end: 0 },
+      tint: [PALETTE.pink, PALETTE.yellow, light(PALETTE.blue, 0.2)],
+      blendMode: 'ADD',
+    })
+    .setDepth(20);
 }
 
 function steerCar(scene, time, seconds) {
@@ -1715,7 +1774,11 @@ function updateCar(scene, time) {
   const bounce = Math.sin(time * 0.03) * 1.2;
   const jumpHeight = jumpHeightAt(race, time);
   scene.car.setPosition(position.x, CAR_SCREEN_Y + bounce - jumpHeight * JUMP_HEIGHT_PX);
-  scene.car.setScale(CAR_IMAGE_SCALE * (1 + jumpHeight * 0.08));
+  if (race.wasAirborne && jumpHeight === 0) race.landedAt = time;
+  race.wasAirborne = jumpHeight > 0;
+  const squash = Math.max(0, 1 - (time - race.landedAt) / 200) * 0.18;
+  const carScale = CAR_IMAGE_SCALE * (1 + jumpHeight * 0.08);
+  scene.car.setScale(carScale * (1 + squash * 0.6), carScale * (1 - squash));
   scene.carShadow.setScale(1 - jumpHeight * 0.45);
   scene.car.setAngle((race.lane * LANE_WIDTH - race.carX) * 45);
   scene.car.setAlpha(isRecovering && Math.floor(time / 100) % 2 === 0 ? 0.35 : 1);
@@ -1766,6 +1829,7 @@ function detectCrash(scene, time) {
     race.speed *= 0.35;
     race.recoveringUntil = time + CRASH_RECOVERY_MS;
     scene.cameras.main.shake(250, 0.012);
+    scene.sparks.explode(22, scene.car.x, CAR_SCREEN_Y - 30);
     scene.cameras.main.flash(180, (COLORS.crashFlash >> 16) & 255, (COLORS.crashFlash >> 8) & 255, COLORS.crashFlash & 255);
     playSound(scene, 'crash');
     ruinMakeup(scene);
@@ -1773,9 +1837,12 @@ function detectCrash(scene, time) {
   }
 }
 
+function nightFogAmount(distanceRatio) {
+  return 0.3 + Math.pow(Phaser.Math.Clamp(distanceRatio, 0, 1), 0.7) * 0.6;
+}
+
 function foggedAtDepth(depth) {
-  const distanceRatio = (depth - NEAREST_VISIBLE_DEPTH) / (FARTHEST_VISIBLE_DEPTH - NEAREST_VISIBLE_DEPTH);
-  const fogAmount = Math.pow(Phaser.Math.Clamp(distanceRatio, 0, 1), 0.7) * 0.9;
+  const fogAmount = nightFogAmount((depth - NEAREST_VISIBLE_DEPTH) / (FARTHEST_VISIBLE_DEPTH - NEAREST_VISIBLE_DEPTH));
   return (color) => blendColor(color, currentLevel.colors.fog, fogAmount);
 }
 
