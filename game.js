@@ -282,6 +282,7 @@ const LEVELS = [
     scenery: ['roundTree', 'roundTree', 'blossomTree', 'pine', 'flowerBush'],
     sceneryDensity: 0.4,
     selfiesNeeded: 0,
+    music: 'date',
     selfie: { shirt: PALETTE.blue, hasBowTie: false, prop: 'none' },
     colors: {
       skyTop: PALETTE.blue,
@@ -314,6 +315,7 @@ const LEVELS = [
     scenery: ['building', 'building', 'lamp'],
     sceneryDensity: 0.7,
     selfiesNeeded: 1,
+    music: 'night',
     selfie: { shirt: dark(PALETTE.purple, 0.3), hasBowTie: false, prop: 'popcorn' },
     colors: {
       skyTop: dark(PALETTE.purple, 0.75),
@@ -346,6 +348,7 @@ const LEVELS = [
     scenery: ['blossomTree', 'blossomTree', 'roundTree', 'flowerBush'],
     sceneryDensity: 0.5,
     selfiesNeeded: 2,
+    music: 'wedding',
     selfie: { shirt: dark(PALETTE.purple, 0.65), hasBowTie: true, prop: 'confetti' },
     colors: {
       skyTop: light(PALETTE.pink, 0.45),
@@ -378,7 +381,9 @@ const LEVELS = [
     scenery: ['fire', 'fire', 'skull', 'bones'],
     sceneryDensity: 0.45,
     selfiesNeeded: 3,
+    music: 'metal',
     selfie: { shirt: PALETTE.blue, hasBowTie: false, prop: 'baby' },
+    hasCryingBaby: true,
     colors: {
       skyTop: dark(PALETTE.red, 0.8),
       skyBottom: dark(PALETTE.orange, 0.25),
@@ -482,11 +487,13 @@ function update(time, delta) {
   updateCar(scene, time);
   updateHud(scene);
   updateEngineSound(scene);
+  updateMusic(scene, time);
   scene.controls.pressed = Object.create(null);
 }
 
 function startLevel(scene) {
   scene.phase = 'playing';
+  playMusic(scene, currentLevel.music);
   scene.race.speed = currentLevel.startingSpeed;
   scene.overlayCamera.setVisible(false);
   scene.controls.pressed = Object.create(null);
@@ -495,6 +502,7 @@ function startLevel(scene) {
 
 function showTitle(scene) {
   scene.phase = 'title';
+  playMusic(scene, 'menu');
   scene.titleLayer.setVisible(true);
   scene.levelSelectLayer.setVisible(false);
   scene.overlayCamera.setVisible(true);
@@ -502,6 +510,7 @@ function showTitle(scene) {
 
 function showLevelSelect(scene, selectedLevel) {
   scene.phase = 'select';
+  playMusic(scene, 'menu');
   scene.selectedLevel = Phaser.Math.Clamp(selectedLevel || 0, 0, LEVELS.length - 1);
   scene.titleLayer.setVisible(false);
   scene.levelSelectLayer.setVisible(true);
@@ -741,6 +750,7 @@ function showResults(scene) {
   scene.titleLayer.setVisible(false);
   scene.levelSelectLayer.setVisible(false);
   scene.overlayCamera.setVisible(true);
+  playMusic(scene, null);
   playMelody(scene, isPerfect ? [523, 659, 784, 1047] : [392, 330, 262]);
 }
 
@@ -2147,7 +2157,7 @@ function updateEngineSound(scene) {
     scene.engineVolume = volume;
   }
   const isDriving = scene.race.speed > 1;
-  scene.engineVolume.gain.setTargetAtTime(isDriving ? 0.035 : 0, context.currentTime, 0.2);
+  scene.engineVolume.gain.setTargetAtTime(isDriving ? 0.02 : 0, context.currentTime, 0.2);
   scene.engine.frequency.setTargetAtTime(40 + scene.race.speed * 3, context.currentTime, 0.1);
 }
 
@@ -2194,4 +2204,187 @@ function playMelody(scene, frequencies) {
     oscillator.stop(start + 0.3);
   });
 }
+
+const MUSIC_TRACKS = {
+  menu: {
+    tempo: 110,
+    voices: [
+      { wave: 'triangle', volume: 0.07, notes: 'E5 G5 A5 G5 E5 - C5 - D5 E5 G5 E5 D5 . . -' },
+      { wave: 'sine', volume: 0.1, notes: 'C3 - G3 - A2 - E3 - F2 - C3 - G2 - G2 -' },
+    ],
+    drums: 'k-h-s-h-',
+  },
+  date: {
+    tempo: 132,
+    voices: [
+      { wave: 'triangle', volume: 0.07, notes: 'C5 E5 G5 E5 F5 A5 G5 - E5 G5 C6 B5 A5 G5 E5 -' },
+      { wave: 'sine', volume: 0.1, notes: 'C3 - C3 - F2 - F2 - A2 - A2 - G2 - G2 -' },
+    ],
+    drums: 'k-h-s-h-k-h-s-hh',
+  },
+  night: {
+    tempo: 118,
+    voices: [
+      { wave: 'square', volume: 0.035, notes: 'A4 C5 E5 A5 E5 C5 A4 C5 F4 A4 C5 F5 G4 B4 D5 G5' },
+      { wave: 'sawtooth', volume: 0.04, notes: 'A2 . A2 . A2 . A2 . F2 . F2 . G2 . G2 .' },
+    ],
+    drums: 'k-hhs-hhk-hhs-hh',
+  },
+  wedding: {
+    tempo: 96,
+    voices: [
+      { wave: 'triangle', volume: 0.09, notes: 'G4 . C5 . C5 C5 C5 . . . G4 . D5 B4 C5 . . . G4 . C5 F5 F5 . E5 D5 C5 B4 C5 D5 C5 . . .' },
+      { wave: 'sine', volume: 0.08, notes: 'C3 . . . . . . . G2 . . . C3 . . . F2 . . . . . . . G2 . . . C3 . . .' },
+      { wave: 'sine', volume: 0.05, notes: 'E4 . . . . . . . D4 . . . E4 . . . A4 . . . . . . . B3 . . . E4 . . .' },
+    ],
+  },
+  metal: {
+    tempo: 170,
+    voices: [
+      { wave: 'sawtooth', volume: 0.05, distorted: true, notes: 'E2 E2 E2 G2 E2 E2 A2 G2 E2 E2 E2 Bb2 A2 G2 F#2 G2' },
+      { wave: 'sawtooth', volume: 0.04, distorted: true, notes: 'B2 B2 B2 D3 B2 B2 E3 D3 B2 B2 B2 F3 E3 D3 C#3 D3' },
+    ],
+    drums: 'kks-kks-kkskkks-',
+  },
+};
+
+const NOTE_SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+function noteFrequency(note) {
+  const accidental = note[1] === '#' ? 1 : note[1] === 'b' ? -1 : 0;
+  const octave = Number(note[note.length - 1]);
+  const semitonesFromA4 = NOTE_SEMITONES[note[0]] + accidental + (octave - 4) * 12 - 9;
+  return 440 * Math.pow(2, semitonesFromA4 / 12);
+}
+
+function playMusic(scene, trackName) {
+  const track = MUSIC_TRACKS[trackName];
+  scene.music = { track, step: 0, nextStepTime: 0, nextCryAt: scene.time.now + 3000 };
+}
+
+function updateMusic(scene, time) {
+  const context = audioContextOf(scene);
+  const music = scene.music;
+  if (!context || !music || !music.track) return;
+  const stepSeconds = 60 / music.track.tempo / 2;
+  if (music.nextStepTime < context.currentTime) music.nextStepTime = context.currentTime + 0.05;
+  while (music.nextStepTime < context.currentTime + 0.2) {
+    for (const voice of music.track.voices) playVoiceStep(context, voice, music.step, music.nextStepTime, stepSeconds);
+    if (music.track.drums) playDrum(context, music.track.drums[music.step % music.track.drums.length], music.nextStepTime);
+    music.step += 1;
+    music.nextStepTime += stepSeconds;
+  }
+  if (currentLevel.hasCryingBaby && scene.phase === 'playing' && time > music.nextCryAt) {
+    playBabyCry(context);
+    music.nextCryAt = time + Phaser.Math.Between(4000, 7000);
+  }
+}
+
+function playVoiceStep(context, voice, step, startTime, stepSeconds) {
+  const notes = voice.tokens || (voice.tokens = voice.notes.split(' '));
+  const note = notes[step % notes.length];
+  if (note === '-' || note === '.') return;
+  let length = 1;
+  while (notes[(step + length) % notes.length] === '.') length += 1;
+  const duration = length * stepSeconds * 0.95;
+  const oscillator = context.createOscillator();
+  const volume = context.createGain();
+  oscillator.type = voice.wave;
+  oscillator.frequency.value = noteFrequency(note);
+  volume.gain.setValueAtTime(voice.volume, startTime);
+  volume.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  if (voice.distorted) {
+    const distortion = context.createWaveShaper();
+    distortion.curve = distortionCurve();
+    oscillator.connect(distortion);
+    distortion.connect(volume);
+  } else {
+    oscillator.connect(volume);
+  }
+  volume.connect(context.destination);
+  oscillator.start(startTime);
+  oscillator.stop(startTime + duration);
+}
+
+let sharedDistortionCurve = null;
+
+function distortionCurve() {
+  if (sharedDistortionCurve) return sharedDistortionCurve;
+  sharedDistortionCurve = new Float32Array(256);
+  for (let index = 0; index < 256; index++) {
+    const x = (index / 128) - 1;
+    sharedDistortionCurve[index] = Math.tanh(x * 6);
+  }
+  return sharedDistortionCurve;
+}
+
+let sharedNoiseBuffer = null;
+
+function noiseBuffer(context) {
+  if (sharedNoiseBuffer) return sharedNoiseBuffer;
+  sharedNoiseBuffer = context.createBuffer(1, context.sampleRate * 0.2, context.sampleRate);
+  const samples = sharedNoiseBuffer.getChannelData(0);
+  for (let index = 0; index < samples.length; index++) samples[index] = Math.random() * 2 - 1;
+  return sharedNoiseBuffer;
+}
+
+function playDrum(context, hit, startTime) {
+  if (hit === 'k') {
+    const oscillator = context.createOscillator();
+    const volume = context.createGain();
+    oscillator.frequency.setValueAtTime(140, startTime);
+    oscillator.frequency.exponentialRampToValueAtTime(45, startTime + 0.12);
+    volume.gain.setValueAtTime(0.35, startTime);
+    volume.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
+    oscillator.connect(volume);
+    volume.connect(context.destination);
+    oscillator.start(startTime);
+    oscillator.stop(startTime + 0.15);
+    return;
+  }
+  if (hit !== 's' && hit !== 'h') return;
+  const isSnare = hit === 's';
+  const source = context.createBufferSource();
+  const filter = context.createBiquadFilter();
+  const volume = context.createGain();
+  source.buffer = noiseBuffer(context);
+  filter.type = 'highpass';
+  filter.frequency.value = isSnare ? 1200 : 6000;
+  volume.gain.setValueAtTime(isSnare ? 0.18 : 0.06, startTime);
+  volume.gain.exponentialRampToValueAtTime(0.001, startTime + (isSnare ? 0.14 : 0.05));
+  source.connect(filter);
+  filter.connect(volume);
+  volume.connect(context.destination);
+  source.start(startTime);
+  source.stop(startTime + 0.2);
+}
+
+function playBabyCry(context) {
+  const start = context.currentTime;
+  for (const [offset, length] of [[0, 0.35], [0.45, 0.9]]) {
+    const oscillator = context.createOscillator();
+    const wobble = context.createOscillator();
+    const wobbleDepth = context.createGain();
+    const volume = context.createGain();
+    const begin = start + offset;
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(450, begin);
+    oscillator.frequency.linearRampToValueAtTime(780, begin + length * 0.3);
+    oscillator.frequency.linearRampToValueAtTime(420, begin + length);
+    wobble.frequency.value = 9;
+    wobbleDepth.gain.value = 35;
+    wobble.connect(wobbleDepth);
+    wobbleDepth.connect(oscillator.frequency);
+    volume.gain.setValueAtTime(0.001, begin);
+    volume.gain.linearRampToValueAtTime(0.12, begin + 0.05);
+    volume.gain.exponentialRampToValueAtTime(0.001, begin + length);
+    oscillator.connect(volume);
+    volume.connect(context.destination);
+    for (const node of [oscillator, wobble]) {
+      node.start(begin);
+      node.stop(begin + length);
+    }
+  }
+}
 })();
+
