@@ -45,6 +45,16 @@ const PERSPECTIVE_SCALE = 1200;
 const PERSPECTIVE_HEIGHT = (GAME_HEIGHT - HORIZON_Y) * NEAREST_VISIBLE_DEPTH;
 const ROAD_HALF_WIDTH = 0.5;
 const ROAD_CENTER_X = PANEL_WIDTH / 2;
+const LANE_WIDTH = (ROAD_HALF_WIDTH * 2) / 3;
+const CAR_DEPTH = 3.3;
+const CAR_SCREEN_Y = HORIZON_Y + PERSPECTIVE_HEIGHT / CAR_DEPTH + 16;
+const CAR_IMAGE_SCALE = 0.85;
+const STARTING_SPEED = 16;
+const MAX_SPEED = 34;
+const SPEED_GAIN_PER_METER = 0.004;
+const FIRST_OBSTACLE_POSITION = 60;
+const CRASH_RECOVERY_MS = 1500;
+const KMH_PER_SPEED_UNIT = 6;
 
 const COLORS = {
   background: 0x1d1230,
@@ -76,6 +86,24 @@ const COLORS = {
   bush: 0x5cb850,
   flowerPink: 0xff7eb3,
   flowerYellow: 0xfff07a,
+  windshield: 0xbfe8ff,
+  driverHair: 0x3a2a2a,
+  passengerHair: 0x8b5a3c,
+  bow: 0xff5f9e,
+  carBody: 0xffc93c,
+  carHighlight: 0xffe27a,
+  carShade: 0xe0a520,
+  tire: 0x26232e,
+  bumper: 0x4a4458,
+  tailLight: 0xe8384f,
+  tailLightGlow: 0xff9aa8,
+  plate: 0xffffff,
+  trafficBodies: [0x7fd6c2, 0xb69cf0, 0x7cb8ff, 0xff9f7a],
+  trafficGlass: 0x2c3550,
+  barrierStripe: 0xff5f9e,
+  barrierLeg: 0x6b6478,
+  cone: 0xff8a3d,
+  crashFlash: [255, 120, 170],
   makeupTop: 0xffd6ea,
   makeupBottom: 0xf3b2d8,
   mirrorFrame: 0xd4a24c,
@@ -103,10 +131,23 @@ function create() {
   scene.cameras.main.setViewport(0, 0, PANEL_WIDTH, GAME_HEIGHT);
   scene.cameras.add(PANEL_WIDTH, 0, PANEL_WIDTH, GAME_HEIGHT).setScroll(MAKEUP_PANEL_WORLD_X, 0);
 
-  scene.race = { distance: 0, speed: 18, cameraX: 0 };
+  scene.race = {
+    distance: 0,
+    speed: STARTING_SPEED,
+    cameraX: 0,
+    lane: 0,
+    carX: 0,
+    crashes: 0,
+    recoveringUntil: 0,
+    obstacles: [],
+    nextObstaclePosition: FIRST_OBSTACLE_POSITION,
+  };
   createSky(scene);
   scene.roadGraphics = scene.add.graphics();
   scene.roadSlices = [];
+  scene.obstacleGraphics = scene.add.graphics();
+  createCar(scene);
+  createHud(scene);
   createMakeupPanel(scene);
 }
 
@@ -114,9 +155,18 @@ function update(time, delta) {
   const scene = this;
   const seconds = Math.min(delta, 50) / 1000;
   const race = scene.race;
+  steerCar(scene, seconds);
+  const cruisingSpeed = Math.min(MAX_SPEED, STARTING_SPEED + race.distance * SPEED_GAIN_PER_METER);
+  race.speed += (cruisingSpeed - race.speed) * Math.min(1, seconds * 0.8);
   race.distance += race.speed * seconds;
+  spawnObstacles(race);
+  detectCrash(scene, time);
   updateSky(scene, seconds);
   drawRoad(scene);
+  drawObstacles(scene);
+  updateCar(scene, time);
+  updateHud(scene);
+  updateEngineSound(scene);
   scene.controls.pressed = Object.create(null);
 }
 
@@ -355,4 +405,262 @@ function normalizeIncomingKey(key) {
   if (typeof key !== 'string' || key.length === 0) return '';
   if (key === ' ') return 'space';
   return key.toLowerCase();
+}
+
+function screenPositionAt(scene, depth, worldX) {
+  const scale = PERSPECTIVE_SCALE / depth;
+  return {
+    x: ROAD_CENTER_X + (worldX - scene.race.cameraX) * scale,
+    y: HORIZON_Y + PERSPECTIVE_HEIGHT / depth,
+    scale,
+  };
+}
+
+function createCar(scene) {
+  const painter = scene.make.graphics({ x: 0, y: 0 }, false);
+  painter.fillStyle(COLORS.windshield, 0.45);
+  painter.fillRoundedRect(18, 8, 84, 32, 8);
+  painter.fillStyle(COLORS.driverHair, 1);
+  painter.fillCircle(40, 30, 13);
+  painter.fillStyle(COLORS.passengerHair, 1);
+  painter.fillCircle(80, 30, 13);
+  painter.fillCircle(80, 14, 7);
+  painter.fillStyle(COLORS.bow, 1);
+  painter.fillTriangle(80, 20, 70, 15, 70, 25);
+  painter.fillTriangle(80, 20, 90, 15, 90, 25);
+  painter.fillStyle(COLORS.tire, 1);
+  painter.fillRoundedRect(8, 62, 22, 24, 5);
+  painter.fillRoundedRect(90, 62, 22, 24, 5);
+  painter.fillStyle(COLORS.carBody, 1);
+  painter.fillRoundedRect(4, 36, 112, 36, 12);
+  painter.fillStyle(COLORS.carHighlight, 1);
+  painter.fillRoundedRect(12, 37, 96, 8, 4);
+  painter.fillStyle(COLORS.carShade, 1);
+  painter.fillRoundedRect(4, 60, 112, 12, { tl: 0, tr: 0, bl: 12, br: 12 });
+  painter.fillStyle(COLORS.bumper, 1);
+  painter.fillRoundedRect(22, 64, 76, 9, 4);
+  painter.fillStyle(COLORS.tailLight, 1);
+  painter.fillRoundedRect(10, 46, 24, 10, 4);
+  painter.fillRoundedRect(86, 46, 24, 10, 4);
+  painter.fillStyle(COLORS.tailLightGlow, 1);
+  painter.fillRoundedRect(13, 48, 10, 5, 2);
+  painter.fillRoundedRect(89, 48, 10, 5, 2);
+  painter.fillStyle(COLORS.plate, 1);
+  painter.fillRoundedRect(47, 50, 26, 11, 2);
+  painter.fillStyle(COLORS.background, 1);
+  painter.fillRect(51, 54, 18, 3);
+  painter.generateTexture('car', 120, 90);
+  painter.clear();
+  painter.fillStyle(COLORS.cloud, 1);
+  painter.fillCircle(8, 8, 8);
+  painter.generateTexture('puff', 16, 16);
+  painter.destroy();
+
+  scene.carShadow = scene.add.ellipse(0, CAR_SCREEN_Y - 4, 110, 18, COLORS.background, 0.3);
+  scene.exhaust = scene.add.particles(0, 0, 'puff', {
+    lifespan: 450,
+    speedX: { min: -15, max: 15 },
+    speedY: { min: 30, max: 70 },
+    scale: { start: 0.4, end: 1.3 },
+    alpha: { start: 0.45, end: 0 },
+    frequency: 70,
+  });
+  scene.car = scene.add.image(ROAD_CENTER_X, CAR_SCREEN_Y, 'car').setOrigin(0.5, 1).setScale(CAR_IMAGE_SCALE);
+}
+
+function steerCar(scene, seconds) {
+  const race = scene.race;
+  const previousLane = race.lane;
+  if (wasPressed(scene, 'P1_L')) race.lane = Math.max(-1, race.lane - 1);
+  if (wasPressed(scene, 'P1_R')) race.lane = Math.min(1, race.lane + 1);
+  if (race.lane !== previousLane) playSound(scene, 'swoosh');
+  race.carX += (race.lane * LANE_WIDTH - race.carX) * Math.min(1, seconds * 12);
+  race.cameraX = race.carX * 0.5;
+}
+
+function updateCar(scene, time) {
+  const race = scene.race;
+  const position = screenPositionAt(scene, CAR_DEPTH, race.carX);
+  const isRecovering = time < race.recoveringUntil;
+  const bounce = Math.sin(time * 0.03) * 1.2;
+  scene.car.setPosition(position.x, CAR_SCREEN_Y + bounce);
+  scene.car.setAngle((race.lane * LANE_WIDTH - race.carX) * 45);
+  scene.car.setAlpha(isRecovering && Math.floor(time / 100) % 2 === 0 ? 0.35 : 1);
+  scene.carShadow.setPosition(position.x, CAR_SCREEN_Y - 4);
+  scene.exhaust.setPosition(position.x - 32, CAR_SCREEN_Y - 14);
+}
+
+function spawnObstacles(race) {
+  while (race.nextObstaclePosition < race.distance + FARTHEST_VISIBLE_DEPTH) {
+    const lanes = Phaser.Utils.Array.Shuffle([-1, 0, 1]);
+    const chanceOfTwoBlockedLanes = Math.min(0.5, race.distance / 4000);
+    const blockedLanes = Math.random() < chanceOfTwoBlockedLanes ? 2 : 1;
+    for (let index = 0; index < blockedLanes; index++) {
+      race.obstacles.push({
+        lane: lanes[index],
+        position: race.nextObstaclePosition,
+        kind: Phaser.Math.RND.pick(['traffic', 'traffic', 'barrier', 'cones']),
+        color: Phaser.Math.RND.pick(COLORS.trafficBodies),
+        hasHit: false,
+      });
+    }
+    race.nextObstaclePosition += Phaser.Math.Between(9, 16);
+  }
+  race.obstacles = race.obstacles.filter((obstacle) => depthOf(race, obstacle) > 1.5);
+}
+
+function depthOf(race, obstacle) {
+  return obstacle.position - race.distance + CAR_DEPTH;
+}
+
+function detectCrash(scene, time) {
+  const race = scene.race;
+  if (time < race.recoveringUntil) return;
+  for (const obstacle of race.obstacles) {
+    const depthFromCar = depthOf(race, obstacle) - CAR_DEPTH;
+    const isAlongside = depthFromCar > -0.15 && depthFromCar < 0.3;
+    const isSameLane = Math.abs(obstacle.lane * LANE_WIDTH - race.carX) < LANE_WIDTH * 0.6;
+    if (obstacle.hasHit || !isAlongside || !isSameLane) continue;
+    obstacle.hasHit = true;
+    race.crashes += 1;
+    race.speed *= 0.35;
+    race.recoveringUntil = time + CRASH_RECOVERY_MS;
+    scene.cameras.main.shake(250, 0.012);
+    scene.cameras.main.flash(180, ...COLORS.crashFlash);
+    playSound(scene, 'crash');
+    return;
+  }
+}
+
+function drawObstacles(scene) {
+  const race = scene.race;
+  const graphics = scene.obstacleGraphics;
+  graphics.clear();
+  for (let index = race.obstacles.length - 1; index >= 0; index--) {
+    const obstacle = race.obstacles[index];
+    const depth = depthOf(race, obstacle);
+    if (depth > FARTHEST_VISIBLE_DEPTH || depth < NEAREST_VISIBLE_DEPTH - 1) continue;
+    const position = screenPositionAt(scene, depth, obstacle.lane * LANE_WIDTH);
+    const distanceRatio = (depth - NEAREST_VISIBLE_DEPTH) / (FARTHEST_VISIBLE_DEPTH - NEAREST_VISIBLE_DEPTH);
+    const fogAmount = Math.pow(Phaser.Math.Clamp(distanceRatio, 0, 1), 0.7) * 0.9;
+    const fogged = (color) => blendColor(color, COLORS.fog, fogAmount);
+    const draw = { traffic: drawTrafficCar, barrier: drawBarrier, cones: drawCones }[obstacle.kind];
+    draw(graphics, position.x, position.y, position.scale, fogged, obstacle.color);
+  }
+}
+
+function drawTrafficCar(graphics, x, groundY, size, fogged, bodyColor) {
+  const width = size * 0.26;
+  graphics.fillStyle(COLORS.background, 0.25);
+  graphics.fillEllipse(x, groundY, width * 1.1, size * 0.04);
+  graphics.fillStyle(fogged(COLORS.tire), 1);
+  graphics.fillRect(x - width * 0.45, groundY - size * 0.05, width * 0.18, size * 0.05);
+  graphics.fillRect(x + width * 0.27, groundY - size * 0.05, width * 0.18, size * 0.05);
+  graphics.fillStyle(fogged(bodyColor), 1);
+  graphics.fillRoundedRect(x - width * 0.4, groundY - size * 0.26, width * 0.8, size * 0.14, size * 0.03);
+  graphics.fillRoundedRect(x - width / 2, groundY - size * 0.15, width, size * 0.12, size * 0.02);
+  graphics.fillStyle(fogged(COLORS.trafficGlass), 1);
+  graphics.fillRoundedRect(x - width * 0.32, groundY - size * 0.24, width * 0.64, size * 0.08, size * 0.02);
+  graphics.fillStyle(fogged(COLORS.tailLight), 1);
+  graphics.fillRect(x - width * 0.46, groundY - size * 0.12, width * 0.16, size * 0.03);
+  graphics.fillRect(x + width * 0.3, groundY - size * 0.12, width * 0.16, size * 0.03);
+  graphics.fillStyle(fogged(COLORS.plate), 1);
+  graphics.fillRect(x - width * 0.1, groundY - size * 0.09, width * 0.2, size * 0.035);
+}
+
+function drawBarrier(graphics, x, groundY, size, fogged) {
+  const width = size * 0.28;
+  const boardHeight = size * 0.06;
+  const boardTop = groundY - size * 0.13;
+  graphics.fillStyle(fogged(COLORS.barrierLeg), 1);
+  graphics.fillRect(x - width * 0.4, boardTop, size * 0.015, size * 0.13);
+  graphics.fillRect(x + width * 0.4 - size * 0.015, boardTop, size * 0.015, size * 0.13);
+  graphics.fillStyle(fogged(COLORS.curbWhite), 1);
+  graphics.fillRect(x - width / 2, boardTop, width, boardHeight);
+  graphics.fillStyle(fogged(COLORS.barrierStripe), 1);
+  for (let stripe = 0; stripe < 4; stripe++) {
+    const left = x - width / 2 + (stripe * width) / 4;
+    graphics.fillTriangle(left, boardTop + boardHeight, left + width / 8, boardTop, left + width / 4, boardTop);
+    graphics.fillTriangle(left, boardTop + boardHeight, left + width / 4, boardTop, left + width / 8, boardTop + boardHeight);
+  }
+}
+
+function drawCones(graphics, x, groundY, size, fogged) {
+  for (const offset of [-0.08, 0, 0.08]) {
+    const coneX = x + offset * size;
+    graphics.fillStyle(fogged(COLORS.cone), 1);
+    graphics.fillTriangle(coneX - size * 0.035, groundY, coneX + size * 0.035, groundY, coneX, groundY - size * 0.12);
+    graphics.fillStyle(fogged(COLORS.curbWhite), 1);
+    graphics.fillRect(coneX - size * 0.018, groundY - size * 0.07, size * 0.036, size * 0.015);
+    graphics.fillStyle(fogged(COLORS.cone), 1);
+    graphics.fillRect(coneX - size * 0.05, groundY - size * 0.01, size * 0.1, size * 0.012);
+  }
+}
+
+function createHud(scene) {
+  const style = {
+    fontFamily: 'Trebuchet MS, Arial',
+    fontSize: '20px',
+    fontStyle: 'bold',
+    color: '#ffffff',
+    stroke: '#1d1230',
+    strokeThickness: 5,
+  };
+  scene.distanceText = scene.add.text(14, 10, '', style);
+  scene.speedText = scene.add.text(PANEL_WIDTH - 14, 10, '', style).setOrigin(1, 0);
+  scene.crashText = scene.add.text(14, 36, '', { ...style, fontSize: '16px', color: '#ffb3d1' });
+}
+
+function updateHud(scene) {
+  const race = scene.race;
+  scene.distanceText.setText(`${Math.floor(race.distance)} m`);
+  scene.speedText.setText(`${Math.round(race.speed * KMH_PER_SPEED_UNIT)} km/h`);
+  scene.crashText.setText(race.crashes ? `Choques: ${race.crashes}` : '');
+}
+
+function audioContextOf(scene) {
+  const context = scene.sound && scene.sound.context;
+  return context && context.state === 'running' ? context : null;
+}
+
+function updateEngineSound(scene) {
+  const context = audioContextOf(scene);
+  if (!context) return;
+  if (!scene.engine) {
+    const oscillator = context.createOscillator();
+    const filter = context.createBiquadFilter();
+    const volume = context.createGain();
+    oscillator.type = 'sawtooth';
+    filter.type = 'lowpass';
+    filter.frequency.value = 380;
+    volume.gain.value = 0.035;
+    oscillator.connect(filter);
+    filter.connect(volume);
+    volume.connect(context.destination);
+    oscillator.start();
+    scene.engine = oscillator;
+  }
+  scene.engine.frequency.setTargetAtTime(40 + scene.race.speed * 3, context.currentTime, 0.1);
+}
+
+function playSound(scene, kind) {
+  const context = audioContextOf(scene);
+  if (!context) return;
+  const oscillator = context.createOscillator();
+  const volume = context.createGain();
+  const now = context.currentTime;
+  const sounds = {
+    swoosh: { wave: 'triangle', from: 260, to: 620, gain: 0.08, length: 0.12 },
+    crash: { wave: 'sawtooth', from: 220, to: 50, gain: 0.25, length: 0.4 },
+  };
+  const sound = sounds[kind];
+  oscillator.type = sound.wave;
+  oscillator.frequency.setValueAtTime(sound.from, now);
+  oscillator.frequency.exponentialRampToValueAtTime(sound.to, now + sound.length);
+  volume.gain.setValueAtTime(sound.gain, now);
+  volume.gain.exponentialRampToValueAtTime(0.001, now + sound.length);
+  oscillator.connect(volume);
+  volume.connect(context.destination);
+  oscillator.start(now);
+  oscillator.stop(now + sound.length);
 }
