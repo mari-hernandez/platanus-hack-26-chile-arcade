@@ -54,6 +54,7 @@ const CAR_IMAGE_SCALE = 0.85;
 const FIRST_OBSTACLE_POSITION = 60;
 const CRASH_RECOVERY_MS = 1500;
 const JUMP_DURATION_MS = 450;
+const CRYING_BABY_HEIGHT = 130;
 const SELFIE_DURATION_MS = 1800;
 const SELFIE_PHOTO_WIDTH = 260;
 const SELFIE_PHOTO_HEIGHT = 200;
@@ -1773,6 +1774,7 @@ function updateCar(scene, time) {
   scene.car.setAlpha(isRecovering && Math.floor(time / 100) % 2 === 0 ? 0.35 : 1);
   scene.carShadow.setPosition(position.x, CAR_SCREEN_Y - 4);
   scene.exhaust.setPosition(position.x - 32, CAR_SCREEN_Y - 14);
+  if (scene.cryingBaby && scene.cryingBaby.active) scene.cryingBaby.setPosition(scene.car.x, scene.car.y - CRYING_BABY_HEIGHT);
 }
 
 function spawnObstacles(race) {
@@ -2374,7 +2376,8 @@ function showCryingBaby(scene) {
     painter.generateTexture('crying-baby', 100, 100);
     painter.destroy();
   }
-  const bubble = scene.add.image(scene.car.x, CAR_SCREEN_Y - 130, 'crying-baby').setDepth(9).setScale(0.3);
+  const bubble = scene.add.image(scene.car.x, scene.car.y - CRYING_BABY_HEIGHT, 'crying-baby').setDepth(9).setScale(0.3);
+  scene.cryingBaby = bubble;
   scene.tweens.add({ targets: bubble, scale: 1, duration: 250, ease: 'Back.Out' });
   scene.tweens.add({ targets: bubble, angle: { from: -8, to: 8 }, duration: 90, yoyo: true, repeat: 8 });
   scene.tweens.add({ targets: bubble, alpha: 0, delay: 1700, duration: 300, onComplete: () => bubble.destroy() });
