@@ -1093,45 +1093,75 @@ function drawCategoryTiles(scene, look) {
   });
 }
 
-function drawPartIcon(graphics, key, x, y, color) {
+function fillRotatedRect(graphics, color, centerX, centerY, length, thickness, angle) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([along, across]) => ({
+    x: centerX + (along * length * cos) / 2 - (across * thickness * sin) / 2,
+    y: centerY + (along * length * sin) / 2 + (across * thickness * cos) / 2,
+  }));
   graphics.fillStyle(color, 1);
-  graphics.lineStyle(5, color, 1);
+  graphics.fillPoints(corners, true);
+}
+
+function drawPartIcon(graphics, key, x, y, color) {
+  const diagonal = -Math.PI / 4;
+  const alongDiagonal = (distance, sideways = 0) => [
+    x + distance * Math.cos(diagonal) - sideways * Math.sin(diagonal),
+    y + distance * Math.sin(diagonal) + sideways * Math.cos(diagonal),
+  ];
+  const caseColor = COLORS.cinemaTrim;
   if (key === 'brows') {
-    graphics.beginPath();
-    graphics.moveTo(x - 14, y + 5);
-    graphics.lineTo(x - 2, y - 5);
-    graphics.lineTo(x + 14, y - 1);
-    graphics.strokePath();
-  } else if (key === 'shadow') {
-    graphics.fillStyle(COLORS.cloud, 1);
-    graphics.fillRoundedRect(x - 15, y - 11, 30, 22, 5);
+    fillRotatedRect(graphics, color, ...alongDiagonal(-14), 4, 7, diagonal);
+    fillRotatedRect(graphics, COLORS.iceCreamCone, ...alongDiagonal(-3), 18, 7, diagonal);
+    graphics.fillStyle(COLORS.skin, 1);
+    graphics.fillTriangle(...alongDiagonal(6, -3.5), ...alongDiagonal(6, 3.5), ...alongDiagonal(15));
     graphics.fillStyle(color, 1);
-    graphics.fillCircle(x - 7, y - 3, 5);
-    graphics.fillStyle(blendColor(color, COLORS.cloud, 0.45), 1);
-    graphics.fillCircle(x + 7, y - 3, 5);
-    graphics.fillStyle(blendColor(color, COLORS.background, 0.3), 1);
-    graphics.fillCircle(x, y + 5, 4);
+    graphics.fillTriangle(...alongDiagonal(11, -1.6), ...alongDiagonal(11, 1.6), ...alongDiagonal(15));
+  } else if (key === 'shadow') {
+    graphics.fillStyle(caseColor, 1);
+    graphics.fillRoundedRect(x - 16, y - 14, 32, 28, 6);
+    const pans = [color, blendColor(color, COLORS.cloud, 0.45), blendColor(color, COLORS.background, 0.3), COLORS.flowerPink];
+    pans.forEach((panColor, index) => {
+      const panX = x + (index % 2 ? 7 : -7);
+      const panY = y + (index < 2 ? -6 : 6);
+      graphics.fillStyle(panColor, 1);
+      graphics.fillCircle(panX, panY, 5.5);
+      graphics.fillStyle(COLORS.cloud, 0.6);
+      graphics.fillCircle(panX - 2, panY - 2, 1.5);
+    });
   } else if (key === 'mascara') {
-    graphics.lineStyle(4, COLORS.bumper, 1);
-    graphics.lineBetween(x - 12, y + 12, x + 4, y - 4);
-    graphics.fillEllipse(x + 8, y - 8, 10, 16);
+    fillRotatedRect(graphics, caseColor, ...alongDiagonal(-7), 18, 9, diagonal);
+    fillRotatedRect(graphics, COLORS.bell, ...alongDiagonal(3), 3, 9, diagonal);
+    fillRotatedRect(graphics, COLORS.lampPost, ...alongDiagonal(8), 8, 2, diagonal);
+    fillRotatedRect(graphics, color, ...alongDiagonal(14), 10, 6, diagonal);
   } else if (key === 'blush') {
-    graphics.fillCircle(x, y, 12);
-    graphics.lineStyle(2, COLORS.cloud, 0.9);
-    for (const offset of [-5, 0, 5]) graphics.lineBetween(x + offset - 2, y + 4, x + offset + 2, y - 4);
+    graphics.fillStyle(caseColor, 1);
+    graphics.fillCircle(x, y, 15);
+    graphics.fillStyle(color, 1);
+    graphics.fillCircle(x, y, 11);
+    graphics.fillStyle(COLORS.cloud, 0.45);
+    graphics.fillEllipse(x - 4, y - 4, 9, 5);
   } else if (key === 'earrings') {
-    graphics.lineStyle(2, color, 1);
-    graphics.lineBetween(x, y - 14, x, y - 4);
-    graphics.fillCircle(x, y - 14, 3);
-    graphics.fillTriangle(x - 8, y - 2, x + 8, y - 2, x, y + 14);
-    graphics.fillCircle(x - 4, y - 2, 4);
-    graphics.fillCircle(x + 4, y - 2, 4);
+    graphics.lineStyle(2, COLORS.bell, 1);
+    graphics.beginPath();
+    graphics.arc(x, y - 12, 4, Math.PI, 0);
+    graphics.strokePath();
+    graphics.lineStyle(3, color, 1);
+    graphics.strokeCircle(x, y - 1, 8);
+    graphics.fillStyle(color, 1);
+    graphics.fillPoints([{ x, y: y + 6 }, { x: x + 5, y: y + 11 }, { x, y: y + 17 }, { x: x - 5, y: y + 11 }], true);
+    graphics.fillStyle(COLORS.cloud, 0.7);
+    graphics.fillCircle(x - 1.5, y + 10, 1.5);
   } else {
-    graphics.fillEllipse(x - 5, y - 2, 16, 9);
-    graphics.fillEllipse(x + 5, y - 2, 16, 9);
-    graphics.fillEllipse(x, y + 4, 22, 10);
-    graphics.fillStyle(COLORS.cloud, 0.6);
-    graphics.fillEllipse(x + 4, y + 5, 7, 3);
+    graphics.fillStyle(COLORS.bell, 1);
+    graphics.fillRect(x - 7, y + 3, 14, 12);
+    graphics.fillStyle(caseColor, 1);
+    graphics.fillRect(x - 6, y - 4, 12, 8);
+    graphics.fillStyle(color, 1);
+    graphics.fillPoints([{ x: x - 5, y: y - 4 }, { x: x + 5, y: y - 4 }, { x: x + 5, y: y - 13 }, { x: x - 5, y: y - 18 }], true);
+    graphics.fillStyle(COLORS.cloud, 0.5);
+    graphics.fillRect(x - 3, y - 14, 2, 9);
   }
 }
 
