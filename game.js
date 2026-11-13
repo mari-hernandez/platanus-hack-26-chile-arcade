@@ -699,7 +699,7 @@ function showResults(scene) {
     })
     .setOrigin(0.5);
   const summary = scene.add
-    .text(centerX, 198, `Look ${matchingCount}/${MAKEUP_PARTS.length}   \u00b7   ${scene.race.crashes} choques`, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large })
+    .text(centerX, 198, `Look ${matchingCount}/${MAKEUP_PARTS.length}   \u00b7   ${scene.race.crashes} ${scene.race.crashes === 1 ? 'choque' : 'choques'}`, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large })
     .setOrigin(0.5);
   const unlockNotice = scene.add
     .text(centerX, 226, unlocksNextLevel ? `Desbloquearon: ${LEVELS[nextLevel].name}` : '', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.small, color: css(PALETTE.purple) })
