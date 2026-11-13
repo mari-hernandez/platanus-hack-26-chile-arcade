@@ -382,7 +382,7 @@ const LEVELS = [
     sceneryDensity: 0.45,
     selfiesNeeded: 3,
     music: 'metal',
-    selfie: { shirt: PALETTE.blue, hasBowTie: false, prop: 'baby' },
+    selfie: { shirt: PALETTE.blue, hasBowTie: false, prop: 'baby', isExhausted: true },
     hasCryingBaby: true,
     colors: {
       skyTop: dark(PALETTE.red, 0.8),
@@ -1148,6 +1148,10 @@ function takeSelfie(scene) {
   drawLandscape(painter, currentLevel, { left: 0, top: 0, width: SELFIE_PHOTO_WIDTH, horizonY: 140, bottom: SELFIE_PHOTO_HEIGHT, scale: 0.7, sunY: 42 });
   drawFace(painter, 176, 112, 0.46, lookFrom(makeup.colorIndexes));
   drawBoyfriend(painter, 84, 120, 0.5, currentLevel.selfie);
+  if (currentLevel.selfie.isExhausted) {
+    painter.fillStyle(light(PALETTE.purple, 0.45), 0.6);
+    for (const side of [-1, 1]) painter.fillEllipse(176 + side * 18, 130, 16, 5);
+  }
   SELFIE_PROPS[currentLevel.selfie.prop](painter);
   replaceTexture(scene, painter, 'selfie', SELFIE_PHOTO_WIDTH, SELFIE_PHOTO_HEIGHT);
   painter.destroy();
@@ -1217,9 +1221,14 @@ function drawBoyfriend(graphics, centerX, centerY, scale, outfit) {
     ellipse(PALETTE.white, side * 34 - 3, 2, 6, 7);
     ellipse(light(PALETTE.pink, 0.4), side * 56, 40, 32, 16);
   }
+  if (outfit.isExhausted) for (const side of [-1, 1]) ellipse(light(PALETTE.purple, 0.45), side * 34, 28, 30, 9);
   graphics.lineStyle(5 * scale, COLORS.outline, 1);
   graphics.beginPath();
-  graphics.arc(...at(0, 44), 22 * scale, 0.2, Math.PI - 0.2);
+  if (outfit.isExhausted) {
+    graphics.arc(...at(0, 64), 18 * scale, Math.PI + 0.5, -0.5);
+  } else {
+    graphics.arc(...at(0, 44), 22 * scale, 0.2, Math.PI - 0.2);
+  }
   graphics.strokePath();
   if (outfit.hasBowTie) {
     graphics.fillStyle(PALETTE.pink, 1);
@@ -1276,16 +1285,21 @@ function drawBaby(graphics, centerX, centerY, scale) {
   graphics.beginPath();
   graphics.arc(...at(6, -56), 14 * scale, Math.PI, Math.PI * 2.4);
   graphics.strokePath();
+  circle(light(PALETTE.red, 0.6), 0, 6, 46);
   graphics.lineStyle(5 * scale, COLORS.outline, 1);
   for (const side of [-1, 1]) {
     graphics.beginPath();
-    graphics.arc(...at(side * 22, -2), 9 * scale, 0.2, Math.PI - 0.2);
+    graphics.moveTo(...at(side * 26, -12));
+    graphics.lineTo(...at(side * 12, -4));
+    graphics.lineTo(...at(side * 26, 4));
     graphics.strokePath();
-    graphics.fillStyle(light(PALETTE.pink, 0.4), 1);
-    graphics.fillEllipse(...at(side * 36, 18), 22 * scale, 12 * scale);
+    graphics.fillStyle(light(PALETTE.blue, 0.3), 0.85);
+    graphics.fillEllipse(...at(side * 30, 30), 10 * scale, 44 * scale);
   }
-  circle(PALETTE.pink, 0, 28, 14);
-  circle(light(PALETTE.pink, 0.5), 0, 28, 7);
+  graphics.fillStyle(COLORS.outline, 1);
+  graphics.fillEllipse(...at(0, 30), 34 * scale, 30 * scale);
+  graphics.fillStyle(PALETTE.pink, 1);
+  graphics.fillEllipse(...at(0, 38), 18 * scale, 10 * scale);
 }
 
 function isPartMatching(makeup, partIndex) {
