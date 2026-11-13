@@ -325,7 +325,6 @@ function create(data) {
     lane: 0,
     carX: 0,
     crashes: 0,
-    elapsedSeconds: 0,
     recoveringUntil: 0,
     jumpStartedAt: -JUMP_DURATION_MS,
     obstacles: [],
@@ -412,7 +411,6 @@ function driveRace(scene, time, seconds) {
     const progressToMaxSpeed = Math.min(1, race.distance / (currentLevel.distance * DISTANCE_SHARE_TO_REACH_MAX_SPEED));
     const cruisingSpeed = currentLevel.startingSpeed + (currentLevel.maxSpeed - currentLevel.startingSpeed) * progressToMaxSpeed;
     race.speed += (cruisingSpeed - race.speed) * Math.min(1, seconds * 0.8);
-    race.elapsedSeconds += seconds;
   } else {
     const stopPosition = currentLevel.distance + CAR_STOP_OFFSET;
     race.speed = Math.max(0, Math.min(race.speed, (stopPosition - race.distance) * 2.5));
@@ -651,10 +649,8 @@ function showResults(scene) {
     scene.add.text(photoX, 420, label, { ...MAKEUP_TEXT_STYLE, fontSize: '22px' }).setOrigin(0.5);
   });
 
-  const minutes = Math.floor(race.elapsedSeconds / 60);
-  const seconds = String(Math.floor(race.elapsedSeconds % 60)).padStart(2, '0');
   scene.add
-    .text(centerX, 492, `Look ${matchingCount}/${MAKEUP_PARTS.length}     Choques ${race.crashes}     Tiempo ${minutes}:${seconds}`, {
+    .text(centerX, 492, `Look ${matchingCount}/${MAKEUP_PARTS.length}     Choques ${race.crashes}`, {
       ...OVERLAY_TEXT_STYLE,
       fontSize: '22px',
       strokeThickness: 6,
