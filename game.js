@@ -287,11 +287,11 @@ const COLORS = {
 const LEVELS = [
   {
     name: 'Primera cita',
-    makeupParts: ['brows', 'blush', 'lips'],
+    makeupParts: ['brows', 'shadow', 'blush', 'lips'],
     isDaytime: true,
     fogBase: 0,
     arrivalText: 'Llegaron a la primera cita',
-    distance: 300,
+    distance: 350,
     startingSpeed: 14,
     maxSpeed: 26,
     obstacleGap: [12, 18],
