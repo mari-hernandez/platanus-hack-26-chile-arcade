@@ -649,19 +649,30 @@ function createTitleScreen(scene) {
   for (let dashX = left + 20; dashX < left + GAME_WIDTH; dashX += 60) art.fillRect(dashX, 578, 30, 4);
   const car = scene.add.image(left + 160, 598, 'car').setOrigin(0.5, 1).setScale(0.8);
 
+  const titleBand = scene.add.graphics();
+  const bandWidth = 440;
+  const bandTop = 150;
+  paintRoundedRect(titleBand, UI.textStroke, centerX - bandWidth / 2 - 6, bandTop - 6, bandWidth + 12, 56, 10);
+  for (let column = 0; column < bandWidth / 11; column++) {
+    for (let row = 0; row < 4; row++) {
+      paintRect(titleBand, (column + row) % 2 ? PALETTE.white : PALETTE.pink, centerX - bandWidth / 2 + column * 11, bandTop + row * 11, 11, 11);
+    }
+  }
   const makeupWord = scene.add
-    .text(centerX + 8, 140, 'Makeup', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.hero })
-    .setOrigin(1, 0.5);
+    .text(centerX, 100, 'MAKEUP', { ...TEXT_STYLES.display, fontSize: '96px', stroke: css(PALETTE.white), strokeThickness: 12 })
+    .setOrigin(0.5)
+    .setPadding(16);
   const racingWord = scene.add
-    .text(centerX + 18, 160, 'Racing', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.hero, fontStyle: 'italic', color: css(light(PALETTE.blue, 0.2)) })
-    .setOrigin(0, 0.5);
-  for (const word of [makeupWord, racingWord]) word.setShadow(0, 6, css(UI.textStroke), 0, true, true);
-  const titleGap = 14;
-  const titleLeft = centerX - (makeupWord.width + titleGap + racingWord.width) / 2;
-  makeupWord.setOrigin(0, 0.5).setX(titleLeft);
-  racingWord.setX(titleLeft + makeupWord.width + titleGap);
+    .text(centerX, 172, 'RACING', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.display, fontStyle: 'italic', strokeThickness: 10 })
+    .setOrigin(0.5)
+    .setPadding(20);
+  for (const [word, colors] of [[makeupWord, [light(PALETTE.pink, 0.3), PALETTE.pink, dark(PALETTE.pink, 0.3)]], [racingWord, [light(PALETTE.yellow, 0.5), PALETTE.yellow, PALETTE.orange]]]) {
+    const gradient = word.context.createLinearGradient(0, 0, 0, word.height);
+    colors.forEach((color, index) => gradient.addColorStop(0.25 + index * 0.25, css(color)));
+    word.setFill(gradient).setShadow(0, 7, css(UI.textStroke), 0, true, true);
+  }
   const subtitle = scene.add
-    .text(centerX, 236, 'Llega a cada destino con el look perfecto', { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large })
+    .text(centerX, 244, 'Llega a cada destino con el look perfecto', { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large })
     .setOrigin(0.5);
 
   const playButton = scene.add.graphics();
@@ -682,7 +693,7 @@ function createTitleScreen(scene) {
   const controlTexts = controlCards.map(([cardX, arrows]) =>
     scene.add.text(cardX + (cardX > centerX ? 0 : 22), 424, arrows, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large, color: css(PALETTE.purple) }).setOrigin(0.5),
   );
-  scene.titleLayer = scene.add.container(0, 0, [art, car, makeupWord, racingWord, subtitle, button, driverIcon, ...controlTexts]);
+  scene.titleLayer = scene.add.container(0, 0, [art, car, titleBand, makeupWord, racingWord, subtitle, button, driverIcon, ...controlTexts]);
 }
 
 function createLevelSelectScreen(scene) {
