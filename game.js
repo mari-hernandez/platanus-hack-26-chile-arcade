@@ -94,6 +94,55 @@ function css(color) {
   return `#${color.toString(16).padStart(6, '0')}`;
 }
 
+const FONTS = {
+  display: 'Arial Black, Impact, sans-serif',
+  body: 'Trebuchet MS, Arial',
+  pixel: 'Courier New, monospace',
+};
+
+const FONT_SIZES = {
+  small: '14px',
+  body: '18px',
+  large: '22px',
+  heading: '32px',
+  display: '52px',
+  hero: '76px',
+};
+
+const TEXT_STYLES = {
+  onDark: {
+    fontFamily: FONTS.body,
+    fontStyle: 'bold',
+    fontSize: FONT_SIZES.body,
+    color: css(PALETTE.white),
+    stroke: css(PALETTE.ink),
+    strokeThickness: 6,
+    align: 'center',
+  },
+  onLight: {
+    fontFamily: FONTS.body,
+    fontStyle: 'bold',
+    fontSize: FONT_SIZES.body,
+    color: css(dark(PALETTE.pink, 0.3)),
+    align: 'center',
+  },
+  display: {
+    fontFamily: FONTS.display,
+    fontSize: FONT_SIZES.display,
+    color: css(PALETTE.pink),
+    stroke: css(PALETTE.ink),
+    strokeThickness: 10,
+  },
+  button: {
+    fontFamily: FONTS.pixel,
+    fontStyle: 'bold',
+    fontSize: FONT_SIZES.large,
+    color: css(PALETTE.white),
+    stroke: css(PALETTE.ink),
+    strokeThickness: 5,
+  },
+};
+
 const COLORS = {
   background: PALETTE.ink,
   sunGlow: light(PALETTE.yellow, 0.7),
@@ -466,22 +515,6 @@ function createFaceTexture(scene, key, look, width, height, scale, background) {
   painter.destroy();
 }
 
-const HEADING_STYLE = {
-  fontFamily: 'Arial Black, Impact, sans-serif',
-  color: css(PALETTE.pink),
-  stroke: css(PALETTE.ink),
-  strokeThickness: 10,
-};
-
-const OVERLAY_TEXT_STYLE = {
-  fontFamily: 'Trebuchet MS, Arial',
-  fontStyle: 'bold',
-  color: css(PALETTE.white),
-  stroke: css(PALETTE.ink),
-  strokeThickness: 10,
-  align: 'center',
-};
-
 function drawOverlayLandscape(graphics, level) {
   graphics.clear();
   drawLandscape(graphics, level, { left: OVERLAY_WORLD_X, top: 0, width: GAME_WIDTH, horizonY: 488, bottom: GAME_HEIGHT, scale: 2, sunY: 110 });
@@ -490,7 +523,7 @@ function drawOverlayLandscape(graphics, level) {
 
 function addBlinkingPrompt(scene, text) {
   const prompt = scene.add
-    .text(OVERLAY_WORLD_X + GAME_WIDTH / 2, 562, text, { ...OVERLAY_TEXT_STYLE, fontSize: '26px', strokeThickness: 7 })
+    .text(OVERLAY_WORLD_X + GAME_WIDTH / 2, 562, text, { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large })
     .setOrigin(0.5);
   scene.tweens.add({ targets: prompt, alpha: 0.25, duration: 600, yoyo: true, repeat: -1 });
   return prompt;
@@ -507,10 +540,10 @@ function createTitleScreen(scene) {
   const car = scene.add.image(left + 160, 598, 'car').setOrigin(0.5, 1).setScale(0.8);
 
   const makeupWord = scene.add
-    .text(centerX + 8, 140, 'Makeup', { fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '78px', color: css(PALETTE.pink), stroke: css(PALETTE.ink), strokeThickness: 12 })
+    .text(centerX + 8, 140, 'Makeup', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.hero })
     .setOrigin(1, 0.5);
   const racingWord = scene.add
-    .text(centerX + 18, 160, 'Racing', { fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '72px', fontStyle: 'italic', color: css(PALETTE.purple), stroke: css(dark(PALETTE.red, 0.6)), strokeThickness: 10 })
+    .text(centerX + 18, 160, 'Racing', { ...TEXT_STYLES.display, fontSize: FONT_SIZES.hero, fontStyle: 'italic', color: css(PALETTE.purple), stroke: css(dark(PALETTE.red, 0.6)) })
     .setOrigin(0, 0.5);
   for (const word of [makeupWord, racingWord]) word.setShadow(0, 6, css(PALETTE.ink), 0, true, true);
   const titleGap = 14;
@@ -518,25 +551,21 @@ function createTitleScreen(scene) {
   makeupWord.setOrigin(0, 0.5).setX(titleLeft);
   racingWord.setX(titleLeft + makeupWord.width + titleGap);
   const subtitle = scene.add
-    .text(centerX, 236, 'Llega a cada destino con el look perfecto', { ...OVERLAY_TEXT_STYLE, fontSize: '20px', strokeThickness: 6 })
+    .text(centerX, 236, 'Llega a cada destino con el look perfecto', { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large })
     .setOrigin(0.5);
 
   const playButton = scene.add.graphics();
   drawPixelButton(playButton, 230, 72);
   const playLabel = scene.add
-    .text(0, 0, 'JUGAR', { fontFamily: 'Courier New, monospace', fontStyle: 'bold', fontSize: '40px', color: css(PALETTE.white), stroke: css(PALETTE.ink), strokeThickness: 6 })
+    .text(0, 0, 'JUGAR', { ...TEXT_STYLES.button, fontSize: FONT_SIZES.heading })
     .setOrigin(0.5);
   const button = scene.add.container(centerX, 330, [playButton, playLabel]);
   scene.tweens.add({ targets: button, scale: 1.08, duration: 500, yoyo: true, repeat: -1 });
   const startHint = scene.add
-    .text(centerX, 388, 'Presiona START', { ...OVERLAY_TEXT_STYLE, fontSize: '18px', strokeThickness: 5 })
+    .text(centerX, 388, 'Presiona START', TEXT_STYLES.onDark)
     .setOrigin(0.5);
   const controls = scene.add
-    .text(centerX, 430, 'J1 maneja  \u25c0 \u25b6  salta \u25b2      J2 maquilla  \u25b2 \u25bc \u25c0 \u25b6  Bot\u00f3n 1', {
-      ...OVERLAY_TEXT_STYLE,
-      fontSize: '17px',
-      strokeThickness: 5,
-    })
+    .text(centerX, 430, 'J1 maneja  \u25c0 \u25b6  salta \u25b2      J2 maquilla  \u25b2 \u25bc \u25c0 \u25b6  Bot\u00f3n 1', TEXT_STYLES.onDark)
     .setOrigin(0.5);
   scene.titleLayer = scene.add.container(0, 0, [art, car, makeupWord, racingWord, subtitle, button, startHint, controls]);
 }
@@ -565,15 +594,15 @@ function drawPixelButton(graphics, width, height, isSelected = true) {
 function createLevelSelectScreen(scene) {
   const centerX = OVERLAY_WORLD_X + GAME_WIDTH / 2;
   scene.levelSelectBackground = scene.add.graphics();
-  const heading = scene.add.text(centerX, 74, 'Elige el destino', { ...HEADING_STYLE, fontSize: '52px' }).setOrigin(0.5);
+  const heading = scene.add.text(centerX, 74, 'Elige el destino', TEXT_STYLES.display).setOrigin(0.5);
   heading.setShadow(0, 5, css(PALETTE.ink), 0, true, true);
   scene.levelCardsGraphics = scene.add.graphics();
   scene.levelCardTexts = LEVELS.map(() => [
-    scene.add.text(0, 0, '', { ...MAKEUP_TEXT_STYLE, fontSize: '15px', color: css(PALETTE.purple) }).setOrigin(0.5),
-    scene.add.text(0, 0, '', { ...MAKEUP_TEXT_STYLE, fontSize: '18px', align: 'center', wordWrap: { width: 150 } }).setOrigin(0.5),
+    scene.add.text(0, 0, '', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.small, color: css(PALETTE.purple) }).setOrigin(0.5),
+    scene.add.text(0, 0, '', { ...TEXT_STYLES.onLight, wordWrap: { width: 150 } }).setOrigin(0.5),
   ]);
   const hint = scene.add
-    .text(centerX, 524, '\u25c0 \u25b6  elegir      START  jugar', { ...OVERLAY_TEXT_STYLE, fontSize: '22px', strokeThickness: 6 })
+    .text(centerX, 524, '\u25c0 \u25b6  elegir      START  jugar', { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large })
     .setOrigin(0.5);
   scene.levelSelectLayer = scene.add.container(0, 0, [scene.levelSelectBackground, heading, scene.levelCardsGraphics, ...scene.levelCardTexts.flat(), hint]);
 }
@@ -661,17 +690,16 @@ function showResults(scene) {
   ]);
   const title = scene.add
     .text(centerX, 152, isPerfect ? '\u00a1Felicidades, ganaron!' : '\u00a1Vuelvan a intentarlo!', {
-      ...HEADING_STYLE,
-      fontSize: '32px',
-      strokeThickness: 8,
+      ...TEXT_STYLES.display,
+      fontSize: FONT_SIZES.heading,
       color: isPerfect ? css(PALETTE.pink) : css(PALETTE.purple),
     })
     .setOrigin(0.5);
   const summary = scene.add
-    .text(centerX, 198, `Look ${matchingCount}/${MAKEUP_PARTS.length}   \u00b7   ${scene.race.crashes} choques`, { ...MAKEUP_TEXT_STYLE, fontSize: '20px' })
+    .text(centerX, 198, `Look ${matchingCount}/${MAKEUP_PARTS.length}   \u00b7   ${scene.race.crashes} choques`, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large })
     .setOrigin(0.5);
   const unlockNotice = scene.add
-    .text(centerX, 226, unlocksNextLevel ? `Desbloquearon: ${LEVELS[nextLevel].name}` : '', { ...MAKEUP_TEXT_STYLE, fontSize: '16px', color: css(PALETTE.purple) })
+    .text(centerX, 226, unlocksNextLevel ? `Desbloquearon: ${LEVELS[nextLevel].name}` : '', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.small, color: css(PALETTE.purple) })
     .setOrigin(0.5);
 
   const retryOption = ['Reintentar', { levelIndex: scene.levelIndex, startLevel: true }];
@@ -684,12 +712,12 @@ function showResults(scene) {
     const y = 286 + index * 66;
     const button = scene.add.graphics({ x: centerX, y });
     const text = scene.add
-      .text(centerX, y, label, { fontFamily: 'Courier New, monospace', fontStyle: 'bold', fontSize: '26px', color: css(PALETTE.white), stroke: css(PALETTE.ink), strokeThickness: 5 })
+      .text(centerX, y, label, TEXT_STYLES.button)
       .setOrigin(0.5);
     return { button, text, restartOptions };
   });
   const hint = scene.add
-    .text(centerX, 474, '\u25b2\u25bc elegir    START aceptar', { ...MAKEUP_TEXT_STYLE, fontSize: '14px', color: css(light(PALETTE.ink, 0.45)) })
+    .text(centerX, 474, '\u25b2\u25bc elegir    START aceptar', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.small, color: css(light(PALETTE.ink, 0.45)) })
     .setOrigin(0.5);
   scene.selectedResultOption = 0;
   refreshResultsMenu(scene);
@@ -988,12 +1016,6 @@ const MAKEUP_PARTS = [
   { key: 'lips', name: 'LABIOS', colors: [PALETTE.red, light(PALETTE.pink, 0.1), dark(PALETTE.purple, 0.1), light(PALETTE.orange, 0.15)] },
 ];
 
-const MAKEUP_TEXT_STYLE = {
-  fontFamily: 'Trebuchet MS, Arial',
-  fontStyle: 'bold',
-  color: css(dark(PALETTE.pink, 0.3)),
-};
-
 function createMakeupPanel(scene) {
   const left = MAKEUP_PANEL_WORLD_X;
   scene.makeup = {
@@ -1034,7 +1056,7 @@ function createReferencePhoto(scene) {
   const photo = scene.add.image(0, 0, 'reference-look');
   const tape = scene.add.rectangle(0, -half - 8, 44, 16, COLORS.curbPink, 0.75);
   const caption = scene.add
-    .text(0, half + 18, 'META', { ...MAKEUP_TEXT_STYLE, fontSize: '18px' })
+    .text(0, half + 18, 'META', TEXT_STYLES.onLight)
     .setOrigin(0.5);
   scene.add.container(MAKEUP_PANEL_WORLD_X + 312, 104, [card, photo, tape, caption]).setAngle(5);
 }
@@ -1048,24 +1070,13 @@ function createMakeupToolbar(scene) {
   toolbar.fillRoundedRect(left + 16, 494, PANEL_WIDTH - 26, 94, 22);
   scene.swatchGraphics = scene.add.graphics();
   scene.partNameText = scene.add
-    .text(left + PANEL_WIDTH / 2 + 3, 513, '', { ...MAKEUP_TEXT_STYLE, fontSize: '19px' })
+    .text(left + PANEL_WIDTH / 2 + 3, 513, '', TEXT_STYLES.onLight)
     .setOrigin(0.5);
   scene.add
-    .text(left + PANEL_WIDTH / 2 + 3, 578, '\u25b2\u25bc parte    \u25c0\u25b6 o Bot\u00f3n 1: color', {
-      ...MAKEUP_TEXT_STYLE,
-      fontSize: '11px',
-      color: css(light(PALETTE.ink, 0.55)),
-    })
+    .text(left + PANEL_WIDTH / 2 + 3, 578, '\u25b2\u25bc parte    \u25c0\u25b6 o Bot\u00f3n 1: color', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.small, color: css(light(PALETTE.ink, 0.55)) })
     .setOrigin(0.5);
   scene.crashNoticeText = scene.add
-    .text(FACE_CENTER_X, 140, '', {
-      ...MAKEUP_TEXT_STYLE,
-      fontSize: '22px',
-      color: css(PALETTE.white),
-      stroke: css(PALETTE.red),
-      strokeThickness: 6,
-      align: 'center',
-    })
+    .text(FACE_CENTER_X, 140, '', { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large, stroke: css(PALETTE.red) })
     .setOrigin(0.5)
     .setAlpha(0);
 }
@@ -1933,14 +1944,7 @@ function drawCones(graphics, x, groundY, size, fogged) {
 }
 
 function createHud(scene) {
-  const style = {
-    fontFamily: 'Trebuchet MS, Arial',
-    fontSize: '16px',
-    fontStyle: 'bold',
-    color: css(PALETTE.white),
-    stroke: css(PALETTE.ink),
-    strokeThickness: 5,
-  };
+  const style = TEXT_STYLES.onDark;
   scene.progressGraphics = scene.add.graphics();
   const finishIcon = scene.add.graphics();
   currentLevel.drawDestination(finishIcon, { x: PROGRESS_BAR_X + PROGRESS_BAR_WIDTH + 28, y: 40, scale: 26 }, (color) => color);
