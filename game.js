@@ -2,6 +2,7 @@ const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
 const PANEL_WIDTH = GAME_WIDTH / 2;
 const MAKEUP_PANEL_WORLD_X = 1000;
+const OVERLAY_WORLD_X = 3000;
 
 // DO NOT replace existing keys — they match the physical arcade cabinet wiring.
 // To add local testing shortcuts, append extra keys to any array.
@@ -55,6 +56,14 @@ const SPEED_GAIN_PER_METER = 0.004;
 const FIRST_OBSTACLE_POSITION = 60;
 const CRASH_RECOVERY_MS = 1500;
 const KMH_PER_SPEED_UNIT = 6;
+const LEVEL_DISTANCE = 1500;
+const LAST_OBSTACLE_POSITION = LEVEL_DISTANCE - 30;
+const CAR_STOP_POSITION = LEVEL_DISTANCE + 4;
+const ICE_CREAM_SHOP_POSITION = LEVEL_DISTANCE + 11;
+const RESULTS_DELAY_MS = 1800;
+const PROGRESS_BAR_X = 16;
+const PROGRESS_BAR_WIDTH = 318;
+const START_BUTTONS = ['START1', 'START2', 'P1_1', 'P2_1'];
 
 const COLORS = {
   background: 0x1d1230,
@@ -116,6 +125,14 @@ const COLORS = {
   iris: 0x4aa8d8,
   irisDark: 0x24508f,
   irisLight: 0xa8e6ff,
+  shopWall: 0xfff4e6,
+  shopTrim: 0x9ee6c9,
+  cone: 0xf3b860,
+  coneLines: 0xd9963f,
+  scoopStrawberry: 0xff9ec7,
+  scoopMint: 0x9ee6c9,
+  scoopVanilla: 0xfff1d6,
+  cherry: 0xe8384f,
   makeupTop: 0xffd6ea,
   makeupBottom: 0xf3b2d8,
 };
@@ -135,20 +152,22 @@ new Phaser.Game({
   scene: { create, update },
 });
 
-function create() {
+function create(data) {
   const scene = this;
   createControls(scene);
 
   scene.cameras.main.setViewport(0, 0, PANEL_WIDTH, GAME_HEIGHT);
   scene.makeupCamera = scene.cameras.add(PANEL_WIDTH, 0, PANEL_WIDTH, GAME_HEIGHT).setScroll(MAKEUP_PANEL_WORLD_X, 0);
+  scene.overlayCamera = scene.cameras.add(0, 0, GAME_WIDTH, GAME_HEIGHT).setScroll(OVERLAY_WORLD_X, 0);
 
   scene.race = {
     distance: 0,
-    speed: STARTING_SPEED,
+    speed: 0,
     cameraX: 0,
     lane: 0,
     carX: 0,
     crashes: 0,
+    elapsedSeconds: 0,
     recoveringUntil: 0,
     obstacles: [],
     nextObstaclePosition: FIRST_OBSTACLE_POSITION,
@@ -160,26 +179,211 @@ function create() {
   createCar(scene);
   createHud(scene);
   createMakeupPanel(scene);
+  createTitleScreen(scene);
+
+  scene.phase = 'title';
+  if (data && data.skipTitle) startLevel(scene);
 }
 
 function update(time, delta) {
   const scene = this;
   const seconds = Math.min(delta, 50) / 1000;
-  const race = scene.race;
-  steerCar(scene, seconds);
-  const cruisingSpeed = Math.min(MAX_SPEED, STARTING_SPEED + race.distance * SPEED_GAIN_PER_METER);
-  race.speed += (cruisingSpeed - race.speed) * Math.min(1, seconds * 0.8);
-  race.distance += race.speed * seconds;
-  spawnObstacles(race);
-  detectCrash(scene, time);
+  const startPressed = START_BUTTONS.some((button) => wasPressed(scene, button));
+  if (scene.phase === 'title' && startPressed) startLevel(scene);
+  else if (scene.phase === 'results' && startPressed) scene.scene.restart({ skipTitle: true });
+
+  if (scene.phase === 'playing' || scene.phase === 'arriving') driveRace(scene, time, seconds);
+  if (scene.phase === 'playing') updateMakeup(scene);
   updateSky(scene, seconds);
   drawRoad(scene);
   drawObstacles(scene);
   updateCar(scene, time);
   updateHud(scene);
   updateEngineSound(scene);
-  updateMakeup(scene);
   scene.controls.pressed = Object.create(null);
+}
+
+function startLevel(scene) {
+  scene.phase = 'playing';
+  scene.race.speed = STARTING_SPEED;
+  scene.overlayCamera.setVisible(false);
+  scene.controls.pressed = Object.create(null);
+  playSound(scene, 'paint');
+}
+
+function driveRace(scene, time, seconds) {
+  const race = scene.race;
+  steerCar(scene, seconds);
+  if (scene.phase === 'playing') {
+    const cruisingSpeed = Math.min(MAX_SPEED, STARTING_SPEED + race.distance * SPEED_GAIN_PER_METER);
+    race.speed += (cruisingSpeed - race.speed) * Math.min(1, seconds * 0.8);
+    race.elapsedSeconds += seconds;
+  } else {
+    race.speed = Math.max(0, Math.min(race.speed, (CAR_STOP_POSITION - race.distance) * 2.5));
+  }
+  race.distance += race.speed * seconds;
+  spawnObstacles(race);
+  if (scene.phase !== 'playing') return;
+  detectCrash(scene, time);
+  if (race.distance >= LEVEL_DISTANCE) arriveAtIceCreamShop(scene);
+}
+
+function arriveAtIceCreamShop(scene) {
+  scene.phase = 'arriving';
+  scene.time.delayedCall(RESULTS_DELAY_MS, () => showResults(scene));
+}
+
+function replaceTexture(scene, painter, key, width, height) {
+  if (scene.textures.exists(key)) scene.textures.remove(key);
+  painter.generateTexture(key, width, height);
+}
+
+function createFaceTexture(scene, key, look, width, height, scale, background) {
+  const painter = scene.make.graphics({ x: 0, y: 0 }, false);
+  painter.fillStyle(background, 1);
+  painter.fillRect(0, 0, width, height);
+  drawFace(painter, width / 2, height / 2 + 6, scale, look);
+  replaceTexture(scene, painter, key, width, height);
+  painter.destroy();
+}
+
+const OVERLAY_TEXT_STYLE = {
+  fontFamily: 'Trebuchet MS, Arial',
+  fontStyle: 'bold',
+  color: '#ffffff',
+  stroke: '#e8458f',
+  strokeThickness: 10,
+  align: 'center',
+};
+
+function createOverlayBackground(scene, topColor, bottomColor) {
+  const background = scene.add.graphics();
+  background.fillGradientStyle(topColor, topColor, bottomColor, bottomColor, 1);
+  background.fillRect(OVERLAY_WORLD_X, 0, GAME_WIDTH, GAME_HEIGHT);
+  for (let bulbX = OVERLAY_WORLD_X + 30; bulbX < OVERLAY_WORLD_X + GAME_WIDTH; bulbX += 52) {
+    background.fillStyle(COLORS.sunGlow, 0.5);
+    background.fillCircle(bulbX, 10, 12);
+    background.fillStyle(COLORS.sun, 1);
+    background.fillCircle(bulbX, 10, 7);
+  }
+  return background;
+}
+
+function addBlinkingPrompt(scene, text) {
+  const prompt = scene.add
+    .text(OVERLAY_WORLD_X + GAME_WIDTH / 2, 562, text, { ...OVERLAY_TEXT_STYLE, fontSize: '26px', strokeThickness: 7 })
+    .setOrigin(0.5);
+  scene.tweens.add({ targets: prompt, alpha: 0.25, duration: 600, yoyo: true, repeat: -1 });
+  return prompt;
+}
+
+function createTitleScreen(scene) {
+  const left = OVERLAY_WORLD_X;
+  const centerX = left + GAME_WIDTH / 2;
+  const art = createOverlayBackground(scene, COLORS.makeupTop, COLORS.clothes);
+  art.fillStyle(COLORS.asphaltLight, 1);
+  art.fillRoundedRect(left + 170, 300, 460, 76, 38);
+  art.fillStyle(COLORS.laneLine, 1);
+  for (let dashX = left + 330; dashX < left + 560; dashX += 46) art.fillRect(dashX, 335, 24, 6);
+  drawIceCream(art, left + 600, 372, 130);
+
+  scene.add.image(left + 255, 372, 'car').setOrigin(0.5, 1).setScale(1.25);
+  const title = scene.add
+    .text(centerX, 108, 'MAKEUP RACING', { ...OVERLAY_TEXT_STYLE, fontSize: '68px', strokeThickness: 14 })
+    .setOrigin(0.5);
+  title.setShadow(0, 6, '#b03a7a', 0, true, true);
+  scene.add
+    .text(centerX, 188, 'Lleguen a la helader\u00eda con el look igual a la foto', {
+      ...MAKEUP_TEXT_STYLE,
+      fontSize: '22px',
+    })
+    .setOrigin(0.5);
+
+  const cards = [
+    ['JUGADOR 1 \u00b7 MANEJA', '\u25c0 \u25b6  cambia de carril\nEsquiva el tr\u00e1fico'],
+    ['JUGADOR 2 \u00b7 MAQUILLA', '\u25b2 \u25bc  elige la parte\n\u25c0 \u25b6 o Bot\u00f3n 1  cambia el color'],
+  ];
+  cards.forEach(([heading, body], index) => {
+    const cardX = left + 60 + index * 360;
+    art.fillStyle(COLORS.curbPink, 0.25);
+    art.fillRoundedRect(cardX + 4, 416, 320, 106, 20);
+    art.fillStyle(COLORS.cloud, 0.95);
+    art.fillRoundedRect(cardX, 410, 320, 106, 20);
+    scene.add.text(cardX + 160, 436, heading, { ...MAKEUP_TEXT_STYLE, fontSize: '19px' }).setOrigin(0.5);
+    scene.add
+      .text(cardX + 160, 482, body, { ...MAKEUP_TEXT_STYLE, fontSize: '16px', color: '#8a5a7a', align: 'center' })
+      .setOrigin(0.5);
+  });
+  addBlinkingPrompt(scene, 'Presiona START para jugar');
+}
+
+function showResults(scene) {
+  scene.phase = 'results';
+  const left = OVERLAY_WORLD_X;
+  const centerX = left + GAME_WIDTH / 2;
+  const makeup = scene.makeup;
+  const race = scene.race;
+  const matchingCount = MAKEUP_PARTS.filter((part, index) => isPartMatching(makeup, index)).length;
+  const isPerfect = matchingCount === MAKEUP_PARTS.length;
+
+  const art = createOverlayBackground(scene, isPerfect ? COLORS.scoopMint : COLORS.makeupTop, isPerfect ? COLORS.makeupTop : COLORS.clothes);
+  scene.add
+    .text(centerX, 70, isPerfect ? '\u00a1LOOK PERFECTO!' : '\u00a1OH NO!', { ...OVERLAY_TEXT_STYLE, fontSize: '54px', strokeThickness: 12 })
+    .setOrigin(0.5);
+  scene.add
+    .text(centerX, 128, isPerfect ? 'Llegaron a la helader\u00eda regias' : 'Llegaron a la helader\u00eda, pero el look no estaba listo', {
+      ...MAKEUP_TEXT_STYLE,
+      fontSize: '20px',
+    })
+    .setOrigin(0.5);
+
+  const photos = [
+    ['result-current', 'ELLA', lookFrom(makeup.colorIndexes)],
+    ['result-target', 'META', lookFrom(makeup.targetIndexes)],
+  ];
+  photos.forEach(([key, label, look], index) => {
+    const photoX = centerX + (index === 0 ? -130 : 130);
+    createFaceTexture(scene, key, look, 200, 220, 0.66, COLORS.makeupBottom);
+    art.fillStyle(COLORS.background, 0.18);
+    art.fillRoundedRect(photoX - 108, 166, 224, 290, 8);
+    art.fillStyle(COLORS.cloud, 1);
+    art.fillRoundedRect(photoX - 112, 160, 224, 290, 8);
+    scene.add.image(photoX, 280, key);
+    scene.add.text(photoX, 420, label, { ...MAKEUP_TEXT_STYLE, fontSize: '22px' }).setOrigin(0.5);
+  });
+  if (isPerfect) drawIceCream(art, centerX, 330, 90);
+
+  const minutes = Math.floor(race.elapsedSeconds / 60);
+  const seconds = String(Math.floor(race.elapsedSeconds % 60)).padStart(2, '0');
+  scene.add
+    .text(centerX, 492, `Look ${matchingCount}/${MAKEUP_PARTS.length}     Choques ${race.crashes}     Tiempo ${minutes}:${seconds}`, {
+      ...MAKEUP_TEXT_STYLE,
+      fontSize: '22px',
+      color: '#ffffff',
+      stroke: '#c2457f',
+      strokeThickness: 6,
+    })
+    .setOrigin(0.5);
+  addBlinkingPrompt(scene, 'START para jugar otra vez');
+  scene.overlayCamera.setVisible(true);
+  playMelody(scene, isPerfect ? [523, 659, 784, 1047] : [392, 330, 262]);
+}
+
+function drawIceCream(graphics, x, bottomY, height, fogged = (color) => color) {
+  const coneTopY = bottomY - height * 0.55;
+  graphics.fillStyle(fogged(COLORS.cone), 1);
+  graphics.fillTriangle(x - height * 0.2, coneTopY, x + height * 0.2, coneTopY, x, bottomY);
+  graphics.lineStyle(Math.max(1, height * 0.015), fogged(COLORS.coneLines), 1);
+  graphics.lineBetween(x - height * 0.12, coneTopY, x + height * 0.06, bottomY - height * 0.18);
+  graphics.lineBetween(x + height * 0.12, coneTopY, x - height * 0.06, bottomY - height * 0.18);
+  graphics.fillStyle(fogged(COLORS.scoopStrawberry), 1);
+  graphics.fillCircle(x - height * 0.1, coneTopY - height * 0.06, height * 0.16);
+  graphics.fillStyle(fogged(COLORS.scoopMint), 1);
+  graphics.fillCircle(x + height * 0.1, coneTopY - height * 0.06, height * 0.16);
+  graphics.fillStyle(fogged(COLORS.scoopVanilla), 1);
+  graphics.fillCircle(x, coneTopY - height * 0.24, height * 0.16);
+  graphics.fillStyle(fogged(COLORS.cherry), 1);
+  graphics.fillCircle(x, coneTopY - height * 0.42, height * 0.05);
 }
 
 function currentSliceIndex(race) {
@@ -432,12 +636,7 @@ function createMakeupPanel(scene) {
 
 function createReferencePhoto(scene) {
   const half = REFERENCE_PHOTO_SIZE / 2;
-  const painter = scene.make.graphics({ x: 0, y: 0 }, false);
-  painter.fillStyle(COLORS.makeupBottom, 1);
-  painter.fillRect(0, 0, REFERENCE_PHOTO_SIZE, REFERENCE_PHOTO_SIZE);
-  drawFace(painter, half, half + 6, 0.44, lookFrom(scene.makeup.targetIndexes));
-  painter.generateTexture('reference-look', REFERENCE_PHOTO_SIZE, REFERENCE_PHOTO_SIZE);
-  painter.destroy();
+  createFaceTexture(scene, 'reference-look', lookFrom(scene.makeup.targetIndexes), REFERENCE_PHOTO_SIZE, REFERENCE_PHOTO_SIZE, 0.44, COLORS.makeupBottom);
 
   const card = scene.add.graphics();
   card.fillStyle(COLORS.background, 0.18);
@@ -864,11 +1063,11 @@ function createCar(scene) {
   painter.fillRoundedRect(47, 50, 26, 11, 2);
   painter.fillStyle(COLORS.background, 1);
   painter.fillRect(51, 54, 18, 3);
-  painter.generateTexture('car', 120, 90);
+  replaceTexture(scene, painter, 'car', 120, 90);
   painter.clear();
   painter.fillStyle(COLORS.cloud, 1);
   painter.fillCircle(8, 8, 8);
-  painter.generateTexture('puff', 16, 16);
+  replaceTexture(scene, painter, 'puff', 16, 16);
   painter.destroy();
 
   scene.carShadow = scene.add.ellipse(0, CAR_SCREEN_Y - 4, 110, 18, COLORS.background, 0.3);
@@ -906,7 +1105,7 @@ function updateCar(scene, time) {
 }
 
 function spawnObstacles(race) {
-  while (race.nextObstaclePosition < race.distance + FARTHEST_VISIBLE_DEPTH) {
+  while (race.nextObstaclePosition < Math.min(race.distance + FARTHEST_VISIBLE_DEPTH, LAST_OBSTACLE_POSITION)) {
     const lanes = Phaser.Utils.Array.Shuffle([-1, 0, 1]);
     const chanceOfTwoBlockedLanes = Math.min(0.5, race.distance / 4000);
     const blockedLanes = Math.random() < chanceOfTwoBlockedLanes ? 2 : 1;
@@ -948,21 +1147,93 @@ function detectCrash(scene, time) {
   }
 }
 
+function foggedAtDepth(depth) {
+  const distanceRatio = (depth - NEAREST_VISIBLE_DEPTH) / (FARTHEST_VISIBLE_DEPTH - NEAREST_VISIBLE_DEPTH);
+  const fogAmount = Math.pow(Phaser.Math.Clamp(distanceRatio, 0, 1), 0.7) * 0.9;
+  return (color) => blendColor(color, COLORS.fog, fogAmount);
+}
+
+function isVisibleDepth(depth) {
+  return depth < FARTHEST_VISIBLE_DEPTH && depth > NEAREST_VISIBLE_DEPTH - 1;
+}
+
 function drawObstacles(scene) {
   const race = scene.race;
   const graphics = scene.obstacleGraphics;
   graphics.clear();
+  const shopDepth = ICE_CREAM_SHOP_POSITION - race.distance + CAR_DEPTH;
+  if (isVisibleDepth(shopDepth)) drawIceCreamShop(graphics, screenPositionAt(scene, shopDepth, 0), foggedAtDepth(shopDepth));
+  const finishDepth = LEVEL_DISTANCE - race.distance + CAR_DEPTH;
+  if (isVisibleDepth(finishDepth)) drawFinishLine(scene, graphics, finishDepth);
+
   for (let index = race.obstacles.length - 1; index >= 0; index--) {
     const obstacle = race.obstacles[index];
     const depth = depthOf(race, obstacle);
-    if (depth > FARTHEST_VISIBLE_DEPTH || depth < NEAREST_VISIBLE_DEPTH - 1) continue;
+    if (!isVisibleDepth(depth)) continue;
     const position = screenPositionAt(scene, depth, obstacle.lane * LANE_WIDTH);
-    const distanceRatio = (depth - NEAREST_VISIBLE_DEPTH) / (FARTHEST_VISIBLE_DEPTH - NEAREST_VISIBLE_DEPTH);
-    const fogAmount = Math.pow(Phaser.Math.Clamp(distanceRatio, 0, 1), 0.7) * 0.9;
-    const fogged = (color) => blendColor(color, COLORS.fog, fogAmount);
+    const fogged = foggedAtDepth(depth);
     const draw = { traffic: drawTrafficCar, barrier: drawBarrier, cones: drawCones }[obstacle.kind];
     draw(graphics, position.x, position.y, position.scale, fogged, obstacle.color);
   }
+}
+
+function drawFinishLine(scene, graphics, depth) {
+  const rows = 2;
+  const columns = 10;
+  const rowLength = 0.35;
+  const fogged = foggedAtDepth(depth);
+  for (let row = 0; row < rows; row++) {
+    const near = screenPositionAt(scene, depth + row * rowLength, 0);
+    const far = screenPositionAt(scene, depth + (row + 1) * rowLength, 0);
+    for (let column = 0; column < columns; column++) {
+      const fromX = -ROAD_HALF_WIDTH + (column * ROAD_HALF_WIDTH * 2) / columns;
+      const toX = fromX + (ROAD_HALF_WIDTH * 2) / columns;
+      graphics.fillStyle(fogged((row + column) % 2 ? COLORS.curbPink : COLORS.cloud), 1);
+      graphics.fillPoints(
+        [
+          { x: near.x + fromX * near.scale, y: near.y },
+          { x: near.x + toX * near.scale, y: near.y },
+          { x: far.x + toX * far.scale, y: far.y },
+          { x: far.x + fromX * far.scale, y: far.y },
+        ],
+        true,
+      );
+    }
+  }
+}
+
+function drawIceCreamShop(graphics, position, fogged) {
+  const { x, y: groundY, scale: size } = position;
+  const width = size * 1.3;
+  const wallHeight = size * 0.62;
+  const wallTop = groundY - wallHeight;
+  graphics.fillStyle(COLORS.background, 0.2);
+  graphics.fillEllipse(x, groundY, width * 1.15, size * 0.08);
+  graphics.fillStyle(fogged(COLORS.shopWall), 1);
+  graphics.fillRect(x - width / 2, wallTop, width, wallHeight);
+  graphics.fillStyle(fogged(COLORS.shopTrim), 1);
+  graphics.fillRect(x - width / 2, groundY - size * 0.07, width, size * 0.07);
+  graphics.fillStyle(fogged(COLORS.windshield), 1);
+  graphics.fillRect(x - size * 0.56, groundY - size * 0.38, size * 0.32, size * 0.2);
+  graphics.fillRect(x + size * 0.24, groundY - size * 0.38, size * 0.32, size * 0.2);
+  graphics.fillStyle(fogged(COLORS.flowerPink), 1);
+  graphics.fillRoundedRect(x - size * 0.13, groundY - size * 0.42, size * 0.26, size * 0.42, { tl: size * 0.12, tr: size * 0.12, bl: 0, br: 0 });
+
+  const stripes = 10;
+  const awningWidth = width + size * 0.12;
+  const stripeWidth = awningWidth / stripes;
+  const awningTop = wallTop + size * 0.04;
+  for (let stripe = 0; stripe < stripes; stripe++) {
+    const stripeX = x - awningWidth / 2 + stripe * stripeWidth;
+    graphics.fillStyle(fogged(stripe % 2 ? COLORS.cloud : COLORS.curbPink), 1);
+    graphics.fillRect(stripeX, awningTop, stripeWidth, size * 0.1);
+    graphics.fillCircle(stripeX + stripeWidth / 2, awningTop + size * 0.1, stripeWidth / 2);
+  }
+  graphics.fillStyle(fogged(COLORS.curbPink), 1);
+  graphics.fillRoundedRect(x - size * 0.42, wallTop - size * 0.2, size * 0.84, size * 0.2, size * 0.05);
+  graphics.fillStyle(fogged(COLORS.cloud), 1);
+  for (let dot = 0; dot < 5; dot++) graphics.fillCircle(x - size * 0.3 + dot * size * 0.15, wallTop - size * 0.1, size * 0.025);
+  drawIceCream(graphics, x, wallTop - size * 0.18, size * 0.62, fogged);
 }
 
 function drawTrafficCar(graphics, x, groundY, size, fogged, bodyColor) {
@@ -1016,20 +1287,36 @@ function drawCones(graphics, x, groundY, size, fogged) {
 function createHud(scene) {
   const style = {
     fontFamily: 'Trebuchet MS, Arial',
-    fontSize: '20px',
+    fontSize: '16px',
     fontStyle: 'bold',
     color: '#ffffff',
     stroke: '#1d1230',
     strokeThickness: 5,
   };
-  scene.distanceText = scene.add.text(14, 10, '', style);
-  scene.speedText = scene.add.text(PANEL_WIDTH - 14, 10, '', style).setOrigin(1, 0);
-  scene.crashText = scene.add.text(14, 36, '', { ...style, fontSize: '16px', color: '#ffb3d1' });
+  scene.progressGraphics = scene.add.graphics();
+  const finishIcon = scene.add.graphics();
+  drawIceCream(finishIcon, PROGRESS_BAR_X + PROGRESS_BAR_WIDTH + 26, 40, 36);
+  scene.remainingText = scene.add.text(PROGRESS_BAR_X, 34, '', style);
+  scene.speedText = scene.add.text(PROGRESS_BAR_X + PROGRESS_BAR_WIDTH, 34, '', style).setOrigin(1, 0);
+  scene.crashText = scene.add.text(PROGRESS_BAR_X, 56, '', { ...style, color: '#ffb3d1' });
 }
 
 function updateHud(scene) {
   const race = scene.race;
-  scene.distanceText.setText(`${Math.floor(race.distance)} m`);
+  const progress = Phaser.Math.Clamp(race.distance / LEVEL_DISTANCE, 0, 1);
+  const markerX = PROGRESS_BAR_X + PROGRESS_BAR_WIDTH * progress;
+  const graphics = scene.progressGraphics;
+  graphics.clear();
+  graphics.fillStyle(COLORS.background, 0.35);
+  graphics.fillRoundedRect(PROGRESS_BAR_X, 12, PROGRESS_BAR_WIDTH, 14, 7);
+  graphics.fillStyle(COLORS.curbPink, 1);
+  graphics.fillRoundedRect(PROGRESS_BAR_X, 12, Math.max(14, PROGRESS_BAR_WIDTH * progress), 14, 7);
+  graphics.fillStyle(COLORS.cloud, 1);
+  graphics.fillCircle(markerX, 19, 11);
+  graphics.fillStyle(COLORS.carBody, 1);
+  graphics.fillCircle(markerX, 19, 8);
+
+  scene.remainingText.setText(`Faltan ${Math.ceil(Math.max(0, LEVEL_DISTANCE - race.distance))} m`);
   scene.speedText.setText(`${Math.round(race.speed * KMH_PER_SPEED_UNIT)} km/h`);
   scene.crashText.setText(race.crashes ? `Choques: ${race.crashes}` : '');
 }
@@ -1049,13 +1336,16 @@ function updateEngineSound(scene) {
     oscillator.type = 'sawtooth';
     filter.type = 'lowpass';
     filter.frequency.value = 380;
-    volume.gain.value = 0.035;
+    volume.gain.value = 0;
     oscillator.connect(filter);
     filter.connect(volume);
     volume.connect(context.destination);
     oscillator.start();
     scene.engine = oscillator;
+    scene.engineVolume = volume;
   }
+  const isDriving = scene.race.speed > 1;
+  scene.engineVolume.gain.setTargetAtTime(isDriving ? 0.035 : 0, context.currentTime, 0.2);
   scene.engine.frequency.setTargetAtTime(40 + scene.race.speed * 3, context.currentTime, 0.1);
 }
 
@@ -1081,4 +1371,22 @@ function playSound(scene, kind) {
   volume.connect(context.destination);
   oscillator.start(now);
   oscillator.stop(now + sound.length);
+}
+
+function playMelody(scene, frequencies) {
+  const context = audioContextOf(scene);
+  if (!context) return;
+  frequencies.forEach((frequency, index) => {
+    const oscillator = context.createOscillator();
+    const volume = context.createGain();
+    const start = context.currentTime + index * 0.16;
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(frequency, start);
+    volume.gain.setValueAtTime(0.12, start);
+    volume.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+    oscillator.connect(volume);
+    volume.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.3);
+  });
 }
