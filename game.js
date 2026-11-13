@@ -66,7 +66,6 @@ const LAST_OBSTACLE_MARGIN = 30;
 const CAR_STOP_OFFSET = 4;
 const DESTINATION_OFFSET = 11;
 const DISTANCE_SHARE_TO_REACH_MAX_SPEED = 0.8;
-const PROGRESS_STORAGE_KEY = 'makeup-racing:progress';
 const RESULTS_DELAY_MS = 1800;
 const PROGRESS_BAR_X = 16;
 const PROGRESS_BAR_WIDTH = 318;
@@ -452,9 +451,6 @@ const SCENERY_DRAWERS = {
 };
 
 let currentLevel = LEVELS[0];
-const ALL_LEVELS_UNLOCKED = true;
-let unlockedLevelCount = ALL_LEVELS_UNLOCKED ? LEVELS.length : 1;
-let hasLoadedProgress = false;
 
 new Phaser.Game({
   type: Phaser.AUTO,
@@ -506,7 +502,6 @@ function create(data) {
   createMakeupPanel(scene);
   createTitleScreen(scene);
   createLevelSelectScreen(scene);
-  loadProgress(scene);
 
   if (options.startLevel) startLevel(scene);
   else if (options.showLevelSelect) showLevelSelect(scene, options.selectedLevel);
@@ -517,7 +512,7 @@ function update(time, delta) {
   const scene = this;
   const seconds = Math.min(delta, 50) / 1000;
   const startPressed = START_BUTTONS.some((button) => wasPressed(scene, button));
-  if (scene.phase === 'title' && startPressed) showLevelSelect(scene, ALL_LEVELS_UNLOCKED ? 0 : unlockedLevelCount - 1);
+  if (scene.phase === 'title' && startPressed) showLevelSelect(scene, 0);
   else if (scene.phase === 'select') updateLevelSelect(scene, startPressed);
   else if (scene.phase === 'intro' && startPressed) beginDriving(scene);
   else if (scene.phase === 'results') updateResultsMenu(scene, startPressed);
@@ -600,9 +595,7 @@ function updateLevelSelect(scene, startPressed) {
     playSound(scene, 'select');
     refreshLevelSelect(scene);
   }
-  if (!startPressed) return;
-  if (scene.selectedLevel < unlockedLevelCount) scene.scene.restart({ levelIndex: scene.selectedLevel, startLevel: true });
-  else playSound(scene, 'crash');
+  if (startPressed) scene.scene.restart({ levelIndex: scene.selectedLevel, startLevel: true });
 }
 
 function driveRace(scene, time, seconds) {
@@ -709,7 +702,6 @@ function refreshLevelSelect(scene) {
   graphics.clear();
   LEVELS.forEach((level, index) => {
     const isSelected = index === scene.selectedLevel;
-    const isLocked = index >= unlockedLevelCount;
     const centerX = OVERLAY_WORLD_X + 105 + index * 197;
     const centerY = isSelected ? 288 : 300;
     const top = centerY - 140;
@@ -718,38 +710,9 @@ function refreshLevelSelect(scene) {
     paintTriangle(graphics, COLORS.asphaltLight, centerX - 12, top + 133, centerX + 12, top + 133, centerX + 40, top + 183);
     graphics.fillTriangle(centerX - 12, top + 133, centerX + 40, top + 183, centerX - 40, top + 183);
     level.drawDestination(graphics, { x: centerX, y: top + 140, scale: 64 }, (color) => color);
-    if (isLocked) {
-      graphics.fillStyle(UI.shadow, 0.6);
-      graphics.fillRect(centerX - 72, top + 13, 144, 170);
-      graphics.lineStyle(6, COLORS.bell, 1);
-      graphics.beginPath();
-      graphics.arc(centerX, top + 88, 14, Math.PI, 0);
-      graphics.strokePath();
-      paintRoundedRect(graphics, COLORS.bell, centerX - 20, top + 88, 40, 32, 6);
-      paintCircle(graphics, COLORS.background, centerX, top + 102, 5);
-    }
     scene.levelNameTexts[index]
-      .setPosition(centerX, top + 212).setText(level.name).setColor(isLocked ? css(light(PALETTE.ink, 0.5)) : css(dark(PALETTE.pink, 0.3)));
+      .setPosition(centerX, top + 212).setText(level.name);
   });
-}
-
-function loadProgress(scene) {
-  if (ALL_LEVELS_UNLOCKED || hasLoadedProgress || !window.platanusArcadeStorage) return;
-  hasLoadedProgress = true;
-  window.platanusArcadeStorage
-    .get(PROGRESS_STORAGE_KEY)
-    .then((result) => {
-      const saved = result && result.found && result.value ? result.value.unlockedLevelCount : null;
-      if (!Number.isInteger(saved)) return;
-      unlockedLevelCount = Phaser.Math.Clamp(saved, 1, LEVELS.length);
-      if (scene.phase === 'select') refreshLevelSelect(scene);
-    })
-    .catch(() => {});
-}
-
-function saveProgress() {
-  if (!window.platanusArcadeStorage) return;
-  window.platanusArcadeStorage.set(PROGRESS_STORAGE_KEY, { unlockedLevelCount }).catch(() => {});
 }
 
 function showResults(scene) {
@@ -763,11 +726,6 @@ function showResults(scene) {
   const isPerfect = isPerfectLook && hasAllSelfies;
   const nextLevel = scene.levelIndex + 1;
   const hasNextLevel = nextLevel < LEVELS.length;
-  const unlocksNextLevel = isPerfect && hasNextLevel && nextLevel >= unlockedLevelCount;
-  if (unlocksNextLevel) {
-    unlockedLevelCount = nextLevel + 1;
-    saveProgress();
-  }
 
   const dimmer = scene.add.rectangle(centerX, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, UI.shadow, 0.45);
   const card = scene.add.graphics();
@@ -802,9 +760,6 @@ function showResults(scene) {
       color: isPerfect ? css(PALETTE.pink) : css(PALETTE.purple),
     })
     .setOrigin(0.5);
-  const unlockNotice = scene.add
-    .text(centerX, 504, unlocksNextLevel ? `\u2605 ${LEVELS[nextLevel].name} \u2605` : '', { ...TEXT_STYLES.onDark, color: css(light(PALETTE.yellow, 0.4)) })
-    .setOrigin(0.5);
 
   const primaryOption = isPerfect && hasNextLevel ? ['Siguiente', { levelIndex: nextLevel, startLevel: true }] : ['Reintentar', { levelIndex: scene.levelIndex, startLevel: true }];
   scene.resultOptions = [
@@ -818,7 +773,7 @@ function showResults(scene) {
   });
   scene.selectedResultOption = 0;
   refreshResultsMenu(scene);
-  scene.add.container(0, 0, [dimmer, card, title, crashCount, unlockNotice, ...scene.resultOptions.flatMap((option) => [option.button, option.text])]);
+  scene.add.container(0, 0, [dimmer, card, title, crashCount, ...scene.resultOptions.flatMap((option) => [option.button, option.text])]);
   scene.titleLayer.setVisible(false);
   scene.levelSelectLayer.setVisible(false);
   scene.overlayCamera.setVisible(true);
