@@ -1,5 +1,5 @@
 {
   "game_name": "Makeup Racing",
-  "description": "Juego cooperativo a pantalla dividida. Uno maneja esquivando el tráfico y la otra se maquilla en el copiloto para quedar igual que la foto. Si chocan, se corre el maquillaje. Cuatro destinos: primera cita, salida de noche, boda y guagua.",
+  "description": "Juego cooperativo a pantalla dividida. Uno maneja esquivando el tráfico y la otra se va maquillando en el copiloto. Si chocan, se corre el maquillaje. Cuatro destinos: primera cita, salida de noche, boda y guagua.",
   "player_mode": "two_player"
 }
