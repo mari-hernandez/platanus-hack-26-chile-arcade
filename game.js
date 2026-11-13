@@ -282,6 +282,7 @@ const LEVELS = [
     scenery: ['roundTree', 'roundTree', 'blossomTree', 'pine', 'flowerBush'],
     sceneryDensity: 0.4,
     selfiesNeeded: 0,
+    selfie: { shirt: PALETTE.blue, hasBowTie: false, prop: 'none' },
     colors: {
       skyTop: PALETTE.blue,
       skyBottom: light(PALETTE.pink, 0.8),
@@ -313,6 +314,7 @@ const LEVELS = [
     scenery: ['building', 'building', 'lamp'],
     sceneryDensity: 0.7,
     selfiesNeeded: 1,
+    selfie: { shirt: dark(PALETTE.purple, 0.3), hasBowTie: false, prop: 'popcorn' },
     colors: {
       skyTop: dark(PALETTE.purple, 0.75),
       skyBottom: dark(PALETTE.purple, 0.2),
@@ -344,6 +346,7 @@ const LEVELS = [
     scenery: ['blossomTree', 'blossomTree', 'roundTree', 'flowerBush'],
     sceneryDensity: 0.5,
     selfiesNeeded: 2,
+    selfie: { shirt: dark(PALETTE.purple, 0.65), hasBowTie: true, prop: 'confetti' },
     colors: {
       skyTop: light(PALETTE.pink, 0.45),
       skyBottom: light(PALETTE.yellow, 0.75),
@@ -375,7 +378,7 @@ const LEVELS = [
     scenery: ['fire', 'fire', 'skull', 'bones'],
     sceneryDensity: 0.45,
     selfiesNeeded: 3,
-    hasBaby: true,
+    selfie: { shirt: PALETTE.blue, hasBowTie: false, prop: 'baby' },
     colors: {
       skyTop: dark(PALETTE.red, 0.8),
       skyBottom: dark(PALETTE.orange, 0.25),
@@ -1132,11 +1135,10 @@ function takeSelfie(scene) {
   scene.makeupCamera.flash(200, 255, 255, 255);
 
   const painter = scene.make.graphics({ x: 0, y: 0 }, false);
-  painter.fillGradientStyle(COLORS.makeupTop, COLORS.makeupTop, COLORS.makeupBottom, COLORS.makeupBottom, 1);
-  painter.fillRect(0, 0, SELFIE_PHOTO_WIDTH, SELFIE_PHOTO_HEIGHT);
-  drawBoyfriend(painter, 88, 118, 0.5);
+  drawLandscape(painter, currentLevel, { left: 0, top: 0, width: SELFIE_PHOTO_WIDTH, horizonY: 140, bottom: SELFIE_PHOTO_HEIGHT, scale: 0.7, sunY: 42 });
   drawFace(painter, 176, 112, 0.46, lookFrom(makeup.colorIndexes));
-  if (currentLevel.hasBaby) drawBaby(painter, 130, 162, 0.44);
+  drawBoyfriend(painter, 84, 120, 0.5, currentLevel.selfie);
+  SELFIE_PROPS[currentLevel.selfie.prop](painter);
   replaceTexture(scene, painter, 'selfie', SELFIE_PHOTO_WIDTH, SELFIE_PHOTO_HEIGHT);
   painter.destroy();
 
@@ -1180,13 +1182,17 @@ function drawCameraIcon(graphics, x, y, color) {
   graphics.fillCircle(x, y + 1, 4);
 }
 
-function drawBoyfriend(graphics, centerX, centerY, scale) {
+function drawBoyfriend(graphics, centerX, centerY, scale, outfit) {
   const at = (offsetX, offsetY) => [centerX + offsetX * scale, centerY + offsetY * scale];
   const ellipse = (color, offsetX, offsetY, width, height) => {
     graphics.fillStyle(color, 1);
     graphics.fillEllipse(...at(offsetX, offsetY), width * scale, height * scale);
   };
-  ellipse(PALETTE.blue, 0, 190, 250, 150);
+  ellipse(outfit.shirt, 0, 190, 250, 150);
+  if (outfit.hasBowTie) {
+    graphics.fillStyle(PALETTE.white, 1);
+    graphics.fillTriangle(...at(-34, 124), ...at(34, 124), ...at(0, 190));
+  }
   ellipse(COLORS.skinShade, 0, 100, 56, 70);
   ellipse(COLORS.outline, 0, 0, 178, 208);
   ellipse(PALETTE.skin, -88, 6, 30, 40);
@@ -1205,6 +1211,45 @@ function drawBoyfriend(graphics, centerX, centerY, scale) {
   graphics.beginPath();
   graphics.arc(...at(0, 44), 22 * scale, 0.2, Math.PI - 0.2);
   graphics.strokePath();
+  if (outfit.hasBowTie) {
+    graphics.fillStyle(PALETTE.pink, 1);
+    graphics.fillTriangle(...at(0, 132), ...at(-22, 120), ...at(-22, 144));
+    graphics.fillTriangle(...at(0, 132), ...at(22, 120), ...at(22, 144));
+  }
+}
+
+const SELFIE_PROPS = {
+  none: () => {},
+  popcorn: drawPopcorn,
+  confetti: drawConfetti,
+  baby: (graphics) => drawBaby(graphics, 130, 162, 0.44),
+};
+
+function drawPopcorn(graphics) {
+  const left = 18;
+  const top = 140;
+  for (let kernel = 0; kernel < 9; kernel++) {
+    graphics.fillStyle(kernel % 3 ? light(PALETTE.yellow, 0.75) : light(PALETTE.yellow, 0.4), 1);
+    graphics.fillCircle(left + 6 + (kernel % 5) * 9, top - 4 - Math.floor(kernel / 5) * 7, 7);
+  }
+  for (let stripe = 0; stripe < 5; stripe++) {
+    graphics.fillStyle(stripe % 2 ? PALETTE.white : PALETTE.red, 1);
+    graphics.fillRect(left + stripe * 10, top, 10, 52);
+  }
+}
+
+function drawConfetti(graphics) {
+  const confettiColors = [PALETTE.pink, PALETTE.yellow, PALETTE.mint, PALETTE.purple];
+  for (let piece = 0; piece < 26; piece++) {
+    graphics.fillStyle(confettiColors[piece % confettiColors.length], 1);
+    graphics.fillRect(seededRandom(piece, 41) * SELFIE_PHOTO_WIDTH, seededRandom(piece, 42) * 90, 6, 4);
+  }
+  for (const [heartX, heartY] of [[30, 30], [228, 46]]) {
+    graphics.fillStyle(PALETTE.pink, 1);
+    graphics.fillCircle(heartX - 6, heartY, 7);
+    graphics.fillCircle(heartX + 6, heartY, 7);
+    graphics.fillTriangle(heartX - 13, heartY + 2, heartX + 13, heartY + 2, heartX, heartY + 17);
+  }
 }
 
 function drawBaby(graphics, centerX, centerY, scale) {
