@@ -143,6 +143,14 @@ const COLORS = {
   bottleMilk: 0xfffdf5,
   bottleRing: 0x7cb8ff,
   nipple: 0xffb3a7,
+  titleSkyTop: 0x5b9be0,
+  titleSkyBottom: 0xc4d7ea,
+  titleSun: 0xffd84a,
+  titleMountainFar: 0x6f7fcf,
+  titleMountainNear: 0x3d4fa3,
+  titleBushes: 0x417a35,
+  buttonPurple: 0x7a3fe8,
+  buttonPurpleLight: 0x9c6bff,
   makeupTop: 0xffd6ea,
   makeupBottom: 0xf3b2d8,
 };
@@ -461,42 +469,88 @@ function addBlinkingPrompt(scene, text) {
 function createTitleScreen(scene) {
   const left = OVERLAY_WORLD_X;
   const centerX = left + GAME_WIDTH / 2;
-  const art = createOverlayBackground(scene, COLORS.makeupTop, COLORS.clothes);
+  const art = scene.add.graphics();
+  art.fillGradientStyle(COLORS.titleSkyTop, COLORS.titleSkyTop, COLORS.titleSkyBottom, COLORS.titleSkyBottom, 1);
+  art.fillRect(left, 0, GAME_WIDTH, GAME_HEIGHT);
+  for (let stroke = 0; stroke < 40; stroke++) {
+    art.fillStyle(COLORS.cloud, 0.08 + seededRandom(stroke, 21) * 0.14);
+    art.fillRect(left + seededRandom(stroke, 22) * GAME_WIDTH - 60, 250 + seededRandom(stroke, 23) * 90, 50 + seededRandom(stroke, 24) * 150, 2);
+  }
+  art.fillStyle(COLORS.sunGlow, 0.45);
+  art.fillCircle(left + 655, 118, 62);
+  art.fillStyle(COLORS.titleSun, 1);
+  art.fillCircle(left + 655, 118, 42);
+  drawJaggedRidge(art, 470, 190, COLORS.titleMountainFar, 1);
+  drawJaggedRidge(art, 510, 150, COLORS.titleMountainNear, 2);
+  drawJaggedRidge(art, 566, 60, COLORS.titleBushes, 3);
   art.fillStyle(COLORS.asphaltLight, 1);
-  art.fillRoundedRect(left + 170, 300, 460, 76, 38);
+  art.fillRect(left, 560, GAME_WIDTH, 40);
   art.fillStyle(COLORS.laneLine, 1);
-  for (let dashX = left + 330; dashX < left + 560; dashX += 46) art.fillRect(dashX, 335, 24, 6);
-  drawIceCream(art, left + 600, 372, 130);
+  for (let dashX = left + 20; dashX < left + GAME_WIDTH; dashX += 60) art.fillRect(dashX, 578, 30, 4);
+  const car = scene.add.image(left + 160, 598, 'car').setOrigin(0.5, 1).setScale(0.8);
 
-  const car = scene.add.image(left + 255, 372, 'car').setOrigin(0.5, 1).setScale(1.25);
-  const title = scene.add
-    .text(centerX, 108, 'MAKEUP RACING', { ...OVERLAY_TEXT_STYLE, fontSize: '68px', strokeThickness: 14 })
-    .setOrigin(0.5);
-  title.setShadow(0, 6, '#b03a7a', 0, true, true);
+  const makeupWord = scene.add
+    .text(centerX + 8, 140, 'Makeup', { fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '78px', color: '#ff00d1', stroke: '#1d1230', strokeThickness: 12 })
+    .setOrigin(1, 0.5);
+  const racingWord = scene.add
+    .text(centerX + 18, 160, 'Racing', { fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '72px', fontStyle: 'italic', color: '#5000ff', stroke: '#6e0404', strokeThickness: 10 })
+    .setOrigin(0, 0.5);
+  for (const word of [makeupWord, racingWord]) word.setShadow(0, 6, '#1d1230', 0, true, true);
+  const titleGap = 14;
+  const titleLeft = centerX - (makeupWord.width + titleGap + racingWord.width) / 2;
+  makeupWord.setOrigin(0, 0.5).setX(titleLeft);
+  racingWord.setX(titleLeft + makeupWord.width + titleGap);
   const subtitle = scene.add
-    .text(centerX, 188, 'Lleguen a cada destino con el look igual a la foto', { ...MAKEUP_TEXT_STYLE, fontSize: '22px' })
+    .text(centerX, 236, 'Lleguen a cada destino con el look igual a la foto', { ...OVERLAY_TEXT_STYLE, fontSize: '20px', stroke: '#1d1230', strokeThickness: 6 })
     .setOrigin(0.5);
 
-  const cardTexts = [];
-  const cards = [
-    ['JUGADOR 1 \u00b7 MANEJA', '\u25c0 \u25b6  cambia de carril\nEsquiva el tr\u00e1fico'],
-    ['JUGADOR 2 \u00b7 MAQUILLA', '\u25b2 \u25bc  elige la parte\n\u25c0 \u25b6 o Bot\u00f3n 1  cambia el color'],
+  const playButton = scene.add.graphics();
+  drawPixelButton(playButton, 230, 72);
+  const playLabel = scene.add
+    .text(0, 0, 'JUGAR', { fontFamily: 'Courier New, monospace', fontStyle: 'bold', fontSize: '40px', color: '#ffffff', stroke: '#1d1230', strokeThickness: 6 })
+    .setOrigin(0.5);
+  const button = scene.add.container(centerX, 330, [playButton, playLabel]);
+  scene.tweens.add({ targets: button, scale: 1.08, duration: 500, yoyo: true, repeat: -1 });
+  const startHint = scene.add
+    .text(centerX, 388, 'Presiona START', { ...OVERLAY_TEXT_STYLE, fontSize: '18px', stroke: '#1d1230', strokeThickness: 5 })
+    .setOrigin(0.5);
+  const controls = scene.add
+    .text(centerX, 430, 'J1 maneja  \u25c0 \u25b6        J2 maquilla  \u25b2 \u25bc \u25c0 \u25b6  Bot\u00f3n 1', {
+      ...OVERLAY_TEXT_STYLE,
+      fontSize: '17px',
+      stroke: '#1d1230',
+      strokeThickness: 5,
+    })
+    .setOrigin(0.5);
+  scene.titleLayer = scene.add.container(0, 0, [art, car, makeupWord, racingWord, subtitle, button, startHint, controls]);
+}
+
+function drawJaggedRidge(graphics, baseY, peakHeight, color, salt) {
+  const outline = [{ x: OVERLAY_WORLD_X, y: GAME_HEIGHT }];
+  for (let x = 0, step = 0; x <= GAME_WIDTH; x += 10, step++) {
+    const wave = 0.5 + 0.3 * Math.sin(x * 0.012 + salt * 2) + 0.2 * Math.sin(x * 0.031 + salt * 5);
+    outline.push({ x: OVERLAY_WORLD_X + x, y: baseY - peakHeight * wave - seededRandom(step, salt) * 8 });
+  }
+  outline.push({ x: OVERLAY_WORLD_X + GAME_WIDTH, y: GAME_HEIGHT });
+  graphics.fillStyle(color, 1);
+  graphics.fillPoints(outline, true);
+}
+
+function drawPixelButton(graphics, width, height) {
+  const notch = 8;
+  const layers = [
+    [COLORS.background, 0],
+    [COLORS.buttonPurple, 5],
   ];
-  cards.forEach(([heading, body], index) => {
-    const cardX = left + 60 + index * 360;
-    art.fillStyle(COLORS.curbPink, 0.25);
-    art.fillRoundedRect(cardX + 4, 416, 320, 106, 20);
-    art.fillStyle(COLORS.cloud, 0.95);
-    art.fillRoundedRect(cardX, 410, 320, 106, 20);
-    cardTexts.push(scene.add.text(cardX + 160, 436, heading, { ...MAKEUP_TEXT_STYLE, fontSize: '19px' }).setOrigin(0.5));
-    cardTexts.push(
-      scene.add
-        .text(cardX + 160, 482, body, { ...MAKEUP_TEXT_STYLE, fontSize: '16px', color: '#8a5a7a', align: 'center' })
-        .setOrigin(0.5),
-    );
-  });
-  const prompt = addBlinkingPrompt(scene, 'Presiona START para jugar');
-  scene.titleLayer = scene.add.container(0, 0, [art, car, title, subtitle, ...cardTexts, prompt]);
+  for (const [color, inset] of layers) {
+    const halfWidth = width / 2 - inset;
+    const halfHeight = height / 2 - inset;
+    graphics.fillStyle(color, 1);
+    graphics.fillRect(-halfWidth + notch, -halfHeight, halfWidth * 2 - notch * 2, halfHeight * 2);
+    graphics.fillRect(-halfWidth, -halfHeight + notch, halfWidth * 2, halfHeight * 2 - notch * 2);
+  }
+  graphics.fillStyle(COLORS.buttonPurpleLight, 1);
+  graphics.fillRect(-width / 2 + 5 + notch, -height / 2 + 5, width - 10 - notch * 2, height / 2 - 8);
 }
 
 function createLevelSelectScreen(scene) {
