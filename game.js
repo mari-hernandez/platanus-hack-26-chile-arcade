@@ -761,50 +761,60 @@ function showResults(scene) {
   }
 
   const dimmer = scene.add.rectangle(centerX, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, UI.shadow, 0.45);
-  const panel = scene.add.graphics({ x: centerX, y: 300 });
-  drawPanel(panel, 0, 0, 480, 400, { isSelected: true, fill: UI.surfaceSoft });
+  const card = scene.add.graphics();
+  drawPanel(card, centerX, 322, 420, 300, { fill: UI.surfaceSoft });
+  card.fillStyle(UI.shadow, 0.3);
+  card.fillCircle(centerX, 172 + UI.shadowOffset, 46);
+  paintCircle(card, UI.accent, centerX, 172, 51);
+  paintCircle(card, UI.surface, centerX, 172, 46);
+  drawHeart(card, centerX, 172, 28, isPerfect ? PALETTE.pink : light(PALETTE.purple, 0.4));
+  if (!isPerfect) {
+    card.lineStyle(5, UI.surface, 1);
+    card.strokePoints([{ x: centerX + 2, y: 152 }, { x: centerX - 6, y: 166 }, { x: centerX + 6, y: 176 }, { x: centerX - 2, y: 194 }]);
+  }
+  const heartsWidth = (MAKEUP_PARTS.length - 1) * 36;
+  MAKEUP_PARTS.forEach((part, index) => drawHeart(card, centerX - heartsWidth / 2 + index * 36, 286, 12, index < matchingCount ? PALETTE.pink : UI.idle));
+  const statsY = 328;
+  const crashX = currentLevel.selfiesNeeded ? centerX + 52 : centerX - 12;
+  if (currentLevel.selfiesNeeded) {
+    drawCameraIcon(card, centerX - 96, statsY, PALETTE.purple);
+    for (let selfie = 0; selfie < currentLevel.selfiesNeeded; selfie++) {
+      paintCircle(card, selfie < makeup.selfiesTaken ? PALETTE.pink : UI.idle, centerX - 66 + selfie * 18, statsY, 6);
+    }
+  }
+  drawStar(card, crashX, statsY, 15, PALETTE.orange);
+  const crashCount = scene.add
+    .text(crashX + 22, statsY, `${scene.race.crashes}`, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large, color: css(dark(PALETTE.purple, 0.45)) })
+    .setOrigin(0, 0.5);
   const title = scene.add
-    .text(centerX, 152, isPerfect ? '\u00a1Felicidades, ganaron!' : '\u00a1Vuelvan a intentarlo!', {
+    .text(centerX, 240, isPerfect ? '\u00a1Lo lograron!' : '\u00a1Casi!', {
       ...TEXT_STYLES.display,
       fontSize: FONT_SIZES.heading,
       color: isPerfect ? css(PALETTE.pink) : css(PALETTE.purple),
     })
     .setOrigin(0.5);
-  const summary = scene.add
-    .text(centerX, 198, [
-        `Look ${matchingCount}/${MAKEUP_PARTS.length}`,
-        currentLevel.selfiesNeeded ? `Selfies ${makeup.selfiesTaken}/${currentLevel.selfiesNeeded}` : '',
-        `${scene.race.crashes} ${scene.race.crashes === 1 ? 'choque' : 'choques'}`,
-      ]
-        .filter(Boolean)
-        .join('   \u00b7   '), { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large })
-    .setOrigin(0.5);
   const unlockNotice = scene.add
-    .text(centerX, 226, unlocksNextLevel ? `Desbloquearon: ${LEVELS[nextLevel].name}` : '', { ...TEXT_STYLES.onLight, color: css(PALETTE.purple) })
+    .text(centerX, 504, unlocksNextLevel ? `\u2605 ${LEVELS[nextLevel].name} \u2605` : '', { ...TEXT_STYLES.onDark, color: css(light(PALETTE.yellow, 0.4)) })
     .setOrigin(0.5);
 
-  const retryOption = ['Reintentar', { levelIndex: scene.levelIndex, startLevel: true }];
-  const nextOption = ['Siguiente nivel', { levelIndex: nextLevel, startLevel: true }];
+  const primaryOption = isPerfect && hasNextLevel ? ['Siguiente', { levelIndex: nextLevel, startLevel: true }] : ['Reintentar', { levelIndex: scene.levelIndex, startLevel: true }];
   scene.resultOptions = [
-    isPerfect && hasNextLevel ? nextOption : retryOption,
-    ['Elegir nivel', { levelIndex: scene.levelIndex, showLevelSelect: true, selectedLevel: isPerfect && hasNextLevel ? nextLevel : scene.levelIndex }],
-    ['Men\u00fa principal', { levelIndex: scene.levelIndex }],
-  ].map(([label, restartOptions], index) => {
-    const y = 286 + index * 66;
-    const button = scene.add.graphics({ x: centerX, y });
-    const text = scene.add
-      .text(centerX, y, label, TEXT_STYLES.button)
-      .setOrigin(0.5);
-    return { button, text, restartOptions };
+    [...primaryOption, centerX, 380, 300, 54],
+    ['Niveles', { levelIndex: scene.levelIndex, showLevelSelect: true, selectedLevel: isPerfect && hasNextLevel ? nextLevel : scene.levelIndex }, centerX - 76, 436, 140, 42],
+    ['Men\u00fa', { levelIndex: scene.levelIndex }, centerX + 76, 436, 140, 42],
+  ].map(([label, restartOptions, x, y, width, height]) => {
+    const button = scene.add.graphics({ x, y });
+    const text = scene.add.text(x, y, label, TEXT_STYLES.button).setOrigin(0.5);
+    return { button, text, restartOptions, width, height };
   });
   scene.selectedResultOption = 0;
   refreshResultsMenu(scene);
-  scene.add.container(0, 0, [dimmer, panel, title, summary, unlockNotice, ...scene.resultOptions.flatMap((option) => [option.button, option.text])]);
+  scene.add.container(0, 0, [dimmer, card, title, crashCount, unlockNotice, ...scene.resultOptions.flatMap((option) => [option.button, option.text])]);
   scene.titleLayer.setVisible(false);
   scene.levelSelectLayer.setVisible(false);
   scene.overlayCamera.setVisible(true);
   playMusic(scene, null);
-  if (isPerfect) scene.sparks.explode(50, centerX, 150);
+  if (isPerfect) scene.sparks.explode(50, centerX, 172);
   playMelody(scene, isPerfect ? [523, 659, 784, 1047] : [392, 330, 262]);
 }
 
@@ -812,13 +822,13 @@ function refreshResultsMenu(scene) {
   scene.resultOptions.forEach((option, index) => {
     const isSelected = index === scene.selectedResultOption;
     option.button.clear();
-    drawButton(option.button, 0, 0, 300, 54, isSelected);
+    drawButton(option.button, 0, 0, option.width, option.height, isSelected);
     option.text.setColor(isSelected ? css(PALETTE.white) : css(dark(PALETTE.purple, 0.45)));
   });
 }
 
 function updateResultsMenu(scene, startPressed) {
-  const step = ['P1_D', 'P2_D'].some((button) => wasPressed(scene, button)) ? 1 : ['P1_U', 'P2_U'].some((button) => wasPressed(scene, button)) ? -1 : 0;
+  const step = ['P1_D', 'P2_D', 'P1_R', 'P2_R'].some((button) => wasPressed(scene, button)) ? 1 : ['P1_U', 'P2_U', 'P1_L', 'P2_L'].some((button) => wasPressed(scene, button)) ? -1 : 0;
   if (step !== 0) {
     const optionCount = scene.resultOptions.length;
     scene.selectedResultOption = (scene.selectedResultOption + step + optionCount) % optionCount;
@@ -1213,9 +1223,7 @@ function takeSelfie(scene) {
 
   const frame = scene.add.graphics();
   drawPanel(frame, 0, 18, SELFIE_PHOTO_WIDTH + 24, SELFIE_PHOTO_HEIGHT + 60);
-  paintCircle(frame, PALETTE.pink, -7, SELFIE_PHOTO_HEIGHT / 2 + 26, 7);
-  frame.fillCircle(7, SELFIE_PHOTO_HEIGHT / 2 + 26, 7);
-  frame.fillTriangle(-14, SELFIE_PHOTO_HEIGHT / 2 + 28, 14, SELFIE_PHOTO_HEIGHT / 2 + 28, 0, SELFIE_PHOTO_HEIGHT / 2 + 42);
+  drawHeart(frame, 0, SELFIE_PHOTO_HEIGHT / 2 + 32, 14, PALETTE.pink);
   const photo = scene.add.image(0, 0, 'selfie');
   const selfie = scene.add.container(OVERLAY_WORLD_X + PANEL_WIDTH / 2, 300, [frame, photo]).setAngle(-4).setScale(0.6).setDepth(10);
   scene.titleLayer.setVisible(false);
@@ -1320,10 +1328,8 @@ function drawConfetti(graphics) {
   for (let piece = 0; piece < 26; piece++) {
     paintRect(graphics, confettiColors[piece % confettiColors.length], seededRandom(piece, 41) * SELFIE_PHOTO_WIDTH, seededRandom(piece, 42) * 90, 6, 4);
   }
-  for (const [heartX, heartY] of [[30, 30], [228, 46]]) {
-    paintCircle(graphics, PALETTE.pink, heartX - 6, heartY, 7);
-    graphics.fillCircle(heartX + 6, heartY, 7);
-    graphics.fillTriangle(heartX - 13, heartY + 2, heartX + 13, heartY + 2, heartX, heartY + 17);
+  for (const [heartX, heartY] of [[30, 36], [228, 52]]) {
+    drawHeart(graphics, heartX, heartY, 14, PALETTE.pink);
   }
 }
 
@@ -1954,6 +1960,13 @@ function drawLamp(graphics, x, groundY, size, fogged) {
   graphics.fillStyle(currentLevel.colors.sunGlow, currentLevel.isNight ? 0.45 : 0.2);
   graphics.fillCircle(x, groundY - size * 0.8, size * 0.12);
   paintCircle(graphics, fogged(COLORS.lampBulb), x, groundY - size * 0.8, size * 0.045);
+}
+
+function drawHeart(graphics, x, y, size, color) {
+  const lobe = size / 2;
+  paintCircle(graphics, color, x - lobe, y - lobe / 2, lobe);
+  graphics.fillCircle(x + lobe, y - lobe / 2, lobe);
+  graphics.fillTriangle(x - size, y - lobe / 4, x + size, y - lobe / 4, x, y + size);
 }
 
 function drawStar(graphics, x, y, radius, color) {
