@@ -630,10 +630,12 @@ function drawSwatches(scene, part) {
 
 function ruinMakeup(scene) {
   const makeup = scene.makeup;
-  const partIndex = Math.floor(Math.random() * MAKEUP_PARTS.length);
+  const paintedParts = MAKEUP_PARTS.map((part, index) => index).filter((index) => makeup.colorIndexes[index] >= 0);
+  if (paintedParts.length === 0) return;
+  const partIndex = randomItem(paintedParts);
   const part = MAKEUP_PARTS[partIndex];
   const otherColors = part.colors.map((color, index) => index).filter((index) => index !== makeup.colorIndexes[partIndex]);
-  makeup.colorIndexes[partIndex] = otherColors[Math.floor(Math.random() * otherColors.length)];
+  makeup.colorIndexes[partIndex] = randomItem(otherColors);
   refreshMakeup(scene);
 
   scene.makeupCamera.shake(300, 0.012);
