@@ -930,13 +930,6 @@ function createMakeupPanel(scene) {
   panelDivider.fillStyle(COLORS.background, 1);
   panelDivider.fillRect(left, 0, 6, GAME_HEIGHT);
 
-  scene.lookText = scene.add.text(left + 18, 16, '', {
-    ...MAKEUP_TEXT_STYLE,
-    fontSize: '20px',
-    color: '#ffffff',
-    stroke: '#c2457f',
-    strokeThickness: 6,
-  });
   refreshMakeup(scene);
 }
 
@@ -1032,8 +1025,6 @@ function refreshMakeup(scene) {
   scene.faceGraphics.clear();
   drawFace(scene.faceGraphics, FACE_CENTER_X, FACE_CENTER_Y, FACE_SCALE, look);
 
-  const matchingCount = MAKEUP_PARTS.filter((part, index) => isPartMatching(makeup, index)).length;
-  scene.lookText.setText(`Look ${matchingCount}/${MAKEUP_PARTS.length}`);
   const part = MAKEUP_PARTS[makeup.selectedPart];
   scene.partNameText.setText(`${part.name}${isPartMatching(makeup, makeup.selectedPart) ? '  \u2713' : ''}`);
   drawCategoryTiles(scene, look);
