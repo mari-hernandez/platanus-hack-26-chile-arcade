@@ -1432,16 +1432,13 @@ function drawPartIcon(graphics, key, x, y, color) {
     graphics.fillStyle(COLORS.cloud, 0.45);
     graphics.fillEllipse(x - 4, y - 4, 9, 5);
   } else if (key === 'earrings') {
-    graphics.lineStyle(2, COLORS.bell, 1);
+    paintCircle(graphics, color, x, y - 14, 3);
+    graphics.lineStyle(5, color, 1);
+    graphics.strokeCircle(x, y + 2, 12);
+    graphics.lineStyle(2, COLORS.cloud, 0.8);
     graphics.beginPath();
-    graphics.arc(x, y - 12, 4, Math.PI, 0);
+    graphics.arc(x, y + 2, 12, Math.PI * 1.1, Math.PI * 1.45);
     graphics.strokePath();
-    graphics.lineStyle(3, color, 1);
-    graphics.strokeCircle(x, y - 1, 8);
-    graphics.fillStyle(color, 1);
-    graphics.fillPoints([{ x, y: y + 6 }, { x: x + 5, y: y + 11 }, { x, y: y + 17 }, { x: x - 5, y: y + 11 }], true);
-    graphics.fillStyle(COLORS.cloud, 0.7);
-    graphics.fillCircle(x - 1.5, y + 10, 1.5);
   } else {
     paintRect(graphics, COLORS.bell, x - 7, y + 3, 14, 12);
     paintRect(graphics, caseColor, x - 6, y - 4, 12, 8);
