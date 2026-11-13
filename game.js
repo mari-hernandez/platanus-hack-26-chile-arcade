@@ -56,7 +56,6 @@ const CRASH_RECOVERY_MS = 1500;
 const JUMP_DURATION_MS = 650;
 const JUMP_HEIGHT_PX = 70;
 const JUMP_HEIGHT_TO_CLEAR_SPIKES = 0.3;
-const KMH_PER_SPEED_UNIT = 6;
 const LAST_OBSTACLE_MARGIN = 30;
 const CAR_STOP_OFFSET = 4;
 const DESTINATION_OFFSET = 11;
@@ -100,7 +99,6 @@ const FONTS = {
 };
 
 const FONT_SIZES = {
-  small: '14px',
   body: '18px',
   large: '22px',
   heading: '32px',
@@ -596,13 +594,17 @@ function createTitleScreen(scene) {
     .setOrigin(0.5);
   const button = scene.add.container(centerX, 330, [playButton, playLabel]);
   scene.tweens.add({ targets: button, scale: 1.08, duration: 500, yoyo: true, repeat: -1 });
-  const startHint = scene.add
-    .text(centerX, 388, 'Presiona START', TEXT_STYLES.onDark)
-    .setOrigin(0.5);
-  const controls = scene.add
-    .text(centerX, 430, 'J1 maneja  \u25c0 \u25b6  salta \u25b2      J2 maquilla  \u25b2 \u25bc \u25c0 \u25b6  Bot\u00f3n 1', TEXT_STYLES.onDark)
-    .setOrigin(0.5);
-  scene.titleLayer = scene.add.container(0, 0, [art, car, makeupWord, racingWord, subtitle, button, startHint, controls]);
+  const controlCards = [
+    [centerX - 140, '\u25c0 \u25b6  \u25b2'],
+    [centerX + 140, '\u25b2 \u25bc  \u25c0 \u25b6'],
+  ];
+  for (const [cardX] of controlCards) drawPanel(art, cardX, 424, 230, 58);
+  drawPartIcon(art, 'lips', centerX + 140 - 72, 424, PALETTE.red);
+  const driverIcon = scene.add.image(centerX - 140 - 72, 444, 'car').setOrigin(0.5, 1).setScale(0.36);
+  const controlTexts = controlCards.map(([cardX, arrows]) =>
+    scene.add.text(cardX + 22, 424, arrows, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large, color: css(PALETTE.purple) }).setOrigin(0.5),
+  );
+  scene.titleLayer = scene.add.container(0, 0, [art, car, makeupWord, racingWord, subtitle, button, driverIcon, ...controlTexts]);
 }
 
 function createLevelSelectScreen(scene) {
@@ -611,14 +613,9 @@ function createLevelSelectScreen(scene) {
   const heading = scene.add.text(centerX, 74, 'Elige el destino', TEXT_STYLES.display).setOrigin(0.5);
   heading.setShadow(0, 5, css(UI.textStroke), 0, true, true);
   scene.levelCardsGraphics = scene.add.graphics();
-  scene.levelCardTexts = LEVELS.map(() => [
-    scene.add.text(0, 0, '', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.small, color: css(PALETTE.purple) }).setOrigin(0.5),
-    scene.add.text(0, 0, '', { ...TEXT_STYLES.onLight, wordWrap: { width: 150 } }).setOrigin(0.5),
-  ]);
-  const hint = scene.add
-    .text(centerX, 524, '\u25c0 \u25b6  elegir      START  jugar', { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large })
-    .setOrigin(0.5);
-  scene.levelSelectLayer = scene.add.container(0, 0, [scene.levelSelectBackground, heading, scene.levelCardsGraphics, ...scene.levelCardTexts.flat(), hint]);
+  scene.levelNameTexts = LEVELS.map(() => scene.add.text(0, 0, '', { ...TEXT_STYLES.onLight, wordWrap: { width: 150 } }).setOrigin(0.5));
+  const hint = scene.add.text(centerX, 524, '\u25c0  \u25b6', { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.heading }).setOrigin(0.5);
+  scene.levelSelectLayer = scene.add.container(0, 0, [scene.levelSelectBackground, heading, scene.levelCardsGraphics, ...scene.levelNameTexts, hint]);
 }
 
 function refreshLevelSelect(scene) {
@@ -631,7 +628,7 @@ function refreshLevelSelect(scene) {
     const centerX = OVERLAY_WORLD_X + 105 + index * 197;
     const centerY = isSelected ? 288 : 300;
     const top = centerY - 140;
-    drawPanel(graphics, centerX, top + 140, isSelected ? 182 : 170, isSelected ? 292 : 280, { isSelected });
+    drawPanel(graphics, centerX, top + 122, isSelected ? 182 : 170, isSelected ? 256 : 244, { isSelected });
     drawLandscape(graphics, level, { left: centerX - 72, top: top + 13, width: 144, horizonY: top + 112, bottom: top + 183, scale: 0.6, sunY: top + 42 });
     graphics.fillStyle(COLORS.asphaltLight, 1);
     graphics.fillTriangle(centerX - 12, top + 133, centerX + 12, top + 133, centerX + 40, top + 183);
@@ -649,9 +646,8 @@ function refreshLevelSelect(scene) {
       graphics.fillStyle(COLORS.background, 1);
       graphics.fillCircle(centerX, top + 102, 5);
     }
-    const [numberText, nameText] = scene.levelCardTexts[index];
-    numberText.setPosition(centerX, top + 206).setText(`NIVEL ${index + 1}`);
-    nameText.setPosition(centerX, top + 238).setText(level.name).setColor(isLocked ? css(light(PALETTE.ink, 0.5)) : css(dark(PALETTE.pink, 0.3)));
+    scene.levelNameTexts[index]
+      .setPosition(centerX, top + 212).setText(level.name).setColor(isLocked ? css(light(PALETTE.ink, 0.5)) : css(dark(PALETTE.pink, 0.3)));
   });
 }
 
@@ -702,7 +698,7 @@ function showResults(scene) {
     .text(centerX, 198, `Look ${matchingCount}/${MAKEUP_PARTS.length}   \u00b7   ${scene.race.crashes} ${scene.race.crashes === 1 ? 'choque' : 'choques'}`, { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.large })
     .setOrigin(0.5);
   const unlockNotice = scene.add
-    .text(centerX, 226, unlocksNextLevel ? `Desbloquearon: ${LEVELS[nextLevel].name}` : '', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.small, color: css(PALETTE.purple) })
+    .text(centerX, 226, unlocksNextLevel ? `Desbloquearon: ${LEVELS[nextLevel].name}` : '', { ...TEXT_STYLES.onLight, color: css(PALETTE.purple) })
     .setOrigin(0.5);
 
   const retryOption = ['Reintentar', { levelIndex: scene.levelIndex, startLevel: true }];
@@ -719,12 +715,9 @@ function showResults(scene) {
       .setOrigin(0.5);
     return { button, text, restartOptions };
   });
-  const hint = scene.add
-    .text(centerX, 474, '\u25b2\u25bc elegir    START aceptar', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.small, color: css(light(PALETTE.ink, 0.45)) })
-    .setOrigin(0.5);
   scene.selectedResultOption = 0;
   refreshResultsMenu(scene);
-  scene.add.container(0, 0, [dimmer, panel, title, summary, unlockNotice, ...scene.resultOptions.flatMap((option) => [option.button, option.text]), hint]);
+  scene.add.container(0, 0, [dimmer, panel, title, summary, unlockNotice, ...scene.resultOptions.flatMap((option) => [option.button, option.text])]);
   scene.titleLayer.setVisible(false);
   scene.levelSelectLayer.setVisible(false);
   scene.overlayCamera.setVisible(true);
@@ -1067,18 +1060,8 @@ function createReferencePhoto(scene) {
 function createMakeupToolbar(scene) {
   const left = MAKEUP_PANEL_WORLD_X;
   const toolbar = scene.add.graphics();
-  drawPanel(toolbar, left + PANEL_WIDTH / 2 + 3, 541, PANEL_WIDTH - 30, 94);
+  drawPanel(toolbar, left + PANEL_WIDTH / 2 + 3, SWATCH_Y, PANEL_WIDTH - 30, 66);
   scene.swatchGraphics = scene.add.graphics();
-  scene.partNameText = scene.add
-    .text(left + PANEL_WIDTH / 2 + 3, 513, '', TEXT_STYLES.onLight)
-    .setOrigin(0.5);
-  scene.add
-    .text(left + PANEL_WIDTH / 2 + 3, 578, '\u25b2\u25bc parte    \u25c0\u25b6 o Bot\u00f3n 1: color', { ...TEXT_STYLES.onLight, fontSize: FONT_SIZES.small, color: css(light(PALETTE.ink, 0.55)) })
-    .setOrigin(0.5);
-  scene.crashNoticeText = scene.add
-    .text(FACE_CENTER_X, 140, '', { ...TEXT_STYLES.onDark, fontSize: FONT_SIZES.large, stroke: css(PALETTE.red) })
-    .setOrigin(0.5)
-    .setAlpha(0);
 }
 
 function lookFrom(colorIndexes) {
@@ -1126,7 +1109,6 @@ function refreshMakeup(scene) {
   drawFace(scene.faceGraphics, FACE_CENTER_X, FACE_CENTER_Y, FACE_SCALE, look);
 
   const part = MAKEUP_PARTS[makeup.selectedPart];
-  scene.partNameText.setText(part.name);
   drawCategoryTiles(scene, look);
   drawSwatches(scene, part);
 }
@@ -1250,10 +1232,11 @@ function ruinMakeup(scene) {
   refreshMakeup(scene);
 
   scene.makeupCamera.shake(300, 0.012);
-  const notice = scene.crashNoticeText;
-  scene.tweens.killTweensOf(notice);
-  notice.setText(`\u00a1Choque!\nCambi\u00f3: ${part.name}`).setAlpha(1).setY(230);
-  scene.tweens.add({ targets: notice, y: 200, alpha: 0, delay: 900, duration: 600 });
+  const flashSize = TILE_SIZE + 14;
+  const flash = scene.add.graphics();
+  flash.fillStyle(PALETTE.red, 0.6);
+  flash.fillRoundedRect(TILE_CENTER_X - flashSize / 2, FIRST_TILE_Y + partIndex * TILE_SPACING - flashSize / 2, flashSize, flashSize, UI.radius);
+  scene.tweens.add({ targets: flash, alpha: 0, duration: 250, yoyo: true, repeat: 2, onComplete: () => flash.destroy() });
 }
 
 function drawFace(graphics, centerX, centerY, scale, look) {
@@ -1939,13 +1922,9 @@ function drawCones(graphics, x, groundY, size, fogged) {
 }
 
 function createHud(scene) {
-  const style = TEXT_STYLES.onDark;
   scene.progressGraphics = scene.add.graphics();
   const finishIcon = scene.add.graphics();
   currentLevel.drawDestination(finishIcon, { x: PROGRESS_BAR_X + PROGRESS_BAR_WIDTH + 28, y: 40, scale: 26 }, (color) => color);
-  scene.remainingText = scene.add.text(PROGRESS_BAR_X, 34, '', style);
-  scene.speedText = scene.add.text(PROGRESS_BAR_X + PROGRESS_BAR_WIDTH, 34, '', style).setOrigin(1, 0);
-  scene.crashText = scene.add.text(PROGRESS_BAR_X, 56, '', { ...style, color: css(light(PALETTE.pink, 0.55)) });
 }
 
 function updateHud(scene) {
@@ -1962,10 +1941,6 @@ function updateHud(scene) {
   graphics.fillCircle(markerX, 19, 11);
   graphics.fillStyle(COLORS.carBody, 1);
   graphics.fillCircle(markerX, 19, 8);
-
-  scene.remainingText.setText(`Faltan ${Math.ceil(Math.max(0, currentLevel.distance - race.distance))} m`);
-  scene.speedText.setText(`${Math.round(race.speed * KMH_PER_SPEED_UNIT)} km/h`);
-  scene.crashText.setText(race.crashes ? `Choques: ${race.crashes}` : '');
 }
 
 function audioContextOf(scene) {
